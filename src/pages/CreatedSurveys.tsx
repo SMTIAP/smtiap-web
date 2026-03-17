@@ -38,7 +38,7 @@ export default function CreatedSurveys() {
             <button onClick={() => navigate('/templates')} className="w-10 h-10 rounded-md bg-[#1E293B] text-white flex items-center justify-center">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3V13M3 8H13"/></svg>
             </button>
-            <button onClick={() => navigate(-1)} className="py-2 px-6 rounded-md bg-[#1E293B] text-white text-sm font-bold">Back</button>
+            <button onClick={() => navigate('/')} className="py-2 px-6 rounded-md bg-[#1E293B] text-white text-sm font-bold shadow-sm hover:opacity-90 transition-opacity">Back</button>
           </div>
         </div>
 

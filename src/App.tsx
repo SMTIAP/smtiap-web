@@ -4,7 +4,6 @@ import Login from './pages/Login';
 import ForgotPassword from './pages/Forgot-password';
 import OrganizationAdmin from './pages/OrganizationAdmin';
 import CreatedSurveys from './pages/CreatedSurveys';
-import AllSurveys from './pages/AllSurveys';
 import SearchTemplate from './pages/SearchTemplate';
 import CreateNewSurvey from './pages/CreateNewSurvey';
 import AddQuestions from './pages/AddQuestions';
@@ -23,7 +22,6 @@ export default function App() {
         
         {/* Dashboard & Survey Management */}
         <Route path="/" element={<OrganizationAdmin />} />
-        <Route path="/surveys" element={<AllSurveys />} />
         <Route path="/created-surveys" element={<CreatedSurveys />} />
         <Route path="/templates" element={<SearchTemplate />} />
         
