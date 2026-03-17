@@ -27,9 +27,9 @@ export default function CreatedSurveys() {
           <div className="flex gap-3">
             {/* Square Add Button */}
             <button 
-              onClick={() => navigate('/create-new')} // Update this path as needed
-              className="flex items-center justify-center w-10 h-10 rounded-md bg-[#1E293B] text-white hover:opacity-90 transition-opacity"
-            >
+              onClick={() => navigate('/templates')} // <--- CHANGE THIS PATH TO '/templates'
+             className="flex items-center justify-center w-10 h-10 rounded-md bg-[#1E293B] text-white hover:opacity-90 transition-opacity"
+             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M8 3.33334V12.6667M3.33334 8H12.6667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
