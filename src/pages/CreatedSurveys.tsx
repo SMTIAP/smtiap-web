@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function CreatedSurveys() {
@@ -9,7 +9,7 @@ export default function CreatedSurveys() {
   const [surveys, setSurveys] = useState([
     { id: 1, date: "25/08/21", title: "Food Satisfaction", status: "Running" },
     { id: 2, date: "22/08/21", title: "Customer Support Quiz", status: "Draft" },
-    { id: 3, date: "15/08/21", title: "Product Feedback", status: "Finished" },
+    { id: 3, date: "15/08/21", title: "Product Feedback", status: "Finished", to: "/response" },
   ]);
 
   useEffect(() => {
@@ -58,8 +58,14 @@ export default function CreatedSurveys() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 w-full">
-          {filteredSurveys.map((survey) => (
-            <div key={survey.id} className="flex flex-col items-center justify-between p-6 bg-white border border-[#E2E8F0] rounded-2xl shadow-sm hover:border-blue-300 transition-all aspect-[3/4]">
+          {filteredSurveys.map((survey: any) => (
+            <div 
+              key={survey.id} 
+              onClick={() => survey.to && navigate(survey.to)}
+              className={`flex flex-col items-center justify-between p-6 bg-white border border-[#E2E8F0] rounded-2xl shadow-sm transition-all aspect-[3/4] ${
+                survey.to ? 'cursor-pointer hover:border-blue-500 hover:shadow-md' : 'hover:border-blue-300'
+              }`}
+            >
               <span className="text-[#94A3B8] text-[10px] font-bold self-end">{survey.date}</span>
               
               <div className="text-center">
