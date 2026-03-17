@@ -3,6 +3,7 @@ import OrganizationAdmin from './pages/OrganizationAdmin';
 import CreatedSurveys from './pages/CreatedSurveys';
 import SearchTemplate from './pages/SearchTemplate'; 
 import CreateNewSurvey from './pages/CreateNewSurvey';
+import AddQuestions from './pages/AddQuestions'; 
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/create-new" element={<div>Create New Survey Page</div>} />
         <Route path="/templates" element={<SearchTemplate />} />
         <Route path="/create-new-survey" element={<CreateNewSurvey />} />
+        <Route path="/add-questions" element={<AddQuestions />} />
       </Routes>
     </BrowserRouter>
   );

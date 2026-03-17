@@ -25,13 +25,11 @@ export default function CreateNewSurvey() {
     isAnonymous: false,
   });
 
-  // FIX: Added 'React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>' type
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // FIX: Added 'keyof SurveyFormData' type to ensure 'field' matches our state keys
   const toggleField = (field: keyof SurveyFormData) => {
     setFormData((prev) => ({ 
       ...prev, 
@@ -39,7 +37,6 @@ export default function CreateNewSurvey() {
     }));
   };
 
-  // FIX: Added 'React.ChangeEvent<HTMLInputElement>' type
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -154,7 +151,10 @@ export default function CreateNewSurvey() {
           </section>
 
           <div className="flex justify-end mt-4">
-            <button className="flex items-center gap-2 bg-[#6366F1] text-white px-6 py-3 rounded-lg font-bold text-xs hover:opacity-90 transition-all shadow-md">
+            <button 
+              onClick={() => navigate('/add-questions')} // Fixed: Navigates to AddQuestions page
+              className="flex items-center gap-2 bg-[#6366F1] text-white px-6 py-3 rounded-lg font-bold text-xs hover:opacity-90 transition-all shadow-md"
+            >
               Next: Add Questions
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                 <path d="M5 12h14M12 5l7 7-7 7"/>
