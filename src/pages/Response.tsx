@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ChevronLeft, Download, BarChart2, Play, FileText, CheckCircle } from 'lucide-react';
+import { ChevronLeft, Download, BarChart2, Play, CheckCircle } from 'lucide-react';
 
 interface ResponseData {
   timestamp: string;
@@ -22,7 +22,7 @@ export default function Response() {
       {/* Navigation Bar */}
       <nav className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <Link 
-          to="/surveys" 
+          to="/created-surveys" 
           className="flex items-center gap-2 text-lg font-bold hover:text-green-600 transition-colors group"
         >
           <ChevronLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
@@ -86,12 +86,8 @@ export default function Response() {
         <div className="mt-12 flex flex-col items-center gap-6">
           <div className="flex flex-wrap justify-center gap-4">
             <ActionButton icon={<Play size={18} />} label="Run" variant="primary" />
-            <ActionButton icon={<FileText size={18} />} label="Draft" variant="secondary" />
             <ActionButton icon={<CheckCircle size={18} />} label="Finish" variant="secondary" />
           </div>
-          <p className="text-gray-400 text-sm italic hover:text-gray-600 transition-colors cursor-default">
-            Internal reference: resp_v2_final
-          </p>
         </div>
       </main>
     </div>
