@@ -2,14 +2,24 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import ForgotPassword from './pages/Forgot-password';
+import OrganizationAdmin from './pages/OrganizationAdmin';
+import CreatedSurveys from './pages/CreatedSurveys';
+import SearchTemplate from './pages/SearchTemplate'; 
 
 export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Register />} />
+        {/* Auth Routes */}
+        <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        
+        {/* Dashboard & Survey Routes */}
+        <Route path="/" element={<OrganizationAdmin />} />
+        <Route path="/created-surveys" element={<CreatedSurveys />} />
+        <Route path="/create-new" element={<div>Create New Survey Page</div>} />
+        <Route path="/templates" element={<SearchTemplate />} />
       </Routes>
     </Router>
   );
