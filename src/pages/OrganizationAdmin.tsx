@@ -1,4 +1,4 @@
-
+import { Link } from "react-router-dom";
 
 export default function OrganizationAdmin() {
   return (
@@ -19,8 +19,11 @@ export default function OrganizationAdmin() {
 
         {/* Top Feature Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
-          {/* Surveys */}
-          <div className="flex py-10 px-6 flex-col justify-center items-center gap-4 rounded-xl border border-[#E2E8F0] bg-[#FFF] shadow-sm w-full">
+          {/* Surveys - clickable */}
+          <Link
+            to="/created-surveys"
+            className="flex py-10 px-6 flex-col justify-center items-center gap-4 rounded-xl border border-[#E2E8F0] bg-[#FFF] shadow-sm w-full cursor-pointer hover:opacity-90"
+          >
             <div className="flex justify-center items-center shrink-0 rounded-md bg-[#F1F5F9] w-12 h-12">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M11.2031 7.96875H13.9688V13.9688H11.2031V7.96875V7.96875M5.57812 0H8.39062V13.9688H5.57812V0V0M0 4.17188H3V13.9688H0V4.17188V4.17188" fill="#64748B" />
@@ -29,7 +32,7 @@ export default function OrganizationAdmin() {
             <p className="text-[#1E293B] font-inter text-lg font-semibold leading-7">
               Surveys
             </p>
-          </div>
+          </Link>
 
           {/* Employees */}
           <div className="flex py-10 px-6 flex-col justify-center items-center gap-4 rounded-xl border border-[#E2E8F0] bg-[#FFF] shadow-sm w-full">
