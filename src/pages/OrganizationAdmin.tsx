@@ -9,7 +9,7 @@ interface FeatureCardProps {
 
 const FeatureCard = ({ to, icon: Icon, title }: FeatureCardProps) => {
   const content = (
-    <div className="flex py-10 px-6 flex-col justify-center items-center gap-4 rounded-xl border border-[#E2E8F0] bg-[#FFF] shadow-sm w-full transition-transform hover:-translate-y-1 hover:shadow-md cursor-pointer">
+    <div className="flex py-10 px-6 flex-col justify-center items-center gap-4 rounded-xl border border-[#E2E8F0] bg-[#FFF] shadow-sm w-full transition-transform hover:-translate-y-1 hover:shadow-md cursor-pointer h-full">
       <div className="flex justify-center items-center shrink-0 rounded-md bg-[#F1F5F9] w-12 h-12">
         <Icon size={24} className="text-[#64748B]" />
       </div>
@@ -19,7 +19,15 @@ const FeatureCard = ({ to, icon: Icon, title }: FeatureCardProps) => {
     </div>
   );
 
-  return to ? <Link to={to} className="w-full">{content}</Link> : <div className="w-full">{content}</div>;
+  return to ? (
+    <Link to={to} className="w-full h-full no-underline">
+      {content}
+    </Link>
+  ) : (
+    <div className="w-full h-full">
+      {content}
+    </div>
+  );
 };
 
 interface StatRowProps {
@@ -37,7 +45,7 @@ const StatRow = ({ label, value, isLast }: StatRowProps) => (
 
 export default function OrganizationAdmin() {
   const features = [
-    { title: 'Surveys', icon: BarChart3, to: '/surveys' },
+    { title: 'Surveys', icon: BarChart3, to: '/created-surveys' },
     { title: 'Employees', icon: Users },
     { title: 'Billing', icon: CreditCard },
   ];
