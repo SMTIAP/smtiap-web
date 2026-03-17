@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function AddQuestions() {
   const navigate = useNavigate();
+  const location = useLocation();
   
-  // State for dynamic functionality
+  // Pulling branding/details from the previous page to keep it in state
+  const previousData = location.state?.formData || {};
+
   const [questionType, setQuestionType] = useState('multiple-choice');
+  const [questionText, setQuestionText] = useState('');
   const [options, setOptions] = useState(['Option A', 'Option B']);
   const [conditionalLogic, setConditionalLogic] = useState(false);
 
@@ -20,11 +24,28 @@ export default function AddQuestions() {
 
   const hasOptions = questionType === 'multiple-choice' || questionType === 'checkbox';
 
+  const handleNext = () => {
+    // Navigating to review page and passing ALL gathered data
+    navigate('/review-publish', { 
+      state: { 
+        surveyData: {
+          ...previousData,
+          totalQuestions: 1 // You can make this dynamic later
+        },
+        questionData: {
+          type: questionType,
+          text: questionText,
+          options: options
+        }
+      } 
+    });
+  };
+
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC]">
       <div className="flex max-w-[800px] py-10 px-6 flex-col gap-8 w-full">
         
-        {/* Header Section with Small Back Button */}
+        {/* Header Section */}
         <div className="flex justify-end w-full">
           <button 
             onClick={() => navigate(-1)} 
@@ -44,7 +65,6 @@ export default function AddQuestions() {
 
         <div className="flex flex-col gap-10 bg-white p-10 rounded-2xl shadow-sm border border-[#E2E8F0]">
           
-          {/* Question Input Section */}
           <section className="flex flex-col gap-6">
             <h2 className="text-[#1E293B] text-sm font-bold uppercase tracking-wider border-b border-[#F1F5F9] pb-4">New Question</h2>
             
@@ -52,7 +72,7 @@ export default function AddQuestions() {
               <label className="text-[#1E293B] text-xs font-bold uppercase">Question Type</label>
               <select 
                 value={questionType}
-                onChange={(e) => setQuestionType(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setQuestionType(e.target.value)}
                 className="w-full p-3 border border-[#E2E8F0] rounded-lg bg-[#F8FAFC] text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 cursor-pointer"
               >
                 <option value="multiple-choice">Multiple Choice</option>
@@ -65,13 +85,14 @@ export default function AddQuestions() {
               <label className="text-[#1E293B] text-xs font-bold uppercase">Question Text</label>
               <input 
                 type="text" 
+                value={questionText}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuestionText(e.target.value)}
                 placeholder="What would you like to ask?" 
                 className="w-full p-3 border border-[#E2E8F0] rounded-lg bg-[#F8FAFC] text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
               />
             </div>
           </section>
 
-          {/* Conditional Answer Options */}
           {hasOptions ? (
             <section className="flex flex-col gap-4 animate-in fade-in duration-300">
               <h3 className="text-[#1E293B] text-sm font-bold uppercase tracking-wider">Answer Options</h3>
@@ -87,7 +108,7 @@ export default function AddQuestions() {
                     <input 
                       type="text"
                       value={option}
-                      onChange={(e) => {
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         const newOptions = [...options];
                         newOptions[idx] = e.target.value;
                         setOptions(newOptions);
@@ -106,10 +127,7 @@ export default function AddQuestions() {
                 </div>
               ))}
 
-              <button 
-                onClick={addOption}
-                className="text-[#6366F1] text-xs font-bold self-start hover:underline"
-              >
+              <button onClick={addOption} className="text-[#6366F1] text-xs font-bold self-start hover:underline">
                 + Add Option
               </button>
             </section>
@@ -119,7 +137,6 @@ export default function AddQuestions() {
             </div>
           )}
 
-          {/* Logic Section */}
           <section className="flex flex-col gap-6">
             <h2 className="text-[#1E293B] text-sm font-bold uppercase tracking-wider border-b border-[#F1F5F9] pb-4">Settings</h2>
             <div className="flex justify-between items-center py-2 bg-[#F8FAFC] px-4 rounded-lg">
@@ -134,7 +151,10 @@ export default function AddQuestions() {
           </section>
 
           <div className="flex justify-end mt-4">
-            <button className="flex items-center gap-2 bg-[#6366F1] text-white px-8 py-3 rounded-lg font-bold text-xs hover:opacity-90 transition-all shadow-md">
+            <button 
+              onClick={handleNext}
+              className="flex items-center gap-2 bg-[#6366F1] text-white px-8 py-3 rounded-lg font-bold text-xs hover:opacity-90 transition-all shadow-md"
+            >
               Next: Review & Publish
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                 <path d="M5 12h14M12 5l7 7-7 7"/>
