@@ -5,7 +5,6 @@ export default function AddQuestions() {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Pulling branding/details from the previous page to keep it in state
   const previousData = location.state?.formData || {};
 
   const [questionType, setQuestionType] = useState('multiple-choice');
@@ -25,17 +24,17 @@ export default function AddQuestions() {
   const hasOptions = questionType === 'multiple-choice' || questionType === 'checkbox';
 
   const handleNext = () => {
-    // Navigating to review page and passing ALL gathered data
     navigate('/review-publish', { 
       state: { 
         surveyData: {
           ...previousData,
-          totalQuestions: 1 // You can make this dynamic later
+          totalQuestions: 1 
         },
         questionData: {
           type: questionType,
           text: questionText,
-          options: options
+          options: options,
+          isLogicEnabled: conditionalLogic
         }
       } 
     });
@@ -45,7 +44,6 @@ export default function AddQuestions() {
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC]">
       <div className="flex max-w-[800px] py-10 px-6 flex-col gap-8 w-full">
         
-        {/* Header Section */}
         <div className="flex justify-end w-full">
           <button 
             onClick={() => navigate(-1)} 
@@ -66,7 +64,14 @@ export default function AddQuestions() {
         <div className="flex flex-col gap-10 bg-white p-10 rounded-2xl shadow-sm border border-[#E2E8F0]">
           
           <section className="flex flex-col gap-6">
-            <h2 className="text-[#1E293B] text-sm font-bold uppercase tracking-wider border-b border-[#F1F5F9] pb-4">New Question</h2>
+            <div className="flex items-center gap-3 border-b border-[#F1F5F9] pb-4">
+              <h2 className="text-[#1E293B] text-sm font-bold uppercase tracking-wider">New Question</h2>
+              {conditionalLogic && (
+                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded text-[10px] font-bold animate-in fade-in zoom-in">
+                  LOGIC ACTIVE
+                </span>
+              )}
+            </div>
             
             <div className="flex flex-col gap-2">
               <label className="text-[#1E293B] text-xs font-bold uppercase">Question Type</label>
@@ -148,6 +153,29 @@ export default function AddQuestions() {
                 <div className={`absolute top-1 w-3 h-3 bg-white rounded-full shadow-sm transition-all ${conditionalLogic ? 'right-1' : 'left-1'}`}></div>
               </div>
             </div>
+
+            {conditionalLogic && hasOptions && (
+              <div className="mt-2 p-6 bg-indigo-50/50 border border-dashed border-indigo-200 rounded-xl animate-in slide-in-from-top-2 duration-300">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                  <p className="text-[11px] font-bold text-indigo-900 uppercase tracking-widest">Logic Configuration</p>
+                </div>
+                <div className="flex flex-col gap-4">
+                  {options.map((option, idx) => (
+                    <div key={idx} className="flex flex-wrap items-center gap-3 text-xs bg-white p-3 rounded-lg border border-indigo-100 shadow-sm">
+                      <span className="text-[#64748B]">If user selects</span>
+                      <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded">"{option || `Option ${idx + 1}`}"</span>
+                      <span className="text-[#64748B]">→ then</span>
+                      <select className="flex-1 min-w-[150px] bg-[#F8FAFC] border border-[#E2E8F0] rounded px-2 py-1.5 text-[11px] outline-none focus:ring-1 focus:ring-indigo-400">
+                        <option>Continue to next question</option>
+                        <option>Skip to question...</option>
+                        <option>End of survey (Submit)</option>
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
 
           <div className="flex justify-end mt-4">
