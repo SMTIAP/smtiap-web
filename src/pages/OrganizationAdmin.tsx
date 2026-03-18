@@ -46,7 +46,7 @@ const StatRow = ({ label, value, isLast }: StatRowProps) => (
 export default function OrganizationAdmin() {
   const features = [
     { title: 'Surveys', icon: BarChart3, to: '/created-surveys' },
-    { title: 'Employees', icon: Users },
+    { title: 'Employees', icon: Users, to: '/role-management' },
     { title: 'Billing', icon: CreditCard },
   ];
 

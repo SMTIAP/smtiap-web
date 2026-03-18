@@ -94,7 +94,7 @@ export default function Login() {
             Forgot password?
           </p>
           <p 
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/register')}
             className="text-[#61758A] font-inter text-sm cursor-pointer hover:underline hover:text-[#1280ED] transition-colors text-center">
             Don't have an account? Sign Up
           </p>
