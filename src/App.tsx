@@ -10,6 +10,7 @@ import AddQuestions from './pages/AddQuestions';
 import ReviewAndPublish from './pages/ReviewAndPublish';
 import Response from './pages/Response';
 import Analytics from './pages/Analytics';
+import RoleManagement from './pages/RoleManagement';
 
 export default function App() {
   return (
@@ -33,6 +34,9 @@ export default function App() {
         {/* Analytics & Responses */}
         <Route path="/response" element={<Response />} />
         <Route path="/analytics" element={<Analytics />} />
+
+        {/* Role Management */}
+        <Route path="/role-management" element={<RoleManagement />} />
       </Routes>
     </BrowserRouter>
   );
