@@ -47,7 +47,7 @@ export default function OrganizationAdmin() {
   const features = [
     { title: 'Surveys', icon: BarChart3, to: '/created-surveys' },
     { title: 'Employees', icon: Users, to: '/role-management' },
-    { title: 'Billing', icon: CreditCard },
+    { title: 'Billing', icon: CreditCard, to: '/subscription' },
   ];
 
   return (

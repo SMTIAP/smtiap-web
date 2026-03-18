@@ -11,6 +11,7 @@ import ReviewAndPublish from './pages/ReviewAndPublish';
 import Response from './pages/Response';
 import Analytics from './pages/Analytics';
 import RoleManagement from './pages/RoleManagement';
+import Subscription from './pages/Subscription';
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/" element={<OrganizationAdmin />} />
         <Route path="/created-surveys" element={<CreatedSurveys />} />
         <Route path="/templates" element={<SearchTemplate />} />
+        <Route path="/subscription" element={<Subscription />} />
         
         {/* Survey Creation Flow */}
         <Route path="/create-new-survey" element={<CreateNewSurvey />} />
