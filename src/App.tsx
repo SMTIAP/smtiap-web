@@ -12,6 +12,7 @@ import Response from './pages/Response';
 import Analytics from './pages/Analytics';
 import RoleManagement from './pages/RoleManagement';
 import Subscription from './pages/Subscription';
+import Audit from './pages/Audit';
 
 export default function App() {
   return (
@@ -39,6 +40,9 @@ export default function App() {
 
         {/* Role Management */}
         <Route path="/role-management" element={<RoleManagement />} />
+
+        {/* Audit Management */}
+        <Route path="/audit-log" element={<Audit />} />
       </Routes>
     </BrowserRouter>
   );
