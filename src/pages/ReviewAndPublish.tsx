@@ -26,10 +26,26 @@ export default function ReviewAndPublish() {
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC]">
       <div className="flex max-w-[900px] py-10 px-6 flex-col gap-6 w-full text-left">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-[#64748B] text-sm font-medium hover:text-[#1E293B]">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          Back
-        </button>
+        
+        {/* BACK BUTTON - Updated to match previous pages */}
+        <div className="flex justify-end w-full">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-[#64748B] text-sm font-medium hover:text-[#1E293B] transition-colors"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Back
+          </button>
+        </div>
 
         <div className="bg-white p-12 rounded-xl shadow-sm border border-[#E2E8F0]">
           <h1 className="text-[#1E293B] text-2xl font-bold mb-2">Review & Publish</h1>
