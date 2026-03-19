@@ -33,6 +33,7 @@ export const usePayHere = () => {
         }),
       });
 
+      //get back verified merchant id and secure hash from serverjs
       const { merchant_id, hash } = await response.json();
 
       //create a payment form for payhere
@@ -72,7 +73,7 @@ export const usePayHere = () => {
         form.appendChild(input);
       });
 
-      //submit that created form. this redirects user to form.action url. payhere.lk/pay/checkout
+      //submit that created form. this redirects user to form.action url. payhere.lk/pay/checkout. leaves browser and open payhere checkout page.
       document.body.appendChild(form);
       form.submit();
 
