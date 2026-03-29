@@ -3,6 +3,8 @@ import Register from './pages/Register';
 import Login from './pages/Login';
 import ForgotPassword from './pages/Forgot-password';
 import OrganizationAdmin from './pages/OrganizationAdmin';
+import CreatorDashboard from './pages/CreatorDashboard';
+import LandingPage from './pages/LandingPage';
 import CreatedSurveys from './pages/CreatedSurveys';
 import SearchTemplate from './pages/SearchTemplate';
 import CreateNewSurvey from './pages/CreateNewSurvey';
@@ -24,7 +26,9 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         
         {/* Dashboard & Survey Management */}
-        <Route path="/" element={<OrganizationAdmin />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/admin" element={<OrganizationAdmin />} />
+        <Route path="/creator-dashboard" element={<CreatorDashboard />} />
         <Route path="/created-surveys" element={<CreatedSurveys />} />
         <Route path="/templates" element={<SearchTemplate />} />
         <Route path="/subscription" element={<Subscription />} />
