@@ -142,43 +142,8 @@ const SurveyItem = ({
   </div>
 );
 
-interface ResponseItemProps {
-  survey: string;
-  respondent: string;
-  time: string;
-  score: number;
-}
-
-const ResponseItem = ({
-  survey,
-  respondent,
-  time,
-  score,
-}: ResponseItemProps) => (
-  <div className="flex items-center justify-between p-4 rounded-lg border border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors">
-    <div className="flex items-center gap-4">
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center text-white font-bold text-sm">
-        {respondent
-          .split(" ")
-          .map((n) => n[0])
-          .join("")}
-      </div>
-      <div>
-        <p className="font-semibold text-[#1E293B]">{survey}</p>
-        <p className="text-xs text-[#94A3B8]">
-          {respondent} • {time}
-        </p>
-      </div>
-    </div>
-    <div className="flex items-center gap-2">
-      <div className="w-8 h-8 rounded-full bg-[#EEF2FF] flex items-center justify-center">
-        <span className="text-xs font-bold text-[#6366F1]">{score}%</span>
-      </div>
-    </div>
-  </div>
-);
-
-export default function CreatorDashboard() {
+function CreatorDashboard() {
+  // Chart data for Doughnut
   const statusData = {
     labels: ["Running", "Draft", "Finished"],
     datasets: [
@@ -186,7 +151,6 @@ export default function CreatorDashboard() {
         data: [5, 2, 8],
         backgroundColor: ["#22C55E", "#F97316", "#EF4444"],
         borderWidth: 0,
-        hoverOffset: 8,
       },
     ],
   };
@@ -235,33 +199,6 @@ export default function CreatorDashboard() {
       status: "Finished" as const,
       date: "3 days ago",
       to: "/analytics",
-    },
-  ];
-
-  const recentResponses = [
-    {
-      survey: "Customer Satisfaction Survey",
-      respondent: "Kasun Perera",
-      time: "2 min ago",
-      score: 92,
-    },
-    {
-      survey: "Product Feedback Form",
-      respondent: "Dilini Fernando",
-      time: "15 min ago",
-      score: 78,
-    },
-    {
-      survey: "Customer Satisfaction Survey",
-      respondent: "Nimal Silva",
-      time: "32 min ago",
-      score: 85,
-    },
-    {
-      survey: "Market Research Survey",
-      respondent: "Sachini Jayawardena",
-      time: "1 hour ago",
-      score: 95,
     },
   ];
 
@@ -403,3 +340,5 @@ export default function CreatorDashboard() {
     </div>
   );
 }
+
+export default CreatorDashboard;

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createPayHereHash } from "../controllers/payhereController";
+import { createPayHereHash } from "../controllers/payhereController.js";
 
 const router = Router();
 

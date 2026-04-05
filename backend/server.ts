@@ -1,10 +1,10 @@
 import express from "express";
 import cors from "cors";
-import payhereRoutes from "./routes/payhereRoutes";
-import { errorHandler } from "./middleware/errorHandler";
-import { env } from "./config/env";
-import { connectDb } from "./config/db";
-import userRoutes from "./routes/userRoutes";
+import payhereRoutes from "./routes/payhereRoutes.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import { env } from "./config/env.js";
+import { connectDb } from "./config/db.js";
+import userRoutes from "./routes/userRoutes.js";
 
 const app = express();
 

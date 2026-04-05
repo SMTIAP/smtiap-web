@@ -15,7 +15,7 @@ import Analytics from "./pages/Analytics";
 import RoleManagement from "./pages/RoleManagement";
 import Subscription from "./pages/Subscription";
 import Audit from "./pages/Audit";
-import NavBar from "./components/NavBar";
+import NavBar from "./components/NavBar.tsx";
 
 function Layout() {
   return (

@@ -61,7 +61,7 @@ export default function Login() {
             </div>
 
             <button
-              onClick={() => navigate("/admin")}
+              onClick={() => navigate("/creator-dashboard")}
               className="mt-2 h-[44px] w-full rounded-lg bg-[#1280ED] text-white text-sm font-bold leading-[21px] hover:bg-[#0f6bca] transition-colors flex justify-center items-center cursor-pointer"
             >
               Login
