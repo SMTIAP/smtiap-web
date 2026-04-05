@@ -1,8 +1,17 @@
+import type { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
-import { env } from "../config/env.js";
+import { env } from "../config/env";
 
-export const createPayHereHash = (req, res, next) => {
-  const { order_id, amount, currency } = req.body;
+export const createPayHereHash = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const { order_id, amount, currency } = req.body as {
+    order_id: string;
+    amount: number | string;
+    currency: string;
+  };
 
   try {
     const formattedAmount = Number(amount)
