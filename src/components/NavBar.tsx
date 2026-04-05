@@ -2,7 +2,7 @@ import { NavLink, Link, useLocation } from "react-router-dom";
 import { BrainCircuit } from "lucide-react";
 
 const links = [
-  { to: "/creator-dashboard", label: "Dashboard" },
+  { to: "/admin", label: "Dashboard" },
   { to: "/created-surveys", label: "Surveys" },
   { to: "/templates", label: "Templates" },
   { to: "/analytics", label: "Analytics" },
