@@ -7,6 +7,7 @@ const links = [
   { to: "/templates", label: "Templates" },
   { to: "/analytics", label: "Analytics" },
   { to: "/subscription", label: "Subscription" },
+  { to: "/role-management", label: "Employees" },
 ];
 
 export default function NavBar() {
