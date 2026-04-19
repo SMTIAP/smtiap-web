@@ -1,5 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom"; 
+import { useState } from "react";
+
 import {
   Sparkles,
   ShoppingBag,
@@ -9,11 +12,15 @@ import {
   BrainCircuit,
   PieChart,
   Mail,
+  FileChartColumnIncreasing,
 } from "lucide-react";
 
 import mountainChartSvg from "../assets/mountain-chart.svg";
 
 export default function LandingPage() {
+
+  const [hovered, setHovered] = useState<number | null>(null);
+
   return (
     <div className="min-h-screen bg-[#F4F6FA] text-[#2C2F32] selection:bg-[#5C38E1] selection:text-white overflow-x-hidden font-sans">
       {/* Background Blobs */}
@@ -59,9 +66,11 @@ export default function LandingPage() {
               patterns in real-time.
             </p>
             <div className="flex flex-col sm:flex-row gap-5">
-              <button className="bg-gradient-to-br from-[#5C38E1] to-[#8E6BFF] text-white px-10 py-5 rounded-2xl font-[800] text-[18px] font-manrope shadow-2xl shadow-purple-500/30 hover:scale-105 transition-all">
-                Choose a Template
-              </button>
+              <Link to="/templates">
+                <button className="bg-gradient-to-br from-[#5C38E1] to-[#8E6BFF] text-white px-10 py-5 rounded-2xl font-[800] text-[18px] font-manrope shadow-2xl shadow-purple-500/30 hover:scale-105 transition-all">
+                  Choose a Template
+                </button>
+              </Link>
               <div className="flex items-center gap-4 pl-2">
                 <div className="text-[14px] font-[600] text-[#475569]">
                   Powered by <span className="text-[#5C38E1]">AI</span>
@@ -230,47 +239,57 @@ export default function LandingPage() {
               icon: LayoutTemplate,
               title: "20+ Smart Templates",
               desc: "From HR feedback to product market fit. Launch optimized surveys in seconds.",
+              stat: "Fast Setup",
             },
             {
               icon: BrainCircuit,
               title: "AI Sentiment Engine",
               desc: "Our engine identifies sarcasm, frustration, and delight in open-ended text.",
-              featured: true,
+              stat: "80% Analysis Accuracy",
             },
             {
               icon: PieChart,
               title: "Interactive Reports",
               desc: "Export response data into stunning live dashboards and shareable PDF reports.",
+              stat: "Real-time Insights",
             },
-          ].map((feat, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 * i }}
-              className={`p-10 rounded-[40px] transition-all duration-500 border ${feat.featured ? "bg-gradient-to-br from-[#5C38E1] to-[#8E6BFF] text-white shadow-2xl lg:-translate-y-8" : "bg-white/45 backdrop-blur-xl border-white hover:bg-white"}`}
-            >
-              <div
-                className={`w-16 h-16 rounded-3xl flex items-center justify-center mb-8 ${feat.featured ? "bg-white/20" : "bg-purple-100"}`}
+          ].map((feat, i) => {
+
+            const isActive = hovered === i;
+            return(
+              <motion.div
+                key={i}
+                onMouseEnter={() => setHovered(i)}
+                onMouseLeave={() => setHovered(null)}
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 * i }}
+
+                className={`p-10 rounded-[40px] duration-500 border 
+                  ${isActive ? "bg-gradient-to-br from-[#5C38E1] to-[#8E6BFF] text-white shadow-2xl lg:-translate-y-8" : "bg-white/45 backdrop-blur-xl border-white hover:bg-white"}`}
               >
-                <feat.icon
-                  className={`w-8 h-8 ${feat.featured ? "text-white" : "text-[#5C38E1]"}`}
-                />
-              </div>
-              <h3 className="text-[24px] font-[800] mb-4 font-manrope">
-                {feat.title}
-              </h3>
-              <p className={feat.featured ? "text-white/80" : "text-slate-500"}>
-                {feat.desc}
-              </p>
-              {feat.featured && (
-                <div className="mt-8 pt-8 border-t border-white/20 text-[14px] font-bold">
-                  80% Analysis Accuracy
+                <div
+                  className={`w-16 h-16 rounded-3xl flex items-center justify-center mb-8 ${isActive ? "bg-white/20" : "bg-purple-100"}`}
+                >
+                  <feat.icon
+                    className={`w-8 h-8 ${isActive ? "text-white" : "text-[#5C38E1]"}`}
+                  />
                 </div>
-              )}
-            </motion.div>
-          ))}
+                <h3 className="text-[24px] font-[800] mb-4 font-manrope">
+                  {feat.title}
+                </h3>
+                <p className={`transition-colors duration-500 ${isActive ? "text-white/80" : "text-slate-500"}`}>
+                  {feat.desc}
+                </p>
+                { (
+                  <div className="mt-8 pt-8 border-t border-slate-300 text-[14px] font-bold ">
+                    {feat.stat}
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
         </div>
       </section>
 
@@ -293,9 +312,11 @@ export default function LandingPage() {
               results with AI.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <button className="bg-gradient-to-br from-[#5C38E1] to-[#8E6BFF] text-white px-12 py-5 rounded-3xl font-[800] text-[20px] shadow-2xl shadow-purple-500/30 hover:scale-105 transition-all">
-                Start For Free
-              </button>
+              <Link to="/register">
+                <button className="bg-gradient-to-br from-[#5C38E1] to-[#8E6BFF] text-white px-12 py-5 rounded-3xl font-[800] text-[20px] shadow-2xl shadow-purple-500/30 hover:scale-105 transition-all">
+                  Start For Free
+                </button>
+              </Link>
             </div>
           </motion.div>
         </div>
@@ -307,7 +328,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 lg:grid-cols-6 gap-16 mb-20">
             <div className="col-span-2">
               <div className="text-[22px] font-[900] text-[#0F172A] font-manrope mb-6 flex items-center gap-2">
-                <BrainCircuit className="text-[#5C38E1]" /> MTSP
+                <FileChartColumnIncreasing className="text-[#5C38E1]" /> MTSP
               </div>
               <p className="text-slate-500 max-w-xs leading-relaxed text-[15px]">
                 Revolutionizing data collection through intelligent design and
@@ -317,13 +338,17 @@ export default function LandingPage() {
             <div>
               <h4 className="font-[800] text-[15px] mb-6">Capabilities</h4>
               <ul className="space-y-4 text-slate-500 text-[14px]">
-                {["AI Analysis", "Templates", "Sentiment"].map((item) => (
-                  <li key={item}>
+                {[
+                  {name: "AI Analysis", link: "/analytics"},
+                  {name: "Templates", link: "/templates"},
+                  {name: "Sentiment", link: "/"}
+                ].map((item) => (
+                  <li key={item.name}>
                     <a
-                      href="#"
+                      href={item.link}
                       className="hover:text-[#5C38E1] transition-colors"
                     >
-                      {item}
+                      {item.name}
                     </a>
                   </li>
                 ))}
@@ -332,13 +357,17 @@ export default function LandingPage() {
             <div>
               <h4 className="font-[800] text-[15px] mb-6">Resources</h4>
               <ul className="space-y-4 text-slate-500 text-[14px]">
-                {["Templates", "Live support", "Reports"].map((item) => (
-                  <li key={item}>
+                {[
+                  {name: "Templates", link: "/templates"},
+                  {name: "Live Support", link: "/"},
+                  {name: "Reports", link: "/"}
+                ].map((item) => (
+                  <li key={item.name}>
                     <a
-                      href="#"
+                      href={item.link}
                       className="hover:text-[#5C38E1] transition-colors"
                     >
-                      {item}
+                      {item.name}
                     </a>
                   </li>
                 ))}
