@@ -1,5 +1,5 @@
 import { NavLink, Link, useLocation } from "react-router-dom";
-import { BrainCircuit } from "lucide-react";
+import { FileChartColumnIncreasing } from "lucide-react";
 
 const links = [
   { to: "/admin", label: "Dashboard" },
@@ -22,7 +22,7 @@ export default function NavBar() {
           className="flex items-center gap-2 text-[20px] font-[900] tracking-tighter font-manrope"
         >
           <span className="w-8 h-8 bg-[#5C38E1] rounded-lg rotate-12 flex items-center justify-center shadow-lg shadow-[#5C38E1]/20">
-            <BrainCircuit className="w-5 h-5 text-white" />
+            <FileChartColumnIncreasing className="w-5 h-5 text-white" />
           </span>
           MTSP
         </Link>

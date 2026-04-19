@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { BarChart3, Users, CreditCard, UserCheck, BookOpen, ShieldCheck, ArrowLeft, type LucideIcon } from 'lucide-react';
+import BackButton from '../components/BackButton';
+import { BarChart3, Users, CreditCard, UserCheck, BookOpen, ShieldCheck, type LucideIcon } from 'lucide-react';
 
 interface FeatureCardProps {
   to?: string;
@@ -56,15 +57,12 @@ export default function OrganizationAdmin() {
         
         {/* Header Section */} 
         <div className="flex justify-between items-center w-full">
-          <div className="flex items-center w-fit">
+          <div className="flex items-center gap-4 w-fit">
+            <BackButton to="/" />
             <h1 className="text-[#1E293B] font-inter text-3xl font-bold leading-9">
               Welcome back, Saliya...
             </h1>
           </div>
-          <Link to="/" className="cursor-pointer text-nowrap py-2 px-6 flex justify-center items-center gap-2 rounded-md bg-[#1E293B] text-[#FFF] font-inter text-sm font-medium transition-opacity hover:opacity-90">
-            <ArrowLeft size={16} />
-            Back
-          </Link>
         </div>
 
         {/* Top Feature Cards */}

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import BackButton from '../components/BackButton';
 import { useState } from 'react';
 
 export default function Audit(){
@@ -11,18 +11,12 @@ export default function Audit(){
         <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC]">
             <div className="w-full max-w-[1152px] px-6 py-10 flex flex-col gap-10">
                 <div className="flex justify-between items-center w-full">
-                    <div className="flex justify-end gap-2">
-                        <button onClick={() => navigate(-1)}
-                            className="cursor-pointer text-nowrap py-2 px-6 flex justify-center items-center gap-2 rounded-md bg-[#1E293B] text-[#FFF] font-inter text-sm font-medium transition-opacity hover:opacity-90">
-                            <ArrowLeft size={16} />
-                            Back
-                        </button>
+                    <div className="flex items-center gap-4 w-fit">
+                        <BackButton />
+                        <h1 className="text-[#1E293B] font-inter text-3xl font-bold leading-9">
+                            Audit Trail
+                        </h1> 
                     </div>
-                </div>
-                <div className="flex items-center w-fit">
-                    <h1 className="text-[#1E293B] font-inter text-3xl font-bold leading-9">
-                        Audit Trail
-                    </h1> 
                 </div>
 
 

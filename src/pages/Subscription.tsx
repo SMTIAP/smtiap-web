@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Check, AlertCircle } from 'lucide-react';
+import BackButton from '../components/BackButton';
 import { usePayHere } from '../hooks/usePayHere';
 
 //frontend ui layer for payment handling
@@ -94,17 +95,11 @@ export default function Subscription() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white font-inter text-[#141217]">
-      {/* navigation header with back button */}
-      <nav className="flex items-center justify-between px-6 py-4 md:px-20 border-b border-gray-100">
-        <Link to="/" className="cursor-pointer text-nowrap py-2 px-6 flex justify-center items-center gap-2 rounded-md bg-[#1E293B] text-[#FFF] font-inter text-sm font-medium transition-opacity hover:opacity-90">
-          <ArrowLeft size={16} />
-          Back
-        </Link>
-        <div className="w-20" /> {/* Spacer */}
-      </nav>
-
       {/* title and other details */}
       <main className="flex-1 flex flex-col items-center py-10 px-4 md:px-20">
+        <div className="w-full max-w-[960px] flex justify-start mb-6">
+          <BackButton to="/" />
+        </div>
         <div className="max-w-[960px] w-full flex flex-col items-center">
           {/* page titles */}
           <span className="text-[#141217] text-base font-bold tracking-widest uppercase mb-4">

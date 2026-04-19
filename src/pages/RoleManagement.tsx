@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import BackButton from '../components/BackButton';
 import { Search } from 'lucide-react';
 
 export default function RoleManagement(){
@@ -9,7 +9,8 @@ export default function RoleManagement(){
         <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC]">
             <div className="w-full max-w-[1152px] px-6 py-10 flex flex-col gap-10">
                 <div className="flex justify-between items-center w-full">
-                    <div className="flex items-center w-fit">
+                    <div className="flex items-center gap-4 w-fit">
+                        <BackButton />
                         <h1 className="text-[#1E293B] font-inter text-3xl font-bold leading-9">
                         All Employees and Role Management
                         </h1>
@@ -18,11 +19,6 @@ export default function RoleManagement(){
                         <button onClick={() => navigate("/audit-log")}
                             className="cursor-pointer text-nowrap py-2 px-6 flex justify-center items-center gap-2 rounded-md bg-[#3B82F6] text-[#FFF] font-inter text-sm font-medium transition-opacity hover:opacity-90">
                             Audit Logs
-                        </button>
-                        <button onClick={() => navigate(-1)}
-                            className="cursor-pointer text-nowrap py-2 px-6 flex justify-center items-center gap-2 rounded-md bg-[#1E293B] text-[#FFF] font-inter text-sm font-medium transition-opacity hover:opacity-90">
-                            <ArrowLeft size={16} />
-                            Back
                         </button>
                     </div>
                     
