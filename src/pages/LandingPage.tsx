@@ -11,10 +11,7 @@ import {
   Mail,
 } from "lucide-react";
 
-const flatPath =
-  "M 10 140 C 40 140, 60 135, 90 130 C 130 120, 180 125, 220 120 C 260 115, 310 130, 350 135 C 380 138, 390 140, 400 140";
-const mountainPath =
-  "M 10 140 C 40 140, 60 70, 100 90 C 140 110, 170 10, 220 40 C 270 70, 310 120, 350 80 C 380 50, 390 140, 400 140";
+import mountainChartSvg from "../assets/mountain-chart.svg";
 
 export default function LandingPage() {
   return (
@@ -142,25 +139,11 @@ export default function LandingPage() {
 
                 {/* Morphing Mountain SVG */}
                 <div className="h-44 w-full relative">
-                  <svg
-                    viewBox="0 0 400 150"
-                    className="w-full h-full overflow-visible"
-                  >
-                    <motion.path
-                      d={mountainPath}
-                      fill="none"
-                      stroke="#5C38E1"
-                      strokeWidth={4}
-                      initial={{ d: flatPath }}
-                      animate={{ d: mountainPath }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        repeatType: "reverse",
-                        ease: "easeInOut",
-                      }}
-                    />
-                  </svg>
+                  <img
+                    src={mountainChartSvg}
+                    alt="Analyzed Mountain Graph"
+                    className="w-full h-full object-contain overflow-visible"
+                  />
                 </div>
               </motion.div>
             </div>
