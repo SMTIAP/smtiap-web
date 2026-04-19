@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { ChevronLeft, Download, BarChart2, Play, CheckCircle } from 'lucide-react';
+import BackButton from '../components/BackButton';
+import { Download, BarChart2, Play, CheckCircle } from 'lucide-react';
 
 interface ResponseData {
   timestamp: string;
@@ -20,15 +21,7 @@ export default function Response() {
   return (
     <div className="flex flex-col min-h-screen bg-[#F8FAFB] text-[#121712] font-inter">
       {/* Navigation Bar */}
-      <nav className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <Link 
-          to="/created-surveys" 
-          className="flex items-center gap-2 text-lg font-bold hover:text-green-600 transition-colors group"
-        >
-          <ChevronLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
-          <span>Back</span>
-        </Link>
-        
+      <nav className="flex items-center justify-end px-6 py-4 bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="flex gap-3">
           <Link 
             to="/analytics" 
@@ -47,8 +40,10 @@ export default function Response() {
       <main className="flex-1 max-w-6xl mx-auto w-full p-6 md:p-10">
         {/* Page Header */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Survey Responses</h1>
-          
+          <div className="flex items-center gap-4 w-fit">
+            <BackButton to="/created-surveys" />
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Survey Responses</h1>
+          </div>
         </div>
 
         {/* Table Container */}

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import BackButton from '../components/BackButton';
 
 export default function SearchTemplate() {
   const navigate = useNavigate();
@@ -14,18 +15,16 @@ export default function SearchTemplate() {
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC]">
       <div className="flex max-w-[1152px] py-10 px-6 flex-col items-start gap-10 w-full">
         
-        {/* Simple Back Button */}
-        <button 
-          onClick={() => navigate(-1)}
-          className="py-1 px-4 rounded bg-[#F1F5F9] text-[#64748B] text-xs font-medium border border-[#E2E8F0] hover:bg-[#E2E8F0] transition-colors"
-        >
-          Back
-        </button>
+        <div className="flex justify-between items-center w-full mb-6">
+          <div className="flex items-center gap-4 w-fit">
+            <BackButton />
+            <h1 className="text-[#1E293B] font-inter text-3xl font-bold leading-9 text-center md:text-left">
+              Search Template
+            </h1>
+          </div>
+        </div>
 
         <div className="flex flex-col gap-6 w-full">
-          <h1 className="text-[#1E293B] font-inter text-3xl font-bold leading-9 text-center md:text-left">
-            Search Template
-          </h1>
 
           {/* Search Bar */}
           <div className="relative w-full max-w-2xl self-center md:self-start">

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import BackButton from '../components/BackButton';
 import { Filter, BarChart, Sparkles, Download } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -182,12 +183,12 @@ export default function Analytics() {
 
       <main className="flex-1 flex flex-col items-center">
         <div className="max-w-[960px] w-full px-4 md:px-0 py-5">
+          <div className="w-full flex justify-start mb-6">
+            <BackButton to="/response" />
+          </div>
           {/* Action Bar */}
           <div className="flex flex-col gap-4 mb-6">
             <div className="flex py-3 items-center gap-3 flex-wrap w-full">
-              <Link to="/response" className="flex min-w-[84px] py-2 px-4 justify-center items-center rounded-lg bg-[#E8EDF2] hover:bg-gray-200 transition-colors">
-                <p className="text-[#0D141C] text-sm font-bold">Back</p>
-              </Link>
               <div className="flex py-2 px-6 justify-center items-center rounded-lg bg-[#2B8CED]">
                 <p className="text-[#F7FAFC] text-sm font-bold">Food Satisfaction</p>
               </div>
