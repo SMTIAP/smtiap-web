@@ -6,6 +6,7 @@ import { env } from "./config/env.js";
 import { connectDb } from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
+import surveyRoutes from "./routes/surveyRoutes.js";
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 
 app.use(payhereRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/surveys", surveyRoutes);
 app.use(analyticsRoutes);
 app.use(errorHandler);
 
