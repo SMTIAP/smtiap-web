@@ -14,6 +14,9 @@ const analyticsResultSchema = new Schema(
     summary: { type: String, required: true, trim: true },
     topKeywords: { type: [keywordSchema], required: true, default: [] },
     sourceCount: { type: Number, required: true, min: 0, default: 0 },
+    total_responses: { type: Number, required: true, min: 0, default: 0 },
+    nps_score: { type: Number, default: null },
+    last_updated: { type: Date, default: Date.now },
   },
   { timestamps: true },
 );

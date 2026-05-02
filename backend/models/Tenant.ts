@@ -1,0 +1,39 @@
+import mongoose, { Schema, type InferSchemaType } from "mongoose";
+
+const brandingSchema = new Schema(
+  {
+    logo_url: { type: String, default: "" },
+    theme_color: { type: String, default: "#000" },
+  },
+  { _id: false },
+);
+
+const settingsSchema = new Schema(
+  {
+    branding: { type: brandingSchema, default: () => ({}) },
+    data_region: { type: String, default: "asia" },
+  },
+  { _id: false },
+);
+
+const tenantSchema = new Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    plan: { type: String, required: true, trim: true },
+    domain: { type: String, required: true, trim: true },
+    status: {
+      type: String,
+      required: true,
+      enum: ["active", "inactive", "suspended"],
+      default: "active",
+    },
+    settings: { type: settingsSchema, default: () => ({}) },
+  },
+  { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } },
+);
+
+tenantSchema.index({ domain: 1 }, { unique: true });
+
+export type Tenant = InferSchemaType<typeof tenantSchema>;
+
+export default mongoose.model<Tenant>("Tenant", tenantSchema);
