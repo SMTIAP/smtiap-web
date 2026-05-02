@@ -6,7 +6,36 @@ import { env } from "./config/env.js";
 import { connectDb } from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
+<<<<<<< HEAD
 import surveyRoutes from "./routes/surveyRoutes.js";
+=======
+import Tenant from "./models/Tenant.js";
+import TenantUser from "./models/TenantUser.js";
+import Survey from "./models/Survey.js";
+import Question from "./models/Question.js";
+import Response from "./models/Response.js";
+import Answer from "./models/Answer.js";
+import Subscription from "./models/Subscription.js";
+import CreditLedger from "./models/CreditLedger.js";
+import Notification from "./models/Notification.js";
+import AuditLog from "./models/AuditLog.js";
+
+const ensureCollections = async () => {
+  await Promise.all([
+    Tenant.createCollection(),
+    TenantUser.createCollection(),
+    Survey.createCollection(),
+    Question.createCollection(),
+    Response.createCollection(),
+    Answer.createCollection(),
+    Subscription.createCollection(),
+    CreditLedger.createCollection(),
+    Notification.createCollection(),
+    AuditLog.createCollection(),
+  ]);
+  console.log("All collections ensured.");
+};
+>>>>>>> origin/ai-analytics-intergration
 
 const app = express();
 
@@ -22,6 +51,7 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDb();
+    await ensureCollections();
 
     app.listen(env.port, () => {
       console.log(`PayHere backend running at http://localhost:${env.port}`);
