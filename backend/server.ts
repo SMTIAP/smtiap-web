@@ -5,6 +5,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { env } from "./config/env.js";
 import { connectDb } from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
+import analyticsRoutes from "./routes/analyticsRoutes.js";
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 
 app.use(payhereRoutes);
 app.use("/api/users", userRoutes);
+app.use(analyticsRoutes);
 app.use(errorHandler);
 
 const startServer = async () => {

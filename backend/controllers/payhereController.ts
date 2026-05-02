@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
-import { env } from "../config/env";
+import { env } from "../config/env.js";
 
 export const createPayHereHash = (
   req: Request,
@@ -16,7 +16,7 @@ export const createPayHereHash = (
   try {
     const formattedAmount = Number(amount)
       .toLocaleString("en-us", { minimumFractionDigits: 2 })
-      .replaceAll(",", "");
+      .replace(/,/g, "");
 
     const hashedSecret = crypto
       .createHash("md5")
