@@ -1,6 +1,9 @@
-import { Link } from 'react-router-dom';
-import BackButton from '../components/BackButton';
-import { Filter, BarChart, Sparkles, Download } from 'lucide-react';
+import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import BackButton from "../components/BackButton";
+import { Filter, BarChart, Sparkles, Download, Loader2 } from "lucide-react";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import surveyData from "../assets/data.json";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,9 +15,9 @@ import {
   ArcElement,
   PointElement,
   LineElement,
-  Filler
-} from 'chart.js';
-import { Bar, Pie } from 'react-chartjs-2';
+  Filler,
+} from "chart.js";
+import { Bar, Pie } from "react-chartjs-2";
 
 // Register ChartJS components
 ChartJS.register(
@@ -27,7 +30,7 @@ ChartJS.register(
   ArcElement,
   PointElement,
   LineElement,
-  Filler
+  Filler,
 );
 
 interface StatCardProps {
@@ -37,8 +40,12 @@ interface StatCardProps {
 
 const StatCard = ({ label, value }: StatCardProps) => (
   <div className="flex min-w-[158px] p-6 flex-col items-start gap-2 rounded-lg border border-[#CFDBE8] w-full bg-white shadow-sm">
-    <p className="text-[#0D141C] font-inter text-base font-medium leading-6">{label}</p>
-    <p className="text-[#0D141C] font-inter text-2xl font-bold leading-[30px]">{value}</p>
+    <p className="text-[#0D141C] font-inter text-base font-medium leading-6">
+      {label}
+    </p>
+    <p className="text-[#0D141C] font-inter text-2xl font-bold leading-[30px]">
+      {value}
+    </p>
   </div>
 );
 
@@ -49,23 +56,124 @@ interface TagProps {
 }
 
 const InsightTag = ({ label, count, color }: TagProps) => (
-  <div 
-    className="flex items-center px-4 py-1.5 rounded-lg text-sm font-medium" 
+  <div
+    className="flex items-center px-4 py-1.5 rounded-lg text-sm font-medium"
     style={{ backgroundColor: color }}
   >
-    <span className="text-[#4D7399]">{label} ({count})</span>
+    <span className="text-[#4D7399]">
+      {label} ({count})
+    </span>
   </div>
 );
 
 export default function Analytics() {
+  const [searchParams] = useSearchParams();
+  const [summary, setSummary] = useState<string | null>(null);
+  const [keywords, setKeywords] = useState<
+    { keyword: string; count: number }[]
+  >([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const runAnalysis = async () => {
+    if (isAnalyzing) return;
+    setIsAnalyzing(true);
+    setAiError(null);
+    setSummary(null);
+    setKeywords([]);
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey)
+        throw new Error(
+          "VITE_GEMINI_API_KEY is not set in environment variables.",
+        );
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+      const allText = surveyData
+        .map((item, index) => `Response ${index + 1}: "${item.text}"`)
+        .join("\n");
+      const prompt = `Analyze the following list of survey responses.
+1. Provide a concise summary of the overall feedback.
+2. Identify the top 5 most important recurring keywords or topics and estimate their frequency/count.
+
+Return a purely JSON object (no markdown formatting, no code fence) with this structure:
+{"summary":"...","top_5_keywords":[{"keyword":"Quality","count":15}]}
+
+Survey Data:\n${allText}`;
+      const result = await model.generateContent(prompt);
+      const text = result.response
+        .text()
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+      const analysis = JSON.parse(text) as {
+        summary?: unknown;
+        top_5_keywords?: unknown;
+      };
+      const rawKeywords = Array.isArray(analysis.top_5_keywords)
+        ? analysis.top_5_keywords
+        : [];
+      const normalizedKeywords = rawKeywords
+        .filter(
+          (
+            item,
+          ): item is {
+            keyword?: unknown;
+            count?: unknown;
+          } =>
+            typeof item === "object" &&
+            item !== null &&
+            "keyword" in item &&
+            typeof item.keyword === "string",
+        )
+        .map((item) => ({
+          keyword: String(item.keyword).trim(),
+          count: Number(item.count ?? 0),
+        }))
+        .slice(0, 5);
+
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+      const surveyId =
+        searchParams.get("surveyId")?.trim() ||
+        import.meta.env.VITE_DEFAULT_SURVEY_ID ||
+        "default-survey";
+
+      const saveResponse = await fetch(`${apiBaseUrl}/api/analytics`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          surveyId,
+          summary: String(analysis.summary ?? "").trim(),
+          topKeywords: normalizedKeywords,
+          sourceCount: surveyData.length,
+        }),
+      });
+
+      if (!saveResponse.ok) {
+        throw new Error("AI analysis generated, but saving to database failed.");
+      }
+
+      setSummary(String(analysis.summary ?? "").trim());
+      setKeywords(normalizedKeywords);
+    } catch (err: unknown) {
+      console.error("Analysis failed:", err);
+      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred during analysis.";
+      setAiError(
+        errorMessage,
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   // Chart configurations
   const ratingData = {
-    labels: ['Rating Question 01', 'Rating Question 02'],
+    labels: ["Rating Question 01", "Rating Question 02"],
     datasets: [
       {
-        label: 'Rating (out of 5)',
+        label: "Rating (out of 5)",
         data: [3.1, 4.2],
-        backgroundColor: '#2B8CED',
+        backgroundColor: "#2B8CED",
         borderRadius: 8,
         barThickness: 16,
       },
@@ -73,7 +181,7 @@ export default function Analytics() {
   };
 
   const ratingOptions = {
-    indexAxis: 'y' as const,
+    indexAxis: "y" as const,
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -88,23 +196,23 @@ export default function Analytics() {
       x: {
         max: 5,
         grid: { display: false },
-        ticks: { font: { family: 'Inter' } }
+        ticks: { font: { family: "Inter" } },
       },
       y: {
         grid: { display: false },
-        ticks: { font: { family: 'Inter' } }
+        ticks: { font: { family: "Inter" } },
       },
     },
   };
 
   const mcq01Data = {
-    labels: ['Option A', 'Option B', 'Option C', 'Option D'],
+    labels: ["Option A", "Option B", "Option C", "Option D"],
     datasets: [
       {
-        label: 'Responses',
+        label: "Responses",
         data: [100, 15, 65, 80],
-        backgroundColor: '#E8EDF2',
-        borderColor: '#757575',
+        backgroundColor: "#E8EDF2",
+        borderColor: "#757575",
         borderWidth: { right: 2 },
         borderRadius: 4,
       },
@@ -112,7 +220,7 @@ export default function Analytics() {
   };
 
   const mcq01Options = {
-    indexAxis: 'y' as const,
+    indexAxis: "y" as const,
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -120,21 +228,27 @@ export default function Analytics() {
     },
     scales: {
       x: { grid: { display: false }, ticks: { display: false } },
-      y: { grid: { display: false }, ticks: { font: { family: 'Inter', weight: 'bold' as any, size: 12 }, color: '#4D7399' } },
+      y: {
+        grid: { display: false },
+        ticks: {
+          font: { family: "Inter", weight: "bold" as any, size: 12 },
+          color: "#4D7399",
+        },
+      },
     },
   };
 
   const mcq02Data = {
-    labels: ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
+    labels: ["Option 1", "Option 2", "Option 3", "Option 4"],
     datasets: [
       {
-        label: 'Responses',
+        label: "Responses",
         data: [137, 104, 59, 93],
         backgroundColor: [
-          '#2B8CED', // Modern Blue
-          '#55E05F', // Vibrant Green
-          '#FFA500', // Warning Orange
-          '#E8EDF2', // Soft Gray
+          "#2B8CED", // Modern Blue
+          "#55E05F", // Vibrant Green
+          "#FFA500", // Warning Orange
+          "#E8EDF2", // Soft Gray
         ],
         hoverOffset: 15,
         borderWidth: 0,
@@ -148,24 +262,26 @@ export default function Analytics() {
     plugins: {
       legend: {
         display: true,
-        position: 'bottom' as const,
+        position: "bottom" as const,
         labels: {
           usePointStyle: true,
           padding: 20,
-          font: { family: 'Inter', size: 12, weight: '500' as any }
-        }
+          font: { family: "Inter", size: 12, weight: "500" as any },
+        },
       },
       tooltip: {
         callbacks: {
           label: (context: any) => {
-            const label = context.label || '';
+            const label = context.label || "";
             const value = context.raw || 0;
-            const total = (context.chart.data.datasets[0].data as number[]).reduce((a, b) => a + b, 0);
+            const total = (
+              context.chart.data.datasets[0].data as number[]
+            ).reduce((a, b) => a + b, 0);
             const percentage = ((value / total) * 100).toFixed(1);
             return `${label}: ${value} (${percentage}%)`;
-          }
-        }
-      }
+          },
+        },
+      },
     },
   };
 
@@ -190,7 +306,9 @@ export default function Analytics() {
           <div className="flex flex-col gap-4 mb-6">
             <div className="flex py-3 items-center gap-3 flex-wrap w-full">
               <div className="flex py-2 px-6 justify-center items-center rounded-lg bg-[#2B8CED]">
-                <p className="text-[#F7FAFC] text-sm font-bold">Food Satisfaction</p>
+                <p className="text-[#F7FAFC] text-sm font-bold">
+                  Food Satisfaction
+                </p>
               </div>
             </div>
 
@@ -199,7 +317,10 @@ export default function Analytics() {
                 <Filter size={24} className="text-[#0D141C]" />
               </button>
               <button className="flex items-center gap-2 px-6 py-2 bg-[#2B8CED] hover:bg-[#1A76D2] text-white rounded-lg font-bold text-sm transition-all shadow-md group">
-                <Download size={20} className="group-hover:-translate-y-0.5 transition-transform" />
+                <Download
+                  size={20}
+                  className="group-hover:-translate-y-0.5 transition-transform"
+                />
                 <span>Export</span>
               </button>
             </div>
@@ -214,7 +335,9 @@ export default function Analytics() {
 
           {/* Ratings Section */}
           <section className="bg-white rounded-xl border border-[#CFDBE8] p-6 mb-8 shadow-sm">
-            <h2 className="text-[22px] font-bold leading-7 mb-6">Rating Questions</h2>
+            <h2 className="text-[22px] font-bold leading-7 mb-6">
+              Rating Questions
+            </h2>
             <div className="h-48">
               <Bar data={ratingData} options={ratingOptions} />
             </div>
@@ -224,7 +347,9 @@ export default function Analytics() {
           <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             {/* MCQ 01 - Horizontal Bars */}
             <div className="p-6 rounded-lg border border-[#CFDBE8] bg-white shadow-sm w-full">
-              <h3 className="text-base font-medium mb-6">Multiple Choice Question 01</h3>
+              <h3 className="text-base font-medium mb-6">
+                Multiple Choice Question 01
+              </h3>
               <div className="h-64">
                 <Bar data={mcq01Data} options={mcq01Options} />
               </div>
@@ -232,7 +357,9 @@ export default function Analytics() {
 
             {/* MCQ 02 - Pie Chart */}
             <div className="p-6 rounded-lg border border-[#CFDBE8] bg-white shadow-sm w-full">
-              <h3 className="text-base font-medium mb-6">Multiple Choice Question 02</h3>
+              <h3 className="text-base font-medium mb-6">
+                Multiple Choice Question 02
+              </h3>
               <div className="h-64">
                 <Pie data={mcq02Data} options={mcq02Options} />
               </div>
@@ -242,37 +369,181 @@ export default function Analytics() {
           {/* AI Insights Section */}
           <section className="p-6 rounded-lg border border-[#CFDBE8] bg-white shadow-md relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform duration-700" />
-            
-            <div className="flex items-center gap-2 mb-6 relative">
-              <Sparkles size={20} className="text-yellow-500" />
-              <h2 className="text-lg font-bold">AI Insights</h2>
-            </div>
-            
-            <div className="mb-6 relative">
-              <h3 className="text-[#4D7399] text-base font-medium mb-3">Key Findings</h3>
-              <ul className="space-y-2 text-black text-base leading-relaxed">
-                <li className="flex gap-2">
-                  <span className="font-bold text-green-500">•</span>
-                  Users consistently praised the new responsive UI for mobile devices.
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-bold text-green-500">•</span>
-                  Onboarding flow shows a 15% drop-off at the "Integration" step.
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-bold text-green-500">•</span>
-                  High demand for enterprise-grade reporting features.
-                </li>
-              </ul>
+
+            <div className="flex items-center justify-between gap-2 mb-6 relative">
+              <div className="flex items-center gap-2">
+                <Sparkles size={20} className="text-yellow-500" />
+                <h2 className="text-lg font-bold">AI Insights</h2>
+              </div>
+              <button
+                onClick={runAnalysis}
+                disabled={isAnalyzing}
+                className="flex items-center gap-2 px-4 py-2 bg-[#2B8CED] hover:bg-[#1A76D2] disabled:opacity-60 text-white rounded-lg font-bold text-sm transition-all shadow-sm"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Analyzing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={16} />
+                    <span>Run AI Analysis</span>
+                  </>
+                )}
+              </button>
             </div>
 
-            <div className="flex flex-wrap gap-3 relative mt-8">
-              <InsightTag label="Quality" count={123} color="#C5EFB5" />
-              <InsightTag label="Professional" count={110} color="#B5E9EF" />
-              <InsightTag label="Efficient" count={95} color="#C0B5EF" />
-              <InsightTag label="Timely" count={75} color="#EFCCB5" />
-              <InsightTag label="Friendly" count={80} color="#EFE4B5" />
-            </div>
+            {aiError && (
+              <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm">
+                {aiError}
+              </div>
+            )}
+
+            {/* Aurora loading overlay */}
+            {isAnalyzing && (
+              <div
+                className="relative rounded-xl overflow-hidden border border-blue-100 bg-white p-8 text-center mb-6"
+                style={{
+                  background: "white",
+                }}
+              >
+                {/* Animated aurora gradient border */}
+                <div
+                  className="absolute inset-0 rounded-xl"
+                  style={{
+                    background:
+                      "linear-gradient(270deg, #a5f3fc, #818cf8, #6ee7b7, #fde68a, #f9a8d4, #a5f3fc)",
+                    backgroundSize: "400% 400%",
+                    animation: "auroraShift 4s ease infinite",
+                    padding: "2px",
+                    WebkitMask:
+                      "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                    WebkitMaskComposite: "xor",
+                    maskComposite: "exclude",
+                  }}
+                />
+                {/* Inner glow */}
+                <div
+                  className="absolute inset-0 rounded-xl opacity-20"
+                  style={{
+                    background:
+                      "linear-gradient(270deg, #a5f3fc, #818cf8, #6ee7b7, #fde68a, #f9a8d4)",
+                    backgroundSize: "400% 400%",
+                    animation: "auroraShift 4s ease infinite",
+                    filter: "blur(16px)",
+                  }}
+                />
+                <div className="relative z-10">
+                  <div className="inline-flex items-center justify-center p-3 bg-blue-50 rounded-full mb-4">
+                    <svg
+                      className="w-8 h-8 text-blue-500 animate-pulse"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-800">
+                    Reading responses
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Analyzing all survey responses.
+                  </p>
+                </div>
+                <style>{`
+                  @keyframes auroraShift {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                  }
+                `}</style>
+              </div>
+            )}
+
+            {!isAnalyzing && (
+              <>
+                <div className="mb-6 relative">
+                  <h3 className="text-[#4D7399] text-base font-medium mb-3">
+                    Key Findings
+                  </h3>
+                  {summary ? (
+                    <ul className="space-y-2 text-black text-base leading-relaxed">
+                      {summary
+                        .split(". ")
+                        .filter(Boolean)
+                        .map((sentence, i) => (
+                          <li key={i} className="flex gap-2">
+                            <span className="font-bold text-green-500">•</span>
+                            {sentence.endsWith(".") ? sentence : sentence + "."}
+                          </li>
+                        ))}
+                    </ul>
+                  ) : (
+                    <ul className="space-y-2 text-black text-base leading-relaxed">
+                      <li className="flex gap-2">
+                        <span className="font-bold text-green-500">•</span>
+                        Users consistently praised the new responsive UI for
+                        mobile devices.
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="font-bold text-green-500">•</span>
+                        Onboarding flow shows a 15% drop-off at the
+                        &quot;Integration&quot; step.
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="font-bold text-green-500">•</span>
+                        High demand for enterprise-grade reporting features.
+                      </li>
+                    </ul>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-3 relative mt-8">
+                  {keywords.length > 0 ? (
+                    keywords.map((item, i) => {
+                      const colors = [
+                        "#C5EFB5",
+                        "#B5E9EF",
+                        "#C0B5EF",
+                        "#EFCCB5",
+                        "#EFE4B5",
+                      ];
+                      return (
+                        <InsightTag
+                          key={i}
+                          label={item.keyword}
+                          count={item.count}
+                          color={colors[i % colors.length]}
+                        />
+                      );
+                    })
+                  ) : (
+                    <>
+                      <InsightTag label="Quality" count={123} color="#C5EFB5" />
+                      <InsightTag
+                        label="Professional"
+                        count={110}
+                        color="#B5E9EF"
+                      />
+                      <InsightTag
+                        label="Efficient"
+                        count={95}
+                        color="#C0B5EF"
+                      />
+                      <InsightTag label="Timely" count={75} color="#EFCCB5" />
+                      <InsightTag label="Friendly" count={80} color="#EFE4B5" />
+                    </>
+                  )}
+                </div>
+              </>
+            )}
           </section>
         </div>
       </main>
