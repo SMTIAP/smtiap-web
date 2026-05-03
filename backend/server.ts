@@ -16,6 +16,8 @@ import "./config/github.js";
 import "./config/linkedin.js";
 import passport from "./config/passport.js";
 
+import cookieParser from "cookie-parser";
+
 const app = express();
 
 app.use(
@@ -25,6 +27,7 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(cookieParser());
 app.use(passport.initialize());
 
 app.use(payhereRoutes);

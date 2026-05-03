@@ -43,166 +43,32 @@ export default function AuthPage() {
   const isSignIn = mode === "signin";
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+    <div className="flex items-center justify-center min-h-screen w-full bg-gradient-to-br from-[#dce3f5] via-[#e8ecf5] to-[#d8dff2] font-nunito">
+      <div className="relative w-[820px] h-[500px] bg-white rounded-[50px] shadow-[0_20px_60px_rgba(90,70,180,0.18),_0_4px_20px_rgba(0,0,0,0.08)] overflow-hidden flex max-md:w-[95vw] max-md:h-auto max-md:flex-col">
+        <div className={`absolute top-0 w-1/2 h-full flex flex-col items-center justify-center py-[36px] px-[40px] transition-all duration-[550ms] ease-[cubic-bezier(0.77,0,0.18,1)] max-md:position-static max-md:w-full max-md:py-[28px] max-md:px-[24px] left-0 ${isSignIn ? "" : "opacity-0 pointer-events-none"}`}>
+          <Login />
+        </div>
 
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        <div className={`absolute top-0 w-1/2 h-full flex flex-col items-center justify-center py-[36px] px-[40px] transition-all duration-[550ms] ease-[cubic-bezier(0.77,0,0.18,1)] max-md:position-static max-md:w-full max-md:py-[28px] max-md:px-[24px] left-1/2 ${isSignIn ? "opacity-0 pointer-events-none" : ""}`}>
+          <Registration />
+        </div>
 
-        body {
-          font-family: 'Nunito', sans-serif;
-          background: #e8ecf5;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 100vh;
-        }
-
-        .auth-wrapper {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 100vh;
-          width: 100%;
-          background: linear-gradient(135deg, #dce3f5 0%, #e8ecf5 50%, #d8dff2 100%);
-          font-family: 'Nunito', sans-serif;
-        }
-
-        .auth-card {
-          position: relative;
-          width: 820px;
-          height: 500px;
-          background: #fff;
-          border-radius: 50px;
-          box-shadow: 0 20px 60px rgba(90, 70, 180, 0.18), 0 4px 20px rgba(0,0,0,0.08);
-          overflow: hidden;
-          display: flex;
-        }
-
-        .panel {
-          position: absolute;
-          top: 0;
-          width: 50%;
-          height: 100%;
-          background: linear-gradient(160deg, #7b6ee0 0%, #5a45b8 100%);
-          border-radius: 50px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 50px 36px;
-          text-align: center;
-          z-index: 10;
-          transition: left 0.55s cubic-bezier(0.77, 0, 0.18, 1);
-        }
-
-        .panel.sign-in-active { left: 50%; }
-        .panel.sign-up-active { left: 0%; }
-
-        .panel h2 {
-          color: #fff;
-          font-size: 28px;
-          font-weight: 800;
-          margin-bottom: 14px;
-          letter-spacing: -0.3px;
-        }
-
-        .panel p {
-          color: rgba(255,255,255,0.82);
-          font-size: 14px;
-          font-weight: 500;
-          line-height: 1.6;
-          margin-bottom: 32px;
-        }
-
-        .panel-btn {
-          border: 2px solid #fff;
-          background: transparent;
-          color: #fff;
-          padding: 10px 36px;
-          border-radius: 100px;
-          font-family: 'Nunito', sans-serif;
-          font-size: 13px;
-          font-weight: 800;
-          letter-spacing: 1.5px;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-
-        .panel-btn:hover {
-          background: rgba(255,255,255,0.15);
-        }
-
-        .form-pane {
-          position: absolute;
-          top: 0;
-          width: 50%;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 36px 40px;
-          transition: left 0.55s cubic-bezier(0.77, 0, 0.18, 1), opacity 0.35s ease;
-        }
-
-        .form-pane.signin-pane {
-          left: 0%;
-        }
-
-        .form-pane.signup-pane {
-          left: 50%;
-        }
-
-        .form-pane.signin-pane.sign-up-active {
-          left: 0%;
-          opacity: 0;
-          pointer-events: none;
-        }
-
-        .form-pane.signup-pane.sign-in-active {
-          left: 50%;
-          opacity: 0;
-          pointer-events: none;
-        }
-
-        @media (max-width: 680px) {
-          .auth-card { width: 95vw; height: auto; flex-direction: column; }
-          .panel, .form-pane { position: static; width: 100%; }
-          .panel { border-radius: 20px 20px 0 0; padding: 30px 24px; }
-          .form-pane { padding: 28px 24px; }
-          .panel.sign-in-active, .panel.sign-up-active { left: unset; }
-        }
-      `}</style>
-
-      <div className="auth-wrapper">
-        <div className="auth-card">
-          <div className={`form-pane signin-pane ${isSignIn ? "" : "sign-up-active"}`}>
-            <Login />
-          </div>
-
-          <div className={`form-pane signup-pane ${isSignIn ? "sign-in-active" : ""}`}>
-            <Registration />
-          </div>
-
-          <div className={`panel ${isSignIn ? "sign-in-active" : "sign-up-active"}`}>
-            {isSignIn ? (
-              <>
-                <h2>Hello, Friend!</h2>
-                <p>Register with your personal details to use all of site features</p>
-                <button className="panel-btn" onClick={() => switchMode("signup")}>Sign Up</button>
-              </>
-            ) : (
-              <>
-                <h2>Welcome Back!</h2>
-                <p>Enter your personal details to use all of site features</p>
-                <button className="panel-btn" onClick={() => switchMode("signin")}>Sign In</button>
-              </>
-            )}
-          </div>
+        <div className={`absolute top-0 w-1/2 h-full bg-gradient-to-br from-[#7b6ee0] to-[#5a45b8] rounded-[50px] flex flex-col items-center justify-center py-[50px] px-[36px] text-center z-10 transition-[left] duration-[550ms] ease-[cubic-bezier(0.77,0,0.18,1)] max-md:position-static max-md:w-full max-md:rounded-t-[20px] max-md:rounded-b-none max-md:py-[30px] max-md:px-[24px] max-md:!left-auto ${isSignIn ? "left-1/2" : "left-0"}`}>
+          {isSignIn ? (
+            <>
+              <h2 className="text-white text-[28px] font-[800] mb-[14px] tracking-[-0.3px]">Hello, Friend!</h2>
+              <p className="text-white/80 text-[14px] font-[500] leading-[1.6] mb-[32px]">Register with your personal details to use all of site features</p>
+              <button className="border-2 border-white bg-transparent text-white py-[10px] px-[36px] rounded-full font-nunito text-[13px] font-[800] tracking-[1.5px] uppercase cursor-pointer transition-colors duration-200 hover:bg-white/15" onClick={() => switchMode("signup")}>Sign Up</button>
+            </>
+          ) : (
+            <>
+              <h2 className="text-white text-[28px] font-[800] mb-[14px] tracking-[-0.3px]">Welcome Back!</h2>
+              <p className="text-white/80 text-[14px] font-[500] leading-[1.6] mb-[32px]">Enter your personal details to use all of site features</p>
+              <button className="border-2 border-white bg-transparent text-white py-[10px] px-[36px] rounded-full font-nunito text-[13px] font-[800] tracking-[1.5px] uppercase cursor-pointer transition-colors duration-200 hover:bg-white/15" onClick={() => switchMode("signin")}>Sign In</button>
+            </>
+          )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

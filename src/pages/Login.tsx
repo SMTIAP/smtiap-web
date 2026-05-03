@@ -1,13 +1,17 @@
 import { useState } from "react";
 import axios from "axios";
 import { GoogleIcon, GithubIcon, LinkedInIcon } from "./AuthPage";
+import { useNavigate } from "react-router-dom";
 
-export default function Register() {
+
+
+export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,8 +25,23 @@ export default function Register() {
         {
           email,
           password
-        }
+        },
+         { withCredentials: true }
       );
+      const userRole = res.data.role;
+      if (res.data.token) {
+        localStorage.setItem("token", res.data.token);
+      }
+      
+      if (userRole === "admin") {
+        navigate("/admin");
+      } else if (userRole === "creater") {
+        navigate("/creator-dashboard");
+      } else if (userRole === "super_admin") {
+        navigate("/super-admin-dashboard");
+      } else {
+        navigate("/admin");
+      }
 
       setMessage("Login successful ✔");
       console.log(res.data);
@@ -45,159 +64,57 @@ const handleLinkedInLogin = () => {
   window.location.href = "http://localhost:5000/api/users/linkedin";
 };
 
+
   return (
-    <>
-      <style>{`
-        .registration-container {
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
-        .registration-container h1 {
-          font-size: 26px;
-          font-weight: 900;
-          color: #1a1a2e;
-          margin-bottom: 18px;
-          letter-spacing: -0.5px;
-        }
-        .social-row {
-          display: flex;
-          gap: 10px;
-          margin-bottom: 16px;
-        }
-        .social-btn {
-          width: 42px;
-          height: 42px;
-          border: 1.5px solid #e0e0e8;
-          border-radius: 10px;
-          background: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
-        }
-        .social-btn:hover {
-          border-color: #7b6ee0;
-          box-shadow: 0 2px 10px rgba(123,110,224,0.2);
-          transform: translateY(-2px);
-        }
-        .divider {
-          font-size: 12px;
-          color: #aaa;
-          font-weight: 600;
-          margin-bottom: 16px;
-          letter-spacing: 0.3px;
-        }
-        .input-field {
-          width: 100%;
-          padding: 11px 16px;
-          border: none;
-          border-radius: 10px;
-          background: #f0f1f7;
-          font-family: 'Nunito', sans-serif;
-          font-size: 14px;
-          font-weight: 600;
-          color: #333;
-          outline: none;
-          margin-bottom: 12px;
-          transition: box-shadow 0.2s, background 0.2s;
-        }
-        .input-field::placeholder { color: #aaa; font-weight: 500; }
-        .input-field:focus {
-          background: #ebebf8;
-          box-shadow: 0 0 0 2.5px rgba(123,110,224,0.35);
-        }
-        .submit-btn {
-          width: 100%;
-          padding: 13px;
-          background: linear-gradient(135deg, #7b6ee0, #5a45b8);
-          color: #fff;
-          border: none;
-          border-radius: 100px;
-          font-family: 'Nunito', sans-serif;
-          font-size: 13px;
-          font-weight: 800;
-          letter-spacing: 1.5px;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: box-shadow 0.2s, transform 0.15s;
-          box-shadow: 0 4px 18px rgba(90,69,184,0.35);
-          margin-top: 4px;
-        }
-        .submit-btn:hover {
-          box-shadow: 0 6px 22px rgba(90,69,184,0.5);
-          transform: translateY(-1px);
-        }
-        .submit-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        .submit-btn:active { transform: translateY(0); }
+    <div className="w-full flex flex-col items-center">
+      <h1 className="text-[26px] font-[900] text-[#1a1a2e] mb-[18px] tracking-[-0.5px]">Sign In</h1>
 
-        .msg {
-          margin-top: 10px;
-          font-size: 12px;
-          font-weight: 600;
-        }
-      `}</style>
+      <div className="flex gap-[10px] mb-[16px]">
+        <button className="w-[42px] h-[42px] border-[1.5px] border-[#e0e0e8] rounded-[10px] bg-white flex items-center justify-center cursor-pointer transition-all duration-200 hover:border-[#7b6ee0] hover:shadow-[0_2px_10px_rgba(123,110,224,0.2)] hover:-translate-y-[2px]" onClick={handleGoogleLogin}>
+          <GoogleIcon />
+        </button>
 
-      <div className="registration-container">
-        <h1>Sign In</h1>
+        <button className="w-[42px] h-[42px] border-[1.5px] border-[#e0e0e8] rounded-[10px] bg-white flex items-center justify-center cursor-pointer transition-all duration-200 hover:border-[#7b6ee0] hover:shadow-[0_2px_10px_rgba(123,110,224,0.2)] hover:-translate-y-[2px]" onClick={handleGithubLogin}>
+          <GithubIcon />
+        </button>
 
-        <div className="social-row">
-                  <div className="social-row">
-          <button className="social-btn" onClick={handleGoogleLogin}>
-            <GoogleIcon />
-          </button>
-
-          <button className="social-btn" onClick={handleGithubLogin}>
-            <GithubIcon />
-          </button>
-
-          <button className="social-btn" onClick={handleLinkedInLogin}>
-            <LinkedInIcon />
-          </button>
-        </div>
-        </div>
-
-        <p className="divider">or use your email for login</p>
-
-        <form onSubmit={handleSubmit} style={{ width: "100%" }}>
-          
-          {/* username added (important for backend) */}
-
-          <input
-            className="input-field"
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-          />
-
-          <input
-            className="input-field"
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-          />
-
-          <button
-            type="submit"
-            className="submit-btn"
-            disabled={loading}
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </button>
-          <p className="font-small"><a href="/forgot-password">Forgot Password?</a></p>
-        </form>
-
-        {message && <div className="msg">{message}</div>}
+        <button className="w-[42px] h-[42px] border-[1.5px] border-[#e0e0e8] rounded-[10px] bg-white flex items-center justify-center cursor-pointer transition-all duration-200 hover:border-[#7b6ee0] hover:shadow-[0_2px_10px_rgba(123,110,224,0.2)] hover:-translate-y-[2px]" onClick={handleLinkedInLogin}>
+          <LinkedInIcon />
+        </button>
       </div>
-    </>
+
+      <p className="text-[12px] text-[#aaa] font-semibold mb-[16px] tracking-[0.3px]">or use your email for login</p>
+
+      <form onSubmit={handleSubmit} className="w-full">
+        <input
+          className="w-full py-[11px] px-[16px] border-none rounded-[10px] bg-[#f0f1f7] font-nunito text-[14px] font-semibold text-[#333] outline-none mb-[12px] transition-all duration-200 placeholder:text-[#aaa] placeholder:font-medium focus:bg-[#ebebf8] focus:ring-[2.5px] focus:ring-[#7b6ee0]/35"
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+        />
+
+        <input
+          className="w-full py-[11px] px-[16px] border-none rounded-[10px] bg-[#f0f1f7] font-nunito text-[14px] font-semibold text-[#333] outline-none mb-[12px] transition-all duration-200 placeholder:text-[#aaa] placeholder:font-medium focus:bg-[#ebebf8] focus:ring-[2.5px] focus:ring-[#7b6ee0]/35"
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+        />
+
+        <button
+          type="submit"
+          className="w-full p-[13px] bg-gradient-to-br from-[#7b6ee0] to-[#5a45b8] text-white border-none rounded-full font-nunito text-[13px] font-[800] tracking-[1.5px] uppercase cursor-pointer transition-all duration-200 shadow-[0_4px_18px_rgba(90,69,184,0.35)] mt-[4px] hover:shadow-[0_6px_22px_rgba(90,69,184,0.5)] hover:-translate-y-[1px] active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed"
+          disabled={loading}
+        >
+          {loading ? "Signing in..." : "Sign In"}
+        </button>
+        <p className="text-sm mt-4 text-center"><a href="/forgot-password" className="text-[#7b6ee0] hover:underline">Forgot Password?</a></p>
+      </form>
+
+      {message && <div className="mt-[10px] text-[12px] font-semibold">{message}</div>}
+    </div>
   );
 }

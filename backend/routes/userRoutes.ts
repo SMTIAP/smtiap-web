@@ -25,9 +25,9 @@ router.post("/forgot-password", forgotPassword);
 router.put("/reset-password/:token", resetPassword);
 
 router.get(
-  "/admin",
+  "/superadmin",
   protect,
-  authorizeRoles("admin"),
+  authorizeRoles("superadmin"),
   (req, res) => {
     res.json({ message: "Welcome Admin Dashboard" });
   }
@@ -56,7 +56,7 @@ router.get(
       sameSite: "lax",
     });
 
-    res.redirect("http://localhost:5173");
+    res.redirect("http://localhost:5173/admin");
   }
 );
 
@@ -85,7 +85,7 @@ router.get(
       sameSite: "lax",
     });
 
-    res.redirect("http://localhost:5173");
+    res.redirect("http://localhost:5173/admin");
   }
 );
 
@@ -116,7 +116,7 @@ router.get(
       sameSite: "lax",
     });
 
-    res.redirect("http://localhost:5173");
+    res.redirect("http://localhost:5173/admin");
   }
 );
 

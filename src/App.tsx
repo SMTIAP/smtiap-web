@@ -18,6 +18,7 @@ import Audit from "./pages/Audit";
 import NavBar from "./components/NavBar.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
+import ProtectedRoute from "./components/ProtectedRoute.tsx";
 
 function Layout() {
   return (
@@ -39,10 +40,16 @@ export default function App() {
 
         {/* Layout wrapper for all routes */}
         <Route element={<Layout />}>
-          
           {/* Dashboard & Survey Management */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/admin" element={<OrganizationAdmin />} />
+           <Route
+      path="/admin"
+      element={
+        <ProtectedRoute>
+          <OrganizationAdmin />
+        </ProtectedRoute>
+      } />
+          
           <Route path="/creator-dashboard" element={<CreatorDashboard />} />
           <Route path="/created-surveys" element={<CreatedSurveys />} />
           <Route path="/templates" element={<SearchTemplate />} />

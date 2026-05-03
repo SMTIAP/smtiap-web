@@ -11,15 +11,17 @@ const sendToken = (user: IUser, res: Response): void => {
 
   res.cookie("token", token, {
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     maxAge: 30 * 24 * 60 * 60 * 1000
   });
 
   res.status(200).json({
     id: user._id,
+    username: user.username,
     email: user.email,
-    role: user.role
+    role: user.role,
+    token // Add token to the response for fallback
   });
 };
 

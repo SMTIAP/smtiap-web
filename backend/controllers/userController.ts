@@ -9,7 +9,7 @@ export const register = async (
   res: Response
 ): Promise<void> => {
   try {
-    const {email, password } = req.body;
+    const { username, email, password } = req.body;
 
     const exists = await User.findOne({ email });
 
@@ -19,6 +19,7 @@ export const register = async (
     }
 
     const user = await User.create({
+      username,
       email,
       password
     });

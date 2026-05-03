@@ -8,10 +8,15 @@ export const protect = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const token = req.cookies.token;
+    let token = req.cookies.token;
+
+    if (!token && req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+      token = req.headers.authorization.split(" ")[1];
+    }
 
     if (!token) {
-      res.status(401).json({ message: "Not authorized" });
+      console.log("No token found in cookies or headers.");
+      res.status(401).json({ message: "Not authorized. No token found.", receivedCookies: req.cookies || "none" });
       return;
     }
 
@@ -21,9 +26,15 @@ export const protect = async (
     ) as { id: string };
 
     (req as any).user = await User.findById(decoded.id).select("-password");
+    
+    if (!(req as any).user) {
+      res.status(401).json({ message: "User not found in database for this token." });
+      return;
+    }
 
     next();
-  } catch {
-    res.status(401).json({ message: "Token failed" });
+  } catch (error: any) {
+    console.error("Token verification error:", error);
+    res.status(401).json({ message: "Token verification failed.", error: error.message });
   }
 };

@@ -4,8 +4,9 @@ import bcrypt from "bcryptjs";
 
 export interface IUser extends Document {
   email: string;
+  username: string;
   password: string;
-  role: "customer" | "admin";
+  role: "admin" | "creater" | "super_admin";
 
   resetPasswordToken?: string | null;
   resetPasswordExpire?: Date | null;
@@ -18,6 +19,10 @@ const userSchema = new Schema<IUser>({
     required: true,
     unique: true
   },
+  username: {
+    type: String,
+    required: true
+  },
   password: {
     type: String,
     required: true,
@@ -25,8 +30,8 @@ const userSchema = new Schema<IUser>({
   },
   role: {
     type: String,
-    enum: ["customer", "admin"],
-    default: "customer"
+    enum: ["admin", "creater", "super_admin"],
+    default: "admin"
   },
   resetPasswordToken: {
       type: String,
