@@ -1,40 +1,42 @@
-import mongoose, { Schema, type InferSchemaType } from "mongoose";
+import mongoose from "mongoose";
 
-const surveySettingsSchema = new Schema(
-  {
-    anonymous: { type: Boolean, default: true },
-    max_responses: { type: Number, min: 0, default: 1000 },
-    password_protected: { type: Boolean, default: false },
-  },
-  { _id: false },
-);
+const questionSchema = new mongoose.Schema({
+  id:          { type: String },
+  type:        { type: String, required: true },
+  label:       { type: String, required: true },
+  required:    { type: Boolean, default: false },
+  options:     [String],
+  placeholder: { type: String },
+  max:         { type: Number },
+  min:         { type: Number },
+});
 
-const surveySchema = new Schema(
+const pageSchema = new mongoose.Schema({
+  id:        { type: String },
+  title:     { type: String, default: "Page 1" },
+  questions: [questionSchema],
+});
+
+const surveySchema = new mongoose.Schema(
   {
-    tenant_id: { type: Schema.Types.ObjectId, ref: "Tenant", required: true },
-    title: { type: String, required: true, trim: true },
-    description: { type: String, trim: true, default: "" },
+    surveyTitle:       { type: String, required: true },
+    description:       { type: String, default: "" },
+    websiteUrl:        { type: String, default: "" },
+    logo:              { type: String, default: null },
+    themeColor:        { type: String, default: "#6366F1" },
+    primaryColor:      { type: String, default: "#6366F1" },
+    customizeBranding: { type: Boolean, default: false },
+    isAnonymous:       { type: Boolean, default: false },
+    pages:             [pageSchema],
     status: {
       type: String,
-      required: true,
-      enum: ["draft", "published", "closed", "archived"],
-      default: "draft",
+      enum: ["Draft", "Running", "Finished"],
+      default: "Draft",
     },
-    created_by: {
-      type: Schema.Types.ObjectId,
-      ref: "TenantUser",
-      required: true,
-    },
-    published_at: { type: Date, default: null },
-    expires_at: { type: Date, default: null },
-    settings: { type: surveySettingsSchema, default: () => ({}) },
+    tenantId: { type: String, default: "default" },
   },
-  { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } },
+  { timestamps: true }
 );
 
-surveySchema.index({ tenant_id: 1 });
-surveySchema.index({ tenant_id: 1, status: 1 });
-
-export type Survey = InferSchemaType<typeof surveySchema>;
-
-export default mongoose.model<Survey>("Survey", surveySchema);
+const Survey = mongoose.model("Survey", surveySchema);
+export default Survey;

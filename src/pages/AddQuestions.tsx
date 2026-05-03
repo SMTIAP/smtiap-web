@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from 'react-router-dom'; // Added for navigation state
 import {
   Plus,
   GripVertical,
@@ -503,15 +504,22 @@ const PropertyEditor = ({
 };
 
 export default function AddQuestions() {
-  const [surveyTitle, setSurveyTitle] = useState("Survey creator");
+  const location = useLocation();
+  const navigate = useNavigate(); // Added for navigation
+  const setupData = location.state?.formData;
+  
+  // Apply the theme color from Step 1, or default to indigo
+  const primaryColor = setupData?.customizeBranding ? setupData.themeColor : "#6366F1";
+
+  const [surveyTitle, setSurveyTitle] = useState(setupData?.surveyTitle || "Survey creator");
   const [pages, setPages] = useState([
     { id: "page-1", title: "Page 1", questions: [] },
   ]);
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [selectedQuestionId, setSelectedQuestionId] = useState(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [draggedType, setDraggedType] = useState(null);
   const [responses, setResponses] = useState({});
+  
   // --- Actions ---
   const addPage = () => {
     const newPage = {
@@ -603,9 +611,17 @@ export default function AddQuestions() {
     <div className="flex h-screen bg-[#F8F9FB] text-gray-800 overflow-hidden font-sans">
       {/* Sidebar - Question Elements */}
       <aside className="w-72 bg-white border-r border-gray-200 flex flex-col z-10 shadow-sm">
-        <div className="p-6 border-b border-gray-100">
-          
-          <p className="text-xs text-gray-500">Drag or click to add elements</p>
+        <div className="p-6 border-b border-gray-100 flex items-center gap-3">
+          <div 
+             className="h-10 w-10 rounded-lg flex items-center justify-center border border-[#F1F5F9]"
+             style={{ backgroundColor: `${primaryColor}10` }}
+          >
+            <Layout size={20} style={{ color: primaryColor }} />
+          </div>
+          <div>
+            <h1 className="text-sm font-bold text-gray-900 truncate w-32">{surveyTitle}</h1>
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Designer</p>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
@@ -618,7 +634,7 @@ export default function AddQuestions() {
                 <button
                   key={type.id}
                   onClick={() => addQuestion(type.id)}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-transparent hover:border-indigo-100 hover:bg-indigo-50 transition-all text-left text-gray-700 hover:text-indigo-700 font-medium group"
+                  className="flex items-center gap-3 p-3 rounded-xl border border-transparent hover:border-gray-100 hover:bg-gray-50 transition-all text-left text-gray-700 font-medium group"
                 >
                   <span className="p-2 bg-gray-50 group-hover:bg-white rounded-lg transition-colors shadow-sm">
                     {type.icon}
@@ -642,10 +658,11 @@ export default function AddQuestions() {
                 <div
                   key={page.id}
                   onClick={() => setActivePageIndex(idx)}
-                  className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${activePageIndex === idx ? "bg-indigo-50 text-indigo-700 font-semibold" : "hover:bg-gray-50 text-gray-600"}`}
+                  className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${activePageIndex === idx ? "bg-gray-100 text-gray-900 font-semibold" : "hover:bg-gray-50 text-gray-600"}`}
                 >
                   <div
-                    className={`w-1.5 h-1.5 rounded-full ${activePageIndex === idx ? "bg-indigo-600" : "bg-transparent"}`}
+                    className={`w-1.5 h-1.5 rounded-full`}
+                    style={{ backgroundColor: activePageIndex === idx ? primaryColor : "transparent" }}
                   />
                   <span className="truncate flex-1">{page.title}</span>
                   {pages.length > 1 && (
@@ -663,7 +680,8 @@ export default function AddQuestions() {
               ))}
               <button
                 onClick={addPage}
-                className="w-full flex items-center gap-2 p-2 text-indigo-600 text-sm hover:bg-indigo-50 rounded-lg transition-colors mt-2"
+                style={{ color: primaryColor }}
+                className="w-full flex items-center gap-2 p-2 text-sm hover:bg-gray-50 rounded-lg transition-colors mt-2"
               >
                 <Plus size={16} /> Add Page
               </button>
@@ -672,7 +690,38 @@ export default function AddQuestions() {
         </div>
 
         <div className="p-4 border-t border-gray-100 bg-gray-50">
-          <button className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 shadow-sm transition-all">
+          <button 
+            onClick={async () => {
+              try {
+                const res = await fetch('http://localhost:5000/api/surveys', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    surveyTitle,
+                    primaryColor,
+                    themeColor: primaryColor,
+                    pages,
+                    status: 'Draft',
+                    tenantId: 'default',
+                  }),
+                });
+                const data = await res.json();
+                navigate('/created-surveys', {
+                  state: {
+                    newSurvey: {
+                      id:    data.survey._id,
+                      date:  new Date().toLocaleDateString('en-GB'),
+                      title: data.survey.surveyTitle,
+                      status: 'Draft',
+                    }
+                  }
+                });
+              } catch (err) {
+                alert('Could not save draft. Is the backend running?');
+              }
+            }}
+            className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 shadow-sm transition-all"
+          >
             <Save size={16} /> Save Draft
           </button>
         </div>
@@ -691,17 +740,28 @@ export default function AddQuestions() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsPreviewMode(!isPreviewMode)}
+              style={isPreviewMode ? { backgroundColor: primaryColor } : {}}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 isPreviewMode
-                  ? "bg-indigo-600 text-white"
+                  ? "text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
               <Eye size={16} />
               {isPreviewMode ? "Exit Preview" : "Preview"}
             </button>
-            <button className="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all">
-              Publish
+            <button 
+              onClick={() => navigate('/review-publish', {
+                state: {
+                  surveyTitle,
+                  primaryColor,
+                  pages,
+                }
+              })}
+              style={{ backgroundColor: primaryColor }}
+              className="text-white px-6 py-2 rounded-lg text-sm font-semibold hover:opacity-90 shadow-lg transition-all"
+            >
+              Review & Publish
             </button>
           </div>
         </header>
@@ -712,7 +772,10 @@ export default function AddQuestions() {
             {!isPreviewMode ? (
               <div className="space-y-4">
                 <div className="mb-8">
-                  <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold uppercase tracking-wider mb-2">
+                  <span 
+                    style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+                    className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2"
+                  >
                     {activePage.title}
                   </span>
                   <input
@@ -758,7 +821,7 @@ export default function AddQuestions() {
                 <div className="pt-8 flex justify-center">
                   <button
                     onClick={() => addQuestion("multiple_choice")}
-                    className="flex items-center gap-2 px-6 py-3 border-2 border-dashed border-gray-200 text-gray-400 hover:border-indigo-400 hover:text-indigo-500 rounded-2xl transition-all"
+                    className="flex items-center gap-2 px-6 py-3 border-2 border-dashed border-gray-200 text-gray-400 hover:border-gray-300 rounded-2xl transition-all"
                   >
                     <Plus size={20} /> Add new question
                   </button>
@@ -767,7 +830,7 @@ export default function AddQuestions() {
             ) : (
               /* Preview Mode */
               <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden min-h-[600px] flex flex-col">
-                <div className="h-2 bg-indigo-600" />
+                <div style={{ backgroundColor: primaryColor }} className="h-2" />
                 <div className="p-10 flex-1">
                   <h1 className="text-2xl font-bold mb-2">{surveyTitle}</h1>
                   <p className="text-gray-500 mb-8">{activePage.title}</p>
@@ -776,7 +839,7 @@ export default function AddQuestions() {
                     {activePage.questions.map((q, idx) => (
                       <div key={q.id}>
                         <div className="flex gap-2 mb-3">
-                          <span className="text-indigo-600 font-bold">
+                          <span style={{ color: primaryColor }} className="font-bold">
                             {idx + 1}.
                           </span>
                           <h3 className="font-semibold text-gray-800">
@@ -790,13 +853,14 @@ export default function AddQuestions() {
                           {q.type === "short_text" && (
                             <input
                               type="text"
-                              className="w-full border-b-2 border-gray-100 focus:border-indigo-500 outline-none pb-2 transition-colors"
+                              className="w-full border-b-2 border-gray-100 focus:border-gray-400 outline-none pb-2 transition-colors"
+                              style={{ caretColor: primaryColor }}
                               placeholder={q.placeholder}
                             />
                           )}
                           {q.type === "long_text" && (
                             <textarea
-                              className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-indigo-500 outline-none min-h-[100px] transition-colors"
+                              className="w-full border-2 border-gray-100 rounded-xl p-3 outline-none min-h-[100px] transition-colors focus:border-gray-400"
                               placeholder={q.placeholder}
                             />
                           )}
@@ -815,9 +879,10 @@ export default function AddQuestions() {
                                         : "checkbox"
                                     }
                                     name={q.id}
-                                    className={`w-5 h-5 text-indigo-600 border-gray-300 focus:ring-indigo-500 ${q.type === "multiple_choice" ? "rounded-full" : "rounded"}`}
+                                    style={{ color: primaryColor }}
+                                    className={`w-5 h-5 border-gray-300 focus:ring-0 ${q.type === "multiple_choice" ? "rounded-full" : "rounded"}`}
                                   />
-                                  <span className="text-gray-700 group-hover:text-indigo-600 transition-colors">
+                                  <span className="text-gray-700 transition-colors">
                                     {opt}
                                   </span>
                                 </label>
@@ -829,7 +894,7 @@ export default function AddQuestions() {
                               {[...Array(q.max)].map((_, i) => (
                                 <button
                                   key={i}
-                                  className="text-gray-300 hover:text-yellow-400 transition-colors"
+                                  className="text-gray-200 hover:text-yellow-400 transition-colors"
                                 >
                                   <Star size={32} />
                                 </button>
@@ -839,7 +904,7 @@ export default function AddQuestions() {
                           {q.type === "number" && (
                             <input
                               type="number"
-                              className="border-2 border-gray-100 rounded-lg p-2 focus:border-indigo-500 outline-none w-32"
+                              className="border-2 border-gray-100 rounded-lg p-2 outline-none w-32 focus:border-gray-400"
                             />
                           )}
                           {q.type === "date" && (
@@ -861,7 +926,8 @@ export default function AddQuestions() {
                     {pages.map((_, i) => (
                       <div
                         key={i}
-                        className={`w-2 h-2 rounded-full ${activePageIndex === i ? "bg-indigo-600" : "bg-gray-300"}`}
+                        className={`w-2 h-2 rounded-full transition-colors`}
+                        style={{ backgroundColor: activePageIndex === i ? primaryColor : "#D1D5DB" }}
                       />
                     ))}
                   </div>
@@ -877,12 +943,13 @@ export default function AddQuestions() {
                     {activePageIndex < pages.length - 1 ? (
                       <button
                         onClick={() => setActivePageIndex(activePageIndex + 1)}
-                        className="px-8 py-2 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all flex items-center gap-2"
+                        style={{ backgroundColor: primaryColor }}
+                        className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all flex items-center gap-2"
                       >
                         Next <ChevronRight size={18} />
                       </button>
                     ) : (
-                      <button className="px-8 py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 shadow-lg shadow-green-100 transition-all">
+                      <button className="px-8 py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 shadow-lg transition-all">
                         Submit Survey
                       </button>
                     )}
