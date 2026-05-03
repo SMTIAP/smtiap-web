@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from 'react-router-dom'; // Added for navigation state
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Plus,
   GripVertical,
@@ -209,7 +209,7 @@ const QUESTION_TYPES = [
   },
 ];
 
-// --- QuestionCard Component (top-level to prevent remounting) ---
+// --- QuestionCard Component ---
 const QuestionCard = ({
   question,
   index,
@@ -339,7 +339,7 @@ const QuestionCard = ({
   );
 };
 
-// --- PropertyEditor Component (top-level to prevent remounting) ---
+// --- PropertyEditor Component ---
 const PropertyEditor = ({
   selectedQuestion,
   updateQuestion,
@@ -505,10 +505,10 @@ const PropertyEditor = ({
 
 export default function AddQuestions() {
   const location = useLocation();
-  const navigate = useNavigate(); // Added for navigation
+  const navigate = useNavigate();
   const setupData = location.state?.formData;
+  const surveyId = location.state?.surveyId; // Get ID passed from CreatedSurveys
   
-  // Apply the theme color from Step 1, or default to indigo
   const primaryColor = setupData?.customizeBranding ? setupData.themeColor : "#6366F1";
 
   const [surveyTitle, setSurveyTitle] = useState(setupData?.surveyTitle || "Survey creator");
@@ -519,6 +519,25 @@ export default function AddQuestions() {
   const [selectedQuestionId, setSelectedQuestionId] = useState(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [responses, setResponses] = useState({});
+
+  // NEW: Effect to load survey data if editing an existing survey
+  useEffect(() => {
+    if (surveyId) {
+      const loadSurvey = async () => {
+        try {
+          const res = await fetch(`http://localhost:5000/api/surveys/${surveyId}`);
+          if (res.ok) {
+            const data = await res.json();
+            setSurveyTitle(data.surveyTitle);
+            setPages(data.pages);
+          }
+        } catch (err) {
+          console.error("Failed to load existing survey data", err);
+        }
+      };
+      loadSurvey();
+    }
+  }, [surveyId]);
   
   // --- Actions ---
   const addPage = () => {
@@ -692,9 +711,13 @@ export default function AddQuestions() {
         <div className="p-4 border-t border-gray-100 bg-gray-50">
           <button 
             onClick={async () => {
+              // Conditional POST or PUT based on existence of surveyId
+              const url = surveyId ? `http://localhost:5000/api/surveys/${surveyId}` : 'http://localhost:5000/api/surveys';
+              const method = surveyId ? 'PUT' : 'POST';
+
               try {
-                const res = await fetch('http://localhost:5000/api/surveys', {
-                  method: 'POST',
+                const res = await fetch(url, {
+                  method: method,
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     surveyTitle,
@@ -706,12 +729,16 @@ export default function AddQuestions() {
                   }),
                 });
                 const data = await res.json();
+                
+                // If it was a PUT, data might look different, check response logic
+                const finalId = surveyId || data.survey._id;
+
                 navigate('/created-surveys', {
                   state: {
                     newSurvey: {
-                      id:    data.survey._id,
+                      id:    finalId,
                       date:  new Date().toLocaleDateString('en-GB'),
-                      title: data.survey.surveyTitle,
+                      title: surveyTitle,
                       status: 'Draft',
                     }
                   }
@@ -722,7 +749,7 @@ export default function AddQuestions() {
             }}
             className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 shadow-sm transition-all"
           >
-            <Save size={16} /> Save Draft
+            <Save size={16} /> {surveyId ? "Update Draft" : "Save Draft"}
           </button>
         </div>
       </aside>
@@ -753,6 +780,7 @@ export default function AddQuestions() {
             <button 
               onClick={() => navigate('/review-publish', {
                 state: {
+                  surveyId,
                   surveyTitle,
                   primaryColor,
                   pages,
