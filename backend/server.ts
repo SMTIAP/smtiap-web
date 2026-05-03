@@ -16,6 +16,7 @@ import Subscription from "./models/Subscription.js";
 import CreditLedger from "./models/CreditLedger.js";
 import Notification from "./models/Notification.js";
 import AuditLog from "./models/AuditLog.js";
+import surveyRoutes from "./routes/surveyRoutes.js";
 
 const ensureCollections = async () => {
   await Promise.all([
@@ -40,6 +41,7 @@ app.use(express.json());
 
 app.use(payhereRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/surveys", surveyRoutes); 
 app.use(analyticsRoutes);
 app.use(errorHandler);
 
