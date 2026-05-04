@@ -16,6 +16,9 @@ import RoleManagement from "./pages/RoleManagement";
 import Subscription from "./pages/Subscription";
 import Audit from "./pages/Audit";
 import NavBar from "./components/NavBar.tsx";
+import ShareSurvey from './pages/ShareSurvey';
+import TakeSurvey from './pages/TakeSurvey';
+import SurveyResults from './pages/SurveyResults';
 
 function Layout() {
   return (
@@ -30,6 +33,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+         <Route path="/take-survey/:surveyId" element={<TakeSurvey />} />
         {/* Layout wrapper for all routes */}
         <Route element={<Layout />}>
           {/* Auth Routes */}
@@ -44,11 +48,14 @@ export default function App() {
           <Route path="/created-surveys" element={<CreatedSurveys />} />
           <Route path="/templates" element={<SearchTemplate />} />
           <Route path="/subscription" element={<Subscription />} />
+          
 
           {/* Survey Creation Flow */}
           <Route path="/create-new-survey" element={<CreateNewSurvey />} />
           <Route path="/add-questions" element={<AddQuestions />} />
           <Route path="/review-publish" element={<ReviewAndPublish />} />
+          <Route path="/share-survey" element={<ShareSurvey />} />
+          <Route path="/survey-results/:surveyId" element={<SurveyResults />} />
 
           {/* Analytics & Responses */}
           <Route path="/response" element={<Response />} />
