@@ -19,6 +19,9 @@ import NavBar from "./components/NavBar.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
+import ShareSurvey from './pages/ShareSurvey';
+import TakeSurvey from './pages/TakeSurvey';
+
 
 function Layout() {
   return (
@@ -54,11 +57,13 @@ export default function App() {
           <Route path="/created-surveys" element={<CreatedSurveys />} />
           <Route path="/templates" element={<SearchTemplate />} />
           <Route path="/subscription" element={<Subscription />} />
+          <Route path="/take-survey/:surveyId" element={<TakeSurvey />} />
 
           {/* Survey Creation Flow */}
           <Route path="/create-new-survey" element={<CreateNewSurvey />} />
           <Route path="/add-questions" element={<AddQuestions />} />
           <Route path="/review-publish" element={<ReviewAndPublish />} />
+          <Route path="/share-survey" element={<ShareSurvey />} />
 
           {/* Analytics & Responses */}
           <Route path="/response" element={<Response />} />
