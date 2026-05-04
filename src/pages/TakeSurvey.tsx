@@ -75,7 +75,6 @@ export default function TakeSurvey() {
     </div>
   );
 
-  // ✅ Key fix: survey data uses pages[] structure
   const pages: Page[] = surveyData.pages || [];
   const primaryColor = surveyData.primaryColor || surveyData.themeColor || '#6366F1';
   const currentPage = pages[activePage];
@@ -96,9 +95,17 @@ export default function TakeSurvey() {
     if (activePage > 0) setActivePage(activePage - 1);
   };
 
-  const handleSubmit = () => {
-    // TODO: save responses to backend later
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    try {
+      await fetch(`http://localhost:5000/api/surveys/${surveyId}/responses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ responses })
+      });
+      setSubmitted(true);
+    } catch (err) {
+      console.error("Submit error:", err);
+    }
   };
 
   return (
@@ -115,7 +122,6 @@ export default function TakeSurvey() {
             {surveyData.description && (
               <p className="text-slate-500 text-sm">{surveyData.description}</p>
             )}
-            {/* Page indicator */}
             {totalPages > 1 && (
               <div className="flex items-center gap-2 mt-4">
                 {pages.map((_: any, i: number) => (
@@ -157,8 +163,7 @@ export default function TakeSurvey() {
                     {q.required && <span className="text-red-500 ml-1">*</span>}
                   </p>
 
-                  {/* Short text */}
-                  {(q.type === 'short_text') && (
+                  {q.type === 'short_text' && (
                     <input
                       type="text"
                       placeholder={q.placeholder || 'Your answer here...'}
@@ -168,7 +173,6 @@ export default function TakeSurvey() {
                     />
                   )}
 
-                  {/* Long text */}
                   {q.type === 'long_text' && (
                     <textarea
                       placeholder={q.placeholder || 'Your answer here...'}
@@ -179,7 +183,6 @@ export default function TakeSurvey() {
                     />
                   )}
 
-                  {/* Multiple choice */}
                   {q.type === 'multiple_choice' && (
                     <div className="space-y-2">
                       {q.options?.map((opt: string, i: number) => (
@@ -198,7 +201,6 @@ export default function TakeSurvey() {
                     </div>
                   )}
 
-                  {/* Checkboxes */}
                   {q.type === 'checkboxes' && (
                     <div className="space-y-2">
                       {q.options?.map((opt: string, i: number) => (
@@ -206,6 +208,14 @@ export default function TakeSurvey() {
                           <input
                             type="checkbox"
                             value={opt}
+                            checked={(responses[q._id] || '').split(',').includes(opt)}
+                            onChange={e => {
+                              const current = responses[q._id] ? responses[q._id].split(',') : [];
+                              const updated = e.target.checked
+                                ? [...current, opt]
+                                : current.filter(v => v !== opt);
+                              handleResponse(q._id, updated.join(','));
+                            }}
                             className="w-4 h-4 rounded"
                           />
                           <span className="text-sm text-slate-700">{opt}</span>
@@ -214,7 +224,6 @@ export default function TakeSurvey() {
                     </div>
                   )}
 
-                  {/* Rating */}
                   {q.type === 'rating' && (
                     <div className="flex gap-2">
                       {Array.from({ length: q.max || 5 }, (_, i) => (
@@ -234,7 +243,6 @@ export default function TakeSurvey() {
                     </div>
                   )}
 
-                  {/* Number */}
                   {q.type === 'number' && (
                     <input
                       type="number"
@@ -244,7 +252,6 @@ export default function TakeSurvey() {
                     />
                   )}
 
-                  {/* Date */}
                   {q.type === 'date' && (
                     <input
                       type="date"

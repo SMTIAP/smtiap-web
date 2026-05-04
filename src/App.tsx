@@ -18,7 +18,7 @@ import Audit from "./pages/Audit";
 import NavBar from "./components/NavBar.tsx";
 import ShareSurvey from './pages/ShareSurvey';
 import TakeSurvey from './pages/TakeSurvey';
-
+import SurveyResults from './pages/SurveyResults';
 
 function Layout() {
   return (
@@ -54,6 +54,7 @@ export default function App() {
           <Route path="/add-questions" element={<AddQuestions />} />
           <Route path="/review-publish" element={<ReviewAndPublish />} />
           <Route path="/share-survey" element={<ShareSurvey />} />
+          <Route path="/survey-results/:surveyId" element={<SurveyResults />} />
 
           {/* Analytics & Responses */}
           <Route path="/response" element={<Response />} />
