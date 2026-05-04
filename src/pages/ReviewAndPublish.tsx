@@ -8,6 +8,7 @@ export default function ReviewAndPublish() {
   const surveyTitle = location.state?.surveyTitle || "Untitled Survey";
   const pages = location.state?.pages || [];
   const primaryColor = location.state?.primaryColor || "#6366F1";
+  const surveyId = location.state?.surveyId; // Get ID if editing a draft
 
   const handleFinalize = async (status: "Running" | "Draft") => {
     try {
@@ -20,8 +21,15 @@ export default function ReviewAndPublish() {
         tenantId: "default",
       };
 
-      const res = await fetch("http://localhost:5000/api/surveys", {
-        method: "POST",
+      // If surveyId exists, we update (PUT), otherwise create (POST)
+      const url = surveyId 
+        ? `http://localhost:5000/api/surveys/${surveyId}` 
+        : "http://localhost:5000/api/surveys";
+      
+      const method = surveyId ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -33,21 +41,32 @@ export default function ReviewAndPublish() {
       }
 
       const data = await res.json();
+      const savedSurvey = data.survey;
 
-      navigate("/created-surveys", {
-        state: {
-          newSurvey: {
-            id:            data.survey._id,
-            date:          new Date().toLocaleDateString("en-GB"),
-            title:         data.survey.surveyTitle,
-            status:        data.survey.status,
-            pageCount:     data.survey.pages.length,
-            questionCount: data.survey.pages.reduce(
-              (acc: number, p: any) => acc + p.questions.length, 0
-            ),
+      // Logic: If published (Running), go to Share page. If Draft, go to Dashboard.
+      if (status === "Running") {
+        navigate("/share-survey", {
+          state: {
+            surveyId: savedSurvey._id,
+            surveyTitle: savedSurvey.surveyTitle,
           }
-        }
-      });
+        });
+      } else {
+        navigate("/created-surveys", {
+          state: {
+            newSurvey: {
+              id:            savedSurvey._id,
+              date:          new Date().toLocaleDateString("en-GB"),
+              title:         savedSurvey.surveyTitle,
+              status:        savedSurvey.status,
+              pageCount:     savedSurvey.pages.length,
+              questionCount: savedSurvey.pages.reduce(
+                (acc: number, p: any) => acc + p.questions.length, 0
+              ),
+            }
+          }
+        });
+      }
     } catch (err) {
       console.error("Failed to save survey:", err);
       alert("Something went wrong. Is the backend running on port 5000?");
@@ -125,7 +144,7 @@ export default function ReviewAndPublish() {
                 </h3>
                 
                 {pages.map((page: any, pIdx: number) => (
-                  <div key={page.id} className="border-l-2 border-gray-100 pl-6 space-y-4">
+                  <div key={page.id || pIdx} className="border-l-2 border-gray-100 pl-6 space-y-4">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold py-0.5 px-2 bg-gray-100 text-gray-500 rounded">
                         PAGE {pIdx + 1}
@@ -139,7 +158,7 @@ export default function ReviewAndPublish() {
                       <div className="grid gap-3">
                         {page.questions.map((q: any, qIdx: number) => (
                           <div
-                            key={q.id}
+                            key={q.id || qIdx}
                             className="flex items-start gap-3 p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:border-gray-200 transition-colors"
                           >
                             <span className="text-xs font-bold text-gray-400 mt-0.5">{qIdx + 1}.</span>
@@ -155,7 +174,6 @@ export default function ReviewAndPublish() {
                                   </span>
                                 )}
                               </div>
-                              {/* Show options preview for multiple choice / checkboxes */}
                               {q.options && q.options.length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-1">
                                   {q.options.slice(0, 3).map((opt: string, i: number) => (
