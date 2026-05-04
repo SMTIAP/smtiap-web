@@ -24,12 +24,14 @@ import CreditLedger from "./models/CreditLedger.js";
 import Notification from "./models/Notification.js";
 import AuditLog from "./models/AuditLog.js";
 import surveyRoutes from "./routes/surveyRoutes.js";
+import SurveyResponse from "./models/SurveyResponse.js";
 
 const ensureCollections = async () => {
   await Promise.all([
     Tenant.createCollection(),
     TenantUser.createCollection(),
     Survey.createCollection(),
+    SurveyResponse.createCollection(),
     Question.createCollection(),
     Response.createCollection(),
     Answer.createCollection(),
