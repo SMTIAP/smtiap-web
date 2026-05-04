@@ -36,11 +36,13 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Auth Routes */}
+         <Route path="/take-survey/:surveyId" element={<TakeSurvey />} />
+                {/* Auth Routes */}
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-
+        <Route path="/take-survey/:surveyId" element={<TakeSurvey />} />
+        
         {/* Layout wrapper for all routes */}
         <Route element={<Layout />}>
           {/* Dashboard & Survey Management */}
@@ -57,7 +59,7 @@ export default function App() {
           <Route path="/created-surveys" element={<CreatedSurveys />} />
           <Route path="/templates" element={<SearchTemplate />} />
           <Route path="/subscription" element={<Subscription />} />
-          <Route path="/take-survey/:surveyId" element={<TakeSurvey />} />
+          
 
           {/* Survey Creation Flow */}
           <Route path="/create-new-survey" element={<CreateNewSurvey />} />
