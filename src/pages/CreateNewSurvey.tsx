@@ -18,7 +18,7 @@ export default function CreateNewSurvey() {
     customizeBranding: false,
     logo: null,
     websiteUrl: '',
-    themeColor: '#6366F1', // Default branding color
+    themeColor: '#6366F1',
     surveyTitle: '',
     description: '',
     isAnonymous: false,
@@ -40,7 +40,6 @@ export default function CreateNewSurvey() {
     }
   };
 
-  // Predefined theme colors for quick selection
   const colorPresets = ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6'];
 
   return (
@@ -65,15 +64,14 @@ export default function CreateNewSurvey() {
           <section className="flex flex-col gap-6">
             <div className="flex justify-between items-center border-b border-[#F1F5F9] pb-4">
               <h2 className="text-[#1E293B] text-sm font-bold uppercase tracking-wider">Customize Branding</h2>
-              <div 
-                onClick={() => toggleField('customizeBranding')} 
+              <div
+                onClick={() => toggleField('customizeBranding')}
                 className={`w-10 h-5 rounded-full relative cursor-pointer transition-all duration-200 ${formData.customizeBranding ? 'bg-blue-600' : 'bg-[#E2E8F0]'}`}
               >
                 <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-200 ${formData.customizeBranding ? 'left-6' : 'left-1'}`}></div>
               </div>
             </div>
 
-            {/* Conditional Branding Fields */}
             {formData.customizeBranding && (
               <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
                 <label className="flex flex-col items-center justify-center border-2 border-dashed border-[#CBD5E1] rounded-lg p-10 bg-[#F8FAFC] gap-3 cursor-pointer hover:bg-slate-50 transition-colors">
@@ -87,21 +85,21 @@ export default function CreateNewSurvey() {
                     <label className="text-[#1E293B] text-xs font-bold uppercase">Website URL</label>
                     <input name="websiteUrl" type="text" value={formData.websiteUrl} onChange={handleChange} placeholder="https://example.com" className="w-full p-3 border border-[#E2E8F0] rounded-lg bg-[#F8FAFC] text-sm outline-none focus:ring-1 focus:ring-blue-400" />
                   </div>
-                  
+
                   <div className="flex flex-col gap-3">
                     <label className="text-[#1E293B] text-xs font-bold uppercase">Theme Color</label>
                     <div className="flex items-center gap-4">
-                      <input 
-                        type="color" 
-                        name="themeColor" 
-                        value={formData.themeColor} 
-                        onChange={handleChange} 
-                        className="w-10 h-10 rounded cursor-pointer border-none p-0 bg-transparent" 
+                      <input
+                        type="color"
+                        name="themeColor"
+                        value={formData.themeColor}
+                        onChange={handleChange}
+                        className="w-10 h-10 rounded cursor-pointer border-none p-0 bg-transparent"
                       />
                       <div className="flex gap-2">
                         {colorPresets.map(color => (
-                          <button 
-                            key={color} 
+                          <button
+                            key={color}
                             onClick={() => setFormData(p => ({...p, themeColor: color}))}
                             className={`w-6 h-6 rounded-full border-2 ${formData.themeColor === color ? 'border-slate-400' : 'border-transparent'}`}
                             style={{ backgroundColor: color }}
@@ -130,9 +128,16 @@ export default function CreateNewSurvey() {
             </div>
           </section>
 
+          {/* ✅ Fixed button — saves as Untitled Survey if skipped */}
           <div className="flex justify-end mt-4">
-            <button 
-              onClick={() => navigate('/add-questions', { state: { formData } })}
+            <button
+              onClick={() => {
+                const finalData = {
+                  ...formData,
+                  surveyTitle: formData.surveyTitle.trim() || 'Untitled Survey'
+                };
+                navigate('/add-questions', { state: { formData: finalData } });
+              }}
               className="flex items-center gap-2 bg-[#6366F1] text-white px-8 py-3 rounded-lg font-bold text-sm hover:opacity-90 shadow-md transition-all active:scale-95"
             >
               Next: Add Questions
