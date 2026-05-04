@@ -1,4 +1,11 @@
 import express from "express";
+import path from "path";
+import dotenv from "dotenv";
+
+// ✅ Load env FIRST (important for OAuth)
+dotenv.config({
+  path: path.resolve(process.cwd(), "../.env"),
+});
 import cors from "cors";
 import payhereRoutes from "./routes/payhereRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -33,20 +40,39 @@ const ensureCollections = async () => {
   ]);
   console.log("All collections ensured.");
 };
+import { initGitHubStrategy } from "./config/github.js";
+import { initLinkedInStrategy } from "./config/linkedin.js";
+import passport, { initGoogleStrategy } from "./config/passport.js";
+
+import cookieParser from "cookie-parser";
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    credentials: true,
+  }),
+);
 app.use(express.json());
+app.use(cookieParser());
+app.use(passport.initialize());
 
 app.use(payhereRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/surveys", surveyRoutes); 
+app.use("/api/surveys", surveyRoutes);
 app.use(analyticsRoutes);
 app.use(errorHandler);
 
+app.get("/", (req, res) => {
+  res.send("🚀 PayHere backend is running");
+});
+
 const startServer = async () => {
   try {
+    initGitHubStrategy();
+    initLinkedInStrategy();
+    initGoogleStrategy();
     await connectDb();
     await ensureCollections();
 

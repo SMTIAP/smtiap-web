@@ -48,13 +48,13 @@ export default function NavBar() {
         {isLanding && (
           <div className="flex items-center gap-3">
             <Link
-              to="/login"
+              to="/auth"
               className="text-[14px] font-[700] text-[#475569] hover:text-[#5C38E1] transition-colors"
             >
               Sign In
             </Link>
             <Link
-              to="/register"
+              to="/auth"
               className="bg-gradient-to-br from-[#5C38E1] to-[#8E6BFF] text-white px-5 py-2 rounded-full font-[700] text-[13px] shadow-xl shadow-purple-500/20 hover:scale-105 transition-transform"
             >
               Create Free Survey

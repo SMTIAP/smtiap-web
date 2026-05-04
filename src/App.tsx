@@ -16,6 +16,9 @@ import RoleManagement from "./pages/RoleManagement";
 import Subscription from "./pages/Subscription";
 import Audit from "./pages/Audit";
 import NavBar from "./components/NavBar.tsx";
+import AuthPage from "./pages/AuthPage.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
+import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import ShareSurvey from './pages/ShareSurvey';
 import TakeSurvey from './pages/TakeSurvey';
 
@@ -33,16 +36,23 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Auth Routes */}
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+
         {/* Layout wrapper for all routes */}
         <Route element={<Layout />}>
-          {/* Auth Routes */}
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-
           {/* Dashboard & Survey Management */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/admin" element={<OrganizationAdmin />} />
+           <Route
+      path="/admin"
+      element={
+        <ProtectedRoute>
+          <OrganizationAdmin />
+        </ProtectedRoute>
+      } />
+          
           <Route path="/creator-dashboard" element={<CreatorDashboard />} />
           <Route path="/created-surveys" element={<CreatedSurveys />} />
           <Route path="/templates" element={<SearchTemplate />} />
@@ -63,6 +73,7 @@ export default function App() {
           {/* Audit Management */}
           <Route path="/audit-log" element={<Audit />} />
         </Route>
+        
       </Routes>
     </BrowserRouter>
   );
