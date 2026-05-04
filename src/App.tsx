@@ -33,6 +33,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+         <Route path="/take-survey/:surveyId" element={<TakeSurvey />} />
         {/* Layout wrapper for all routes */}
         <Route element={<Layout />}>
           {/* Auth Routes */}
@@ -47,7 +48,7 @@ export default function App() {
           <Route path="/created-surveys" element={<CreatedSurveys />} />
           <Route path="/templates" element={<SearchTemplate />} />
           <Route path="/subscription" element={<Subscription />} />
-          <Route path="/take-survey/:surveyId" element={<TakeSurvey />} />
+          
 
           {/* Survey Creation Flow */}
           <Route path="/create-new-survey" element={<CreateNewSurvey />} />
