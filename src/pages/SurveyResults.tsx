@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, StopCircle, X } from 'lucide-react';
 
 interface Question {
   _id: string;
@@ -10,6 +10,55 @@ interface Question {
   max?: number;
 }
 
+// ✅ Stop Survey Confirmation Modal
+const StopConfirmModal = ({ onConfirm, onCancel, stopping }: {
+  onConfirm: () => void;
+  onCancel: () => void;
+  stopping: boolean;
+}) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+    {/* Backdrop */}
+    <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onCancel} />
+    
+    {/* Modal Card */}
+    <div className="relative bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 max-w-sm w-full z-10">
+      <button
+        onClick={onCancel}
+        className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-all"
+      >
+        <X size={16} />
+      </button>
+
+      {/* Icon */}
+      <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
+        <StopCircle size={28} className="text-red-500" />
+      </div>
+
+      <h2 className="text-xl font-black text-slate-900 text-center mb-2">Stop this survey?</h2>
+      <p className="text-slate-500 text-sm text-center mb-8">
+        This survey will no longer accept new responses. This action cannot be undone.
+      </p>
+
+      <div className="flex flex-col gap-3">
+        <button
+          onClick={onConfirm}
+          disabled={stopping}
+          className="w-full py-3 bg-red-500 text-white rounded-2xl font-bold text-sm hover:bg-red-600 transition-all disabled:opacity-50 shadow-lg shadow-red-100"
+        >
+          {stopping ? 'Stopping...' : 'Yes, stop survey'}
+        </button>
+        <button
+          onClick={onCancel}
+          disabled={stopping}
+          className="w-full py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-all"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 export default function SurveyResults() {
   const { surveyId } = useParams<{ surveyId: string }>();
   const navigate = useNavigate();
@@ -18,6 +67,8 @@ export default function SurveyResults() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'summary' | 'individual'>('summary');
   const [activeResponseIndex, setActiveResponseIndex] = useState(0);
+  const [stopping, setStopping] = useState(false);
+  const [showStopModal, setShowStopModal] = useState(false); // ✅ NEW
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -39,6 +90,23 @@ export default function SurveyResults() {
     if (surveyId) fetchAll();
   }, [surveyId]);
 
+  const handleStopSurvey = async () => {
+    setStopping(true);
+    try {
+      await fetch(`http://localhost:5000/api/surveys/${surveyId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Finished' })
+      });
+      setSurvey((prev: any) => ({ ...prev, status: 'Finished' }));
+      setShowStopModal(false);
+    } catch (err) {
+      console.error("Failed to stop survey:", err);
+    } finally {
+      setStopping(false);
+    }
+  };
+
   if (loading) return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
       <div className="text-center">
@@ -57,25 +125,55 @@ export default function SurveyResults() {
   const primaryColor = survey.primaryColor || survey.themeColor || '#6366F1';
   const allQuestions: Question[] = survey.pages?.flatMap((p: any) => p.questions) || [];
   const totalResponses = responses.length;
+  const isRunning = survey.status === 'Running';
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-12 px-6">
+
+      {/* ✅ Stop Modal */}
+      {showStopModal && (
+        <StopConfirmModal
+          onConfirm={handleStopSurvey}
+          onCancel={() => setShowStopModal(false)}
+          stopping={stopping}
+        />
+      )}
+
       <div className="max-w-2xl mx-auto space-y-6">
 
         {/* Header card */}
         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="h-2 w-full" style={{ backgroundColor: primaryColor }} />
           <div className="p-8">
-            <button
-              onClick={() => navigate('/created-surveys')}
-              className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 mb-4 transition-all"
-            >
-              <ChevronLeft size={14} /> Back to surveys
-            </button>
+            <div className="flex justify-between items-start">
+              <button
+                onClick={() => navigate('/created-surveys')}
+                className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 mb-4 transition-all"
+              >
+                <ChevronLeft size={14} /> Back to surveys
+              </button>
+
+              {/* ✅ Stop Survey button — opens modal instead of confirm() */}
+              {isRunning && (
+                <button
+                  onClick={() => setShowStopModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-bold hover:bg-red-100 transition-all"
+                >
+                  <StopCircle size={14} />
+                  Stop Survey
+                </button>
+              )}
+
+              {!isRunning && (
+                <span className="px-4 py-2 bg-rose-50 text-rose-500 border border-rose-100 rounded-xl text-xs font-bold">
+                  ✓ Finished
+                </span>
+              )}
+            </div>
+
             <h1 className="text-2xl font-black text-slate-900">{survey.surveyTitle || 'Untitled Survey'}</h1>
             <p className="text-slate-400 text-sm mt-1">{totalResponses} response{totalResponses !== 1 ? 's' : ''} collected</p>
 
-            {/* Tabs */}
             <div className="flex gap-2 mt-6 bg-slate-100 p-1 rounded-2xl w-fit">
               {(['summary', 'individual'] as const).map(tab => (
                 <button
@@ -104,14 +202,12 @@ export default function SurveyResults() {
         {/* SUMMARY TAB */}
         {activeTab === 'summary' && totalResponses > 0 && allQuestions.map((q) => {
           const answers = responses.map(r => r.responses?.[q._id]).filter(Boolean);
-
           return (
             <div key={q._id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <p className="font-bold text-slate-800 text-base mb-1">{q.label}</p>
               <p className="text-xs text-slate-400 mb-4">{answers.length} response{answers.length !== 1 ? 's' : ''}</p>
 
-              {/* Multiple choice → bar chart */}
-              {(q.type === 'multiple_choice') && q.options && (
+              {q.type === 'multiple_choice' && q.options && (
                 <div className="space-y-3">
                   {q.options.map((opt) => {
                     const count = answers.filter(a => a === opt).length;
@@ -123,10 +219,7 @@ export default function SurveyResults() {
                           <span className="text-slate-400 text-xs">{count} ({pct}%)</span>
                         </div>
                         <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{ width: `${pct}%`, backgroundColor: primaryColor }}
-                          />
+                          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: primaryColor }} />
                         </div>
                       </div>
                     );
@@ -134,7 +227,6 @@ export default function SurveyResults() {
                 </div>
               )}
 
-              {/* Checkboxes → bar chart (each option counted separately) */}
               {q.type === 'checkboxes' && q.options && (
                 <div className="space-y-3">
                   {q.options.map((opt) => {
@@ -147,10 +239,7 @@ export default function SurveyResults() {
                           <span className="text-slate-400 text-xs">{count} ({pct}%)</span>
                         </div>
                         <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{ width: `${pct}%`, backgroundColor: primaryColor }}
-                          />
+                          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: primaryColor }} />
                         </div>
                       </div>
                     );
@@ -158,7 +247,6 @@ export default function SurveyResults() {
                 </div>
               )}
 
-              {/* Rating → average + breakdown */}
               {q.type === 'rating' && (
                 <div>
                   <p className="text-4xl font-black mb-1" style={{ color: primaryColor }}>
@@ -172,10 +260,7 @@ export default function SurveyResults() {
                       return (
                         <div key={i} className="flex flex-col items-center gap-1 flex-1">
                           <div className="w-full bg-slate-100 rounded-full overflow-hidden h-16 flex flex-col-reverse">
-                            <div
-                              className="w-full rounded-full transition-all duration-500"
-                              style={{ height: `${pct}%`, backgroundColor: primaryColor, opacity: 0.8 }}
-                            />
+                            <div className="w-full rounded-full transition-all duration-500" style={{ height: `${pct}%`, backgroundColor: primaryColor, opacity: 0.8 }} />
                           </div>
                           <span className="text-xs text-slate-500 font-bold">{i + 1}</span>
                           <span className="text-xs text-slate-400">{count}</span>
@@ -186,15 +271,12 @@ export default function SurveyResults() {
                 </div>
               )}
 
-              {/* Text answers */}
               {(q.type === 'short_text' || q.type === 'long_text' || q.type === 'number' || q.type === 'date') && (
                 <ul className="space-y-2">
                   {answers.length === 0
                     ? <p className="text-slate-400 text-sm italic">No answers yet</p>
                     : answers.map((a, i) => (
-                      <li key={i} className="text-sm text-slate-700 bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
-                        {a}
-                      </li>
+                      <li key={i} className="text-sm text-slate-700 bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">{a}</li>
                     ))
                   }
                 </ul>
@@ -206,7 +288,6 @@ export default function SurveyResults() {
         {/* INDIVIDUAL TAB */}
         {activeTab === 'individual' && totalResponses > 0 && (
           <div className="space-y-4">
-            {/* Pagination */}
             <div className="flex justify-between items-center bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-4">
               <button
                 disabled={activeResponseIndex === 0}
@@ -227,12 +308,10 @@ export default function SurveyResults() {
               </button>
             </div>
 
-            {/* Submitted at */}
             <p className="text-xs text-slate-400 text-center">
-              Submitted: {new Date(responses[activeResponseIndex].submittedAt).toLocaleString()}
+              Submitted: {new Date(responses[activeResponseIndex].createdAt).toLocaleString()}
             </p>
 
-            {/* Individual answers */}
             {allQuestions.map((q) => {
               const answer = responses[activeResponseIndex].responses?.[q._id];
               return (

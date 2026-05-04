@@ -61,6 +61,21 @@ export default function TakeSurvey() {
     </div>
   );
 
+  // ✅ Show closed message if survey is Finished
+  if (surveyData.status === 'Finished') return (
+    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+      <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
+        <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg width="28" height="28" fill="none" stroke="#F43F5E" strokeWidth="2.5" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6" strokeLinecap="round"/>
+          </svg>
+        </div>
+        <h2 className="text-2xl font-black text-slate-900 mb-2">Survey Closed</h2>
+        <p className="text-slate-500 text-sm">This survey is no longer accepting responses.</p>
+      </div>
+    </div>
+  );
+
   if (submitted) return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
       <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
@@ -164,37 +179,18 @@ export default function TakeSurvey() {
                   </p>
 
                   {q.type === 'short_text' && (
-                    <input
-                      type="text"
-                      placeholder={q.placeholder || 'Your answer here...'}
-                      value={responses[q._id] || ''}
-                      onChange={e => handleResponse(q._id, e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
-                    />
+                    <input type="text" placeholder={q.placeholder || 'Your answer here...'} value={responses[q._id] || ''} onChange={e => handleResponse(q._id, e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm" />
                   )}
 
                   {q.type === 'long_text' && (
-                    <textarea
-                      placeholder={q.placeholder || 'Your answer here...'}
-                      value={responses[q._id] || ''}
-                      onChange={e => handleResponse(q._id, e.target.value)}
-                      rows={4}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm resize-none"
-                    />
+                    <textarea placeholder={q.placeholder || 'Your answer here...'} value={responses[q._id] || ''} onChange={e => handleResponse(q._id, e.target.value)} rows={4} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm resize-none" />
                   )}
 
                   {q.type === 'multiple_choice' && (
                     <div className="space-y-2">
                       {q.options?.map((opt: string, i: number) => (
                         <label key={i} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-indigo-200 cursor-pointer transition-all">
-                          <input
-                            type="radio"
-                            name={q._id}
-                            value={opt}
-                            checked={responses[q._id] === opt}
-                            onChange={() => handleResponse(q._id, opt)}
-                            className="w-4 h-4"
-                          />
+                          <input type="radio" name={q._id} value={opt} checked={responses[q._id] === opt} onChange={() => handleResponse(q._id, opt)} className="w-4 h-4" />
                           <span className="text-sm text-slate-700">{opt}</span>
                         </label>
                       ))}
@@ -205,19 +201,11 @@ export default function TakeSurvey() {
                     <div className="space-y-2">
                       {q.options?.map((opt: string, i: number) => (
                         <label key={i} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-indigo-200 cursor-pointer transition-all">
-                          <input
-                            type="checkbox"
-                            value={opt}
-                            checked={(responses[q._id] || '').split(',').includes(opt)}
-                            onChange={e => {
-                              const current = responses[q._id] ? responses[q._id].split(',') : [];
-                              const updated = e.target.checked
-                                ? [...current, opt]
-                                : current.filter(v => v !== opt);
-                              handleResponse(q._id, updated.join(','));
-                            }}
-                            className="w-4 h-4 rounded"
-                          />
+                          <input type="checkbox" value={opt} checked={(responses[q._id] || '').split(',').includes(opt)} onChange={e => {
+                            const current = responses[q._id] ? responses[q._id].split(',') : [];
+                            const updated = e.target.checked ? [...current, opt] : current.filter(v => v !== opt);
+                            handleResponse(q._id, updated.join(','));
+                          }} className="w-4 h-4 rounded" />
                           <span className="text-sm text-slate-700">{opt}</span>
                         </label>
                       ))}
@@ -227,16 +215,7 @@ export default function TakeSurvey() {
                   {q.type === 'rating' && (
                     <div className="flex gap-2">
                       {Array.from({ length: q.max || 5 }, (_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => handleResponse(q._id, String(i + 1))}
-                          className="w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all"
-                          style={{
-                            borderColor: Number(responses[q._id]) > i ? primaryColor : '#E2E8F0',
-                            backgroundColor: Number(responses[q._id]) > i ? primaryColor : 'white',
-                            color: Number(responses[q._id]) > i ? 'white' : '#94A3B8',
-                          }}
-                        >
+                        <button key={i} onClick={() => handleResponse(q._id, String(i + 1))} className="w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all" style={{ borderColor: Number(responses[q._id]) > i ? primaryColor : '#E2E8F0', backgroundColor: Number(responses[q._id]) > i ? primaryColor : 'white', color: Number(responses[q._id]) > i ? 'white' : '#94A3B8' }}>
                           {i + 1}
                         </button>
                       ))}
@@ -244,59 +223,30 @@ export default function TakeSurvey() {
                   )}
 
                   {q.type === 'number' && (
-                    <input
-                      type="number"
-                      value={responses[q._id] || ''}
-                      onChange={e => handleResponse(q._id, e.target.value)}
-                      className="w-32 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
-                    />
+                    <input type="number" value={responses[q._id] || ''} onChange={e => handleResponse(q._id, e.target.value)} className="w-32 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm" />
                   )}
 
                   {q.type === 'date' && (
-                    <input
-                      type="date"
-                      value={responses[q._id] || ''}
-                      onChange={e => handleResponse(q._id, e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
-                    />
+                    <input type="date" value={responses[q._id] || ''} onChange={e => handleResponse(q._id, e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm" />
                   )}
                 </div>
               ))
             )}
 
-            {/* Navigation */}
             <div className="flex justify-between items-center pt-4">
               {activePage > 0 ? (
-                <button
-                  onClick={handleBack}
-                  className="px-6 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-gray-50 transition-all"
-                >
-                  ← Back
-                </button>
+                <button onClick={handleBack} className="px-6 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-gray-50 transition-all">← Back</button>
               ) : <div />}
 
               {activePage < totalPages - 1 ? (
-                <button
-                  onClick={handleNext}
-                  style={{ backgroundColor: primaryColor }}
-                  className="px-8 py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg transition-all"
-                >
-                  Next →
-                </button>
+                <button onClick={handleNext} style={{ backgroundColor: primaryColor }} className="px-8 py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg transition-all">Next →</button>
               ) : (
-                <button
-                  onClick={handleSubmit}
-                  className="px-8 py-3 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 shadow-lg transition-all"
-                >
-                  Submit Response ✓
-                </button>
+                <button onClick={handleSubmit} className="px-8 py-3 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 shadow-lg transition-all">Submit Response ✓</button>
               )}
             </div>
           </div>
         ) : (
-          <div className="p-10 text-center text-slate-400 italic">
-            No pages found in this survey.
-          </div>
+          <div className="p-10 text-center text-slate-400 italic">No pages found in this survey.</div>
         )}
       </div>
     </div>
