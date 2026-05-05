@@ -7,12 +7,14 @@ export const saveAnalyticsResult = async (
   next: NextFunction,
 ) => {
   try {
-    const { surveyId, summary, topKeywords, sourceCount } = req.body as {
-      surveyId?: string;
-      summary?: string;
-      topKeywords?: { keyword: string; count: number }[];
-      sourceCount?: number;
-    };
+    const { surveyId, summary, topKeywords, sourceCount, totalResponses } =
+      req.body as {
+        surveyId?: string;
+        summary?: string;
+        topKeywords?: { keyword: string; count: number }[];
+        sourceCount?: number;
+        totalResponses?: number;
+      };
 
     if (!surveyId || !summary || !Array.isArray(topKeywords)) {
       res.status(400).json({ error: "Invalid analytics payload" });
@@ -31,7 +33,9 @@ export const saveAnalyticsResult = async (
       surveyId: surveyId.trim(),
       summary: summary.trim(),
       topKeywords: normalizedTopKeywords,
-      sourceCount: Number(sourceCount ?? 0),
+      sourceCount: Number(sourceCount ?? totalResponses ?? 0),
+      total_responses: Number(totalResponses ?? sourceCount ?? 0),
+      last_updated: new Date(),
     };
 
     const existingBySurvey = await AnalyticsResult.findOne({
