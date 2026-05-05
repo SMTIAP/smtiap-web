@@ -1,6 +1,4 @@
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
-import Register from "./pages/Register";
-import Login from "./pages/Login";
 import ForgotPassword from "./pages/Forgot-password";
 import OrganizationAdmin from "./pages/OrganizationAdmin";
 import CreatorDashboard from "./pages/CreatorDashboard";
