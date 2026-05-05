@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import BackButton from "../components/BackButton";
+import SurveyCard from "../components/SurveyCard";
 import { Filter, BarChart, Sparkles, Download, Loader2 } from "lucide-react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
@@ -79,6 +80,13 @@ interface AnalyticsResultDoc {
   topKeywords?: { keyword: string; count: number }[];
 }
 
+interface SurveyListItem {
+  _id: string;
+  surveyTitle?: string;
+  createdAt?: string;
+  status?: string;
+}
+
 const getQuestionId = (question: SurveyQuestion): string =>
   String(question._id ?? question.id ?? "").trim();
 
@@ -140,13 +148,40 @@ export default function Analytics() {
   >([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [finishedSurveys, setFinishedSurveys] = useState<SurveyListItem[]>([]);
+  const [surveysLoading, setSurveysLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFinishedSurveys = async () => {
+      if (surveyId) {
+        setSurveysLoading(false);
+        return;
+      }
+
+      setSurveysLoading(true);
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/surveys`);
+        const data = await response.json();
+        const surveyList = Array.isArray(data)
+          ? (data as SurveyListItem[])
+          : [];
+        setFinishedSurveys(
+          surveyList.filter((survey) => survey.status === "Finished"),
+        );
+      } catch (err) {
+        console.error("Failed to load finished surveys:", err);
+        setFinishedSurveys([]);
+      } finally {
+        setSurveysLoading(false);
+      }
+    };
+
+    void fetchFinishedSurveys();
+  }, [apiBaseUrl, surveyId]);
 
   useEffect(() => {
     const fetchSurveyContext = async () => {
       if (!surveyId) {
-        setAiError(
-          "Survey ID is missing. Open analytics from a survey result page.",
-        );
         return;
       }
 
@@ -531,6 +566,59 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
     },
   };
 
+  if (!surveyId) {
+    return (
+      <div className="flex flex-col min-h-screen bg-[#F7FAFC] font-inter text-[#0D141C]">
+        <nav className="flex py-3 px-10 border-b border-[#E5E8EB] bg-white w-full sticky top-0 z-20">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#E8EDF2]">
+              <BarChart size={20} className="text-[#0D141C]" />
+            </div>
+            <h1 className="text-lg font-bold">Survey Analytics</h1>
+          </div>
+        </nav>
+
+        <main className="flex-1 max-w-[1200px] mx-auto w-full px-6 py-10">
+          <div className="mb-8">
+            <h2 className="text-3xl font-black tracking-tight text-[#0D141C]">
+              Finished Surveys
+            </h2>
+            <p className="text-[#4A739C] mt-2">
+              Select a finished survey to view analytics and AI insights.
+            </p>
+          </div>
+
+          {surveysLoading ? (
+            <div className="text-sm text-[#4A739C]">
+              Loading finished surveys...
+            </div>
+          ) : finishedSurveys.length === 0 ? (
+            <div className="rounded-xl border border-[#CFDBE8] bg-white p-8 text-[#4A739C]">
+              No finished surveys found.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {finishedSurveys.map((survey) => (
+                <SurveyCard
+                  key={survey._id}
+                  title={survey.surveyTitle || "Untitled Survey"}
+                  date={
+                    survey.createdAt
+                      ? new Date(survey.createdAt).toLocaleDateString("en-GB")
+                      : undefined
+                  }
+                  category="Finished"
+                  variant="finished"
+                  to={`/analytics?surveyId=${survey._id}`}
+                />
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-[#F7FAFC] font-inter text-[#0D141C]">
       {/* Top Navbar */}
@@ -546,7 +634,7 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
       <main className="flex-1 flex flex-col items-center">
         <div className="max-w-[960px] w-full px-4 md:px-0 py-5">
           <div className="w-full flex justify-start mb-6">
-            <BackButton to="/response" />
+            <BackButton to="/analytics" />
           </div>
           {/* Action Bar */}
           <div className="flex flex-col gap-4 mb-6">
