@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import BackButton from "../components/BackButton";
 import { Filter, BarChart, Sparkles, Download, Loader2 } from "lucide-react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import surveyData from "../assets/data.json";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -55,6 +54,56 @@ interface TagProps {
   color: string;
 }
 
+interface SurveyResponseDoc {
+  createdAt?: string;
+  responses?: Record<string, unknown>;
+}
+
+interface SurveyQuestion {
+  _id?: string;
+  id?: string;
+  type?: string;
+  label?: string;
+  options?: string[];
+  max?: number;
+}
+
+interface SurveyDoc {
+  surveyTitle?: string;
+  title?: string;
+  pages?: { questions?: SurveyQuestion[] }[];
+}
+
+interface AnalyticsResultDoc {
+  summary?: string;
+  topKeywords?: { keyword: string; count: number }[];
+}
+
+const getQuestionId = (question: SurveyQuestion): string =>
+  String(question._id ?? question.id ?? "").trim();
+
+const normalizeAnswer = (value: unknown): string => {
+  if (value === null || value === undefined) return "";
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item).trim())
+      .filter(Boolean)
+      .join(", ");
+  }
+  return String(value).trim();
+};
+
+const toCheckboxValues = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+  const normalized = normalizeAnswer(value);
+  return normalized
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+};
+
 const InsightTag = ({ label, count, color }: TagProps) => (
   <div
     className="flex items-center px-4 py-1.5 rounded-lg text-sm font-medium"
@@ -68,12 +117,119 @@ const InsightTag = ({ label, count, color }: TagProps) => (
 
 export default function Analytics() {
   const [searchParams] = useSearchParams();
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  const surveyId = useMemo(
+    () =>
+      searchParams.get("surveyId")?.trim() ||
+      import.meta.env.VITE_DEFAULT_SURVEY_ID ||
+      "",
+    [searchParams],
+  );
+
+  const [surveyTitle, setSurveyTitle] = useState("Survey");
+  const [totalResponses, setTotalResponses] = useState(0);
+  const [surveyQuestions, setSurveyQuestions] = useState<SurveyQuestion[]>([]);
+  const [surveyResponses, setSurveyResponses] = useState<SurveyResponseDoc[]>(
+    [],
+  );
+  const [aiInputLines, setAiInputLines] = useState<string[]>([]);
   const [summary, setSummary] = useState<string | null>(null);
   const [keywords, setKeywords] = useState<
     { keyword: string; count: number }[]
   >([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchSurveyContext = async () => {
+      if (!surveyId) {
+        setAiError(
+          "Survey ID is missing. Open analytics from a survey result page.",
+        );
+        return;
+      }
+
+      try {
+        const [surveyRes, responsesRes, analyticsRes] = await Promise.all([
+          fetch(`${apiBaseUrl}/api/surveys/${surveyId}`),
+          fetch(`${apiBaseUrl}/api/surveys/${surveyId}/responses`),
+          fetch(
+            `${apiBaseUrl}/api/analytics?surveyId=${encodeURIComponent(surveyId)}`,
+          ),
+        ]);
+
+        const surveyJson = (await surveyRes.json()) as SurveyDoc;
+        const responsesJson = await responsesRes.json();
+        const analyticsJson = analyticsRes.ok ? await analyticsRes.json() : [];
+
+        const responseDocs = Array.isArray(responsesJson)
+          ? (responsesJson as SurveyResponseDoc[])
+          : [];
+
+        const pages = Array.isArray(surveyJson?.pages) ? surveyJson.pages : [];
+        const questions = pages.flatMap((page) =>
+          Array.isArray(page.questions) ? page.questions : [],
+        );
+
+        const questionById = new Map(
+          questions
+            .map((question) => [getQuestionId(question), question] as const)
+            .filter(([id]) => Boolean(id)),
+        );
+
+        const extractedText = responseDocs.flatMap(
+          (responseDoc, responseIndex) =>
+            Object.entries(responseDoc.responses ?? {}).flatMap(
+              ([questionId, value]) => {
+                const question = questionById.get(questionId);
+                if (!question) return [];
+
+                const answer = normalizeAnswer(value);
+                if (!answer) return [];
+
+                return [
+                  `Response ${responseIndex + 1} | Question (${question.type ?? "unknown"}): ${question.label ?? "Untitled"} | Answer: ${answer}`,
+                ];
+              },
+            ),
+        );
+
+        const analyticsResults = Array.isArray(analyticsJson)
+          ? (analyticsJson as AnalyticsResultDoc[])
+          : [];
+
+        setSurveyTitle(
+          String(
+            surveyJson?.surveyTitle ?? surveyJson?.title ?? "Untitled Survey",
+          ),
+        );
+        setTotalResponses(responseDocs.length);
+        setSurveyQuestions(questions);
+        setSurveyResponses(responseDocs);
+        setAiInputLines(extractedText);
+
+        const latestResult = analyticsResults[0];
+        if (latestResult) {
+          setSummary(
+            typeof latestResult.summary === "string"
+              ? latestResult.summary
+              : null,
+          );
+          setKeywords(
+            Array.isArray(latestResult.topKeywords)
+              ? latestResult.topKeywords.slice(0, 5)
+              : [],
+          );
+        }
+      } catch (err) {
+        console.error("Failed to load survey analytics context:", err);
+        setAiError("Failed to load survey data from database.");
+      }
+    };
+
+    void fetchSurveyContext();
+  }, [apiBaseUrl, surveyId]);
 
   const runAnalysis = async () => {
     if (isAnalyzing) return;
@@ -82,6 +238,14 @@ export default function Analytics() {
     setSummary(null);
     setKeywords([]);
     try {
+      if (!surveyId) {
+        throw new Error("Survey ID is missing.");
+      }
+
+      if (aiInputLines.length === 0) {
+        throw new Error("No responses found in database for this survey.");
+      }
+
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       if (!apiKey)
         throw new Error(
@@ -89,17 +253,30 @@ export default function Analytics() {
         );
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-      const allText = surveyData
-        .map((item, index) => `Response ${index + 1}: "${item.text}"`)
+      const questionCatalogue = surveyQuestions
+        .map(
+          (question, index) =>
+            `${index + 1}. [${question.type ?? "unknown"}] ${question.label ?? "Untitled"}`,
+        )
         .join("\n");
-      const prompt = `Analyze the following list of survey responses.
-1. Provide a concise summary of the overall feedback.
-2. Identify the top 5 most important recurring keywords or topics and estimate their frequency/count.
+
+      const allText = aiInputLines.join("\n");
+      const prompt = `Analyze the survey responses for this exact survey.
+
+Survey Questions:
+${questionCatalogue}
+
+Response Records:
+${allText}
+
+Instructions:
+1. Provide a concise summary grounded only in the provided responses.
+2. Identify top 5 recurring keywords/topics with estimated counts.
+3. Align findings with the survey questions and response patterns.
 
 Return a purely JSON object (no markdown formatting, no code fence) with this structure:
 {"summary":"...","top_5_keywords":[{"keyword":"Quality","count":15}]}
-
-Survey Data:\n${allText}`;
+`;
       const result = await model.generateContent(prompt);
       const text = result.response
         .text()
@@ -132,12 +309,6 @@ Survey Data:\n${allText}`;
         }))
         .slice(0, 5);
 
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-      const surveyId =
-        searchParams.get("surveyId")?.trim() ||
-        import.meta.env.VITE_DEFAULT_SURVEY_ID ||
-        "default-survey";
-
       const saveResponse = await fetch(`${apiBaseUrl}/api/analytics`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -145,143 +316,218 @@ Survey Data:\n${allText}`;
           surveyId,
           summary: String(analysis.summary ?? "").trim(),
           topKeywords: normalizedKeywords,
-          sourceCount: surveyData.length,
+          sourceCount: totalResponses,
+          totalResponses,
         }),
       });
 
       if (!saveResponse.ok) {
-        throw new Error("AI analysis generated, but saving to database failed.");
+        throw new Error(
+          "AI analysis generated, but saving to database failed.",
+        );
       }
 
       setSummary(String(analysis.summary ?? "").trim());
       setKeywords(normalizedKeywords);
     } catch (err: unknown) {
       console.error("Analysis failed:", err);
-      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred during analysis.";
-      setAiError(
-        errorMessage,
-      );
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "An unexpected error occurred during analysis.";
+      setAiError(errorMessage);
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  // Chart configurations
-  const ratingData = {
-    labels: ["Rating Question 01", "Rating Question 02"],
-    datasets: [
-      {
-        label: "Rating (out of 5)",
-        data: [3.1, 4.2],
-        backgroundColor: "#2B8CED",
-        borderRadius: 8,
-        barThickness: 16,
-      },
-    ],
-  };
+  const questionAnswerMap = useMemo(() => {
+    const answerMap = new Map<string, unknown[]>();
+
+    for (const question of surveyQuestions) {
+      const questionId = getQuestionId(question);
+      if (questionId) {
+        answerMap.set(questionId, []);
+      }
+    }
+
+    for (const response of surveyResponses) {
+      for (const [questionId, value] of Object.entries(
+        response.responses ?? {},
+      )) {
+        if (!answerMap.has(questionId)) continue;
+        if (normalizeAnswer(value)) {
+          answerMap.get(questionId)?.push(value);
+        }
+      }
+    }
+
+    return answerMap;
+  }, [surveyQuestions, surveyResponses]);
+
+  const ratingQuestions = useMemo(
+    () => surveyQuestions.filter((question) => question.type === "rating"),
+    [surveyQuestions],
+  );
+
+  const multipleChoiceQuestions = useMemo(
+    () =>
+      surveyQuestions.filter((question) => question.type === "multiple_choice"),
+    [surveyQuestions],
+  );
+
+  const checkboxQuestions = useMemo(
+    () =>
+      surveyQuestions.filter(
+        (question) =>
+          question.type === "checkbox" || question.type === "checkboxes",
+      ),
+    [surveyQuestions],
+  );
+
+  const completionRate = useMemo(() => {
+    if (surveyResponses.length === 0 || surveyQuestions.length === 0) return 0;
+
+    const validQuestionIds = new Set(
+      surveyQuestions
+        .map((question) => getQuestionId(question))
+        .filter(Boolean),
+    );
+
+    let answeredCount = 0;
+    for (const response of surveyResponses) {
+      for (const [questionId, value] of Object.entries(
+        response.responses ?? {},
+      )) {
+        if (!validQuestionIds.has(questionId)) continue;
+        if (normalizeAnswer(value)) {
+          answeredCount += 1;
+        }
+      }
+    }
+
+    const totalPossible = surveyResponses.length * surveyQuestions.length;
+    return totalPossible > 0
+      ? Math.round((answeredCount / totalPossible) * 100)
+      : 0;
+  }, [surveyQuestions, surveyResponses]);
+
+  const averageRating = useMemo(() => {
+    const ratingValues = ratingQuestions.flatMap((question) => {
+      const questionId = getQuestionId(question);
+      const answers = questionId
+        ? (questionAnswerMap.get(questionId) ?? [])
+        : [];
+      return answers
+        .map((answer) => Number(normalizeAnswer(answer)))
+        .filter((value) => Number.isFinite(value));
+    });
+
+    if (ratingValues.length === 0) return null;
+
+    const sum = ratingValues.reduce((acc, value) => acc + value, 0);
+    return (sum / ratingValues.length).toFixed(1);
+  }, [questionAnswerMap, ratingQuestions]);
+
+  const ratingData = useMemo(
+    () => ({
+      labels: ratingQuestions.map(
+        (question) => question.label ?? "Untitled Question",
+      ),
+      datasets: [
+        {
+          label: "Average Rating",
+          data: ratingQuestions.map((question) => {
+            const questionId = getQuestionId(question);
+            const answers = questionId
+              ? (questionAnswerMap.get(questionId) ?? [])
+              : [];
+            const values = answers
+              .map((answer) => Number(normalizeAnswer(answer)))
+              .filter((value) => Number.isFinite(value));
+
+            if (values.length === 0) return 0;
+
+            const total = values.reduce((acc, value) => acc + value, 0);
+            return Number((total / values.length).toFixed(2));
+          }),
+          backgroundColor: "#2B8CED",
+          borderRadius: 8,
+          barThickness: 16,
+        },
+      ],
+    }),
+    [questionAnswerMap, ratingQuestions],
+  );
 
   const ratingOptions = {
     indexAxis: "y" as const,
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        enabled: true,
-      },
+      legend: { display: false },
+      tooltip: { enabled: true },
     },
     scales: {
       x: {
-        max: 5,
+        beginAtZero: true,
+        max: Math.max(
+          ...ratingQuestions.map((question) => Number(question.max ?? 5)),
+          5,
+        ),
         grid: { display: false },
-        ticks: { font: { family: "Inter" } },
       },
-      y: {
-        grid: { display: false },
-        ticks: { font: { family: "Inter" } },
-      },
+      y: { grid: { display: false } },
     },
   };
 
-  const mcq01Data = {
-    labels: ["Option A", "Option B", "Option C", "Option D"],
-    datasets: [
-      {
-        label: "Responses",
-        data: [100, 15, 65, 80],
-        backgroundColor: "#E8EDF2",
-        borderColor: "#757575",
-        borderWidth: { right: 2 },
-        borderRadius: 4,
-      },
-    ],
+  const buildOptionChartData = (
+    question: SurveyQuestion,
+    isCheckbox: boolean,
+  ) => {
+    const options = Array.isArray(question.options) ? question.options : [];
+    const questionId = getQuestionId(question);
+    const answers = questionId ? (questionAnswerMap.get(questionId) ?? []) : [];
+
+    const counts = options.map((option) => {
+      if (isCheckbox) {
+        return answers.filter((answer) =>
+          toCheckboxValues(answer).includes(option),
+        ).length;
+      }
+      return answers.filter((answer) => normalizeAnswer(answer) === option)
+        .length;
+    });
+
+    return {
+      labels: options,
+      datasets: [
+        {
+          label: "Responses",
+          data: counts,
+          backgroundColor: [
+            "#2B8CED",
+            "#55E05F",
+            "#FFA500",
+            "#E8EDF2",
+            "#C0B5EF",
+            "#EFCCB5",
+          ],
+          borderRadius: 6,
+        },
+      ],
+    };
   };
 
-  const mcq01Options = {
-    indexAxis: "y" as const,
+  const optionChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
     },
     scales: {
-      x: { grid: { display: false }, ticks: { display: false } },
-      y: {
-        grid: { display: false },
-        ticks: {
-          font: { family: "Inter", weight: "bold" as any, size: 12 },
-          color: "#4D7399",
-        },
-      },
-    },
-  };
-
-  const mcq02Data = {
-    labels: ["Option 1", "Option 2", "Option 3", "Option 4"],
-    datasets: [
-      {
-        label: "Responses",
-        data: [137, 104, 59, 93],
-        backgroundColor: [
-          "#2B8CED", // Modern Blue
-          "#55E05F", // Vibrant Green
-          "#FFA500", // Warning Orange
-          "#E8EDF2", // Soft Gray
-        ],
-        hoverOffset: 15,
-        borderWidth: 0,
-      },
-    ],
-  };
-
-  const mcq02Options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: true,
-        position: "bottom" as const,
-        labels: {
-          usePointStyle: true,
-          padding: 20,
-          font: { family: "Inter", size: 12, weight: "500" as any },
-        },
-      },
-      tooltip: {
-        callbacks: {
-          label: (context: any) => {
-            const label = context.label || "";
-            const value = context.raw || 0;
-            const total = (
-              context.chart.data.datasets[0].data as number[]
-            ).reduce((a, b) => a + b, 0);
-            const percentage = ((value / total) * 100).toFixed(1);
-            return `${label}: ${value} (${percentage}%)`;
-          },
-        },
-      },
+      x: { beginAtZero: true, grid: { display: false } },
+      y: { grid: { display: false } },
     },
   };
 
@@ -307,7 +553,7 @@ Survey Data:\n${allText}`;
             <div className="flex py-3 items-center gap-3 flex-wrap w-full">
               <div className="flex py-2 px-6 justify-center items-center rounded-lg bg-[#2B8CED]">
                 <p className="text-[#F7FAFC] text-sm font-bold">
-                  Food Satisfaction
+                  {surveyTitle}
                 </p>
               </div>
             </div>
@@ -328,43 +574,86 @@ Survey Data:\n${allText}`;
 
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <StatCard label="Total Responses" value="1,234" />
-            <StatCard label="Completion Rate" value="85%" />
-            <StatCard label="NPS" value="7.8" />
+            <StatCard label="Total Responses" value={String(totalResponses)} />
+            <StatCard label="Completion Rate" value={`${completionRate}%`} />
+            <StatCard
+              label="Avg Rating"
+              value={averageRating ? averageRating : "-"}
+            />
           </div>
 
           {/* Ratings Section */}
-          <section className="bg-white rounded-xl border border-[#CFDBE8] p-6 mb-8 shadow-sm">
-            <h2 className="text-[22px] font-bold leading-7 mb-6">
-              Rating Questions
-            </h2>
-            <div className="h-48">
-              <Bar data={ratingData} options={ratingOptions} />
-            </div>
-          </section>
-
-          {/* MCQs Section */}
-          <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            {/* MCQ 01 - Horizontal Bars */}
-            <div className="p-6 rounded-lg border border-[#CFDBE8] bg-white shadow-sm w-full">
-              <h3 className="text-base font-medium mb-6">
-                Multiple Choice Question 01
-              </h3>
-              <div className="h-64">
-                <Bar data={mcq01Data} options={mcq01Options} />
+          {ratingQuestions.length > 0 && (
+            <section className="bg-white rounded-xl border border-[#CFDBE8] p-6 mb-8 shadow-sm">
+              <h2 className="text-[22px] font-bold leading-7 mb-6">
+                Rating Questions
+              </h2>
+              <div className="h-48">
+                <Bar data={ratingData} options={ratingOptions} />
               </div>
-            </div>
+            </section>
+          )}
 
-            {/* MCQ 02 - Pie Chart */}
-            <div className="p-6 rounded-lg border border-[#CFDBE8] bg-white shadow-sm w-full">
-              <h3 className="text-base font-medium mb-6">
-                Multiple Choice Question 02
-              </h3>
-              <div className="h-64">
-                <Pie data={mcq02Data} options={mcq02Options} />
+          {multipleChoiceQuestions.length > 0 && (
+            <section className="mb-8">
+              <h2 className="text-[22px] font-bold leading-7 mb-4">
+                Multiple Choice Questions
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {multipleChoiceQuestions.map((question) => (
+                  <div
+                    key={getQuestionId(question)}
+                    className="p-6 rounded-lg border border-[#CFDBE8] bg-white shadow-sm w-full"
+                  >
+                    <h3 className="text-base font-medium mb-6">
+                      {question.label ?? "Untitled Question"}
+                    </h3>
+                    <div className="h-64">
+                      <Bar
+                        data={buildOptionChartData(question, false)}
+                        options={optionChartOptions}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          </section>
+            </section>
+          )}
+
+          {checkboxQuestions.length > 0 && (
+            <section className="mb-8">
+              <h2 className="text-[22px] font-bold leading-7 mb-4">
+                Checkbox Questions
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {checkboxQuestions.map((question) => (
+                  <div
+                    key={getQuestionId(question)}
+                    className="p-6 rounded-lg border border-[#CFDBE8] bg-white shadow-sm w-full"
+                  >
+                    <h3 className="text-base font-medium mb-6">
+                      {question.label ?? "Untitled Question"}
+                    </h3>
+                    <div className="h-64">
+                      <Pie
+                        data={buildOptionChartData(question, true)}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              display: true,
+                              position: "bottom" as const,
+                            },
+                          },
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* AI Insights Section */}
           <section className="p-6 rounded-lg border border-[#CFDBE8] bg-white shadow-md relative overflow-hidden group">
