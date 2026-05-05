@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Plus,
   GripVertical,
@@ -508,10 +508,17 @@ export default function AddQuestions() {
   const navigate = useNavigate();
   const setupData = location.state?.formData;
   const surveyId = location.state?.surveyId; // Get ID passed from CreatedSurveys
-  
-  const primaryColor = setupData?.customizeBranding ? setupData.themeColor : "#6366F1";
 
-  const [surveyTitle, setSurveyTitle] = useState(setupData?.surveyTitle || "Survey creator");
+  const [primaryColor, setPrimaryColor] = useState(
+    setupData?.customizeBranding
+      ? setupData.themeColor
+      : setupData?.themeColor || "#6366F1",
+  );
+  const [loadingSurvey, setLoadingSurvey] = useState(false);
+
+  const [surveyTitle, setSurveyTitle] = useState(
+    setupData?.surveyTitle || "Survey creator",
+  );
   const [pages, setPages] = useState([
     { id: "page-1", title: "Page 1", questions: [] },
   ]);
@@ -520,25 +527,86 @@ export default function AddQuestions() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [responses, setResponses] = useState({});
 
+  const normalizeQuestionType = (type) => {
+    if (type === "checkbox") return "checkboxes";
+    return type || "short_text";
+  };
+
+  const normalizeSurveyPages = (incomingPages) => {
+    if (!Array.isArray(incomingPages) || incomingPages.length === 0) {
+      return [{ id: "page-1", title: "Page 1", questions: [] }];
+    }
+
+    return incomingPages.map((page, pageIndex) => {
+      const pageQuestions = Array.isArray(page?.questions)
+        ? page.questions
+        : [];
+
+      return {
+        id: page?.id || page?._id || `page-${Date.now()}-${pageIndex}`,
+        title: page?.title || `Page ${pageIndex + 1}`,
+        questions: pageQuestions.map((question, questionIndex) => {
+          const type = normalizeQuestionType(question?.type);
+          const supportsOptions =
+            type === "multiple_choice" || type === "checkboxes";
+
+          return {
+            id:
+              question?.id ||
+              question?._id ||
+              `q-${Date.now()}-${pageIndex}-${questionIndex}`,
+            type,
+            label: question?.label || "Untitled Question",
+            placeholder:
+              question?.placeholder ||
+              (type === "short_text"
+                ? "Enter text here..."
+                : type === "long_text"
+                  ? "Enter detailed response..."
+                  : undefined),
+            options: supportsOptions
+              ? Array.isArray(question?.options) && question.options.length > 0
+                ? question.options
+                : ["Option 1", "Option 2"]
+              : undefined,
+            required: Boolean(question?.required),
+            max: type === "rating" ? Number(question?.max || 5) : question?.max,
+            min: type === "number" ? Number(question?.min || 0) : question?.min,
+          };
+        }),
+      };
+    });
+  };
+
   // NEW: Effect to load survey data if editing an existing survey
   useEffect(() => {
     if (surveyId) {
       const loadSurvey = async () => {
         try {
-          const res = await fetch(`http://localhost:5000/api/surveys/${surveyId}`);
+          setLoadingSurvey(true);
+          const res = await fetch(
+            `http://localhost:5000/api/surveys/${surveyId}`,
+          );
           if (res.ok) {
             const data = await res.json();
-            setSurveyTitle(data.surveyTitle);
-            setPages(data.pages);
+            setSurveyTitle(data?.surveyTitle || "Untitled Survey");
+            setPrimaryColor(
+              data?.primaryColor || data?.themeColor || "#6366F1",
+            );
+            setPages(normalizeSurveyPages(data?.pages));
+            setActivePageIndex(0);
+            setSelectedQuestionId(null);
           }
         } catch (err) {
           console.error("Failed to load existing survey data", err);
+        } finally {
+          setLoadingSurvey(false);
         }
       };
       loadSurvey();
     }
   }, [surveyId]);
-  
+
   // --- Actions ---
   const addPage = () => {
     const newPage = {
@@ -626,20 +694,35 @@ export default function AddQuestions() {
     activePage.questions.find((q) => q.id === selectedQuestionId) ||
     pages.flatMap((p) => p.questions).find((q) => q.id === selectedQuestionId);
 
+  if (loadingSurvey) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#F8F9FB]">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-sm text-gray-500">Loading draft survey...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-[#F8F9FB] text-gray-800 overflow-hidden font-sans">
       {/* Sidebar - Question Elements */}
       <aside className="w-72 bg-white border-r border-gray-200 flex flex-col z-10 shadow-sm">
         <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-          <div 
-             className="h-10 w-10 rounded-lg flex items-center justify-center border border-[#F1F5F9]"
-             style={{ backgroundColor: `${primaryColor}10` }}
+          <div
+            className="h-10 w-10 rounded-lg flex items-center justify-center border border-[#F1F5F9]"
+            style={{ backgroundColor: `${primaryColor}10` }}
           >
             <Layout size={20} style={{ color: primaryColor }} />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-gray-900 truncate w-32">{surveyTitle}</h1>
-            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Designer</p>
+            <h1 className="text-sm font-bold text-gray-900 truncate w-32">
+              {surveyTitle}
+            </h1>
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+              Designer
+            </p>
           </div>
         </div>
 
@@ -681,7 +764,10 @@ export default function AddQuestions() {
                 >
                   <div
                     className={`w-1.5 h-1.5 rounded-full`}
-                    style={{ backgroundColor: activePageIndex === idx ? primaryColor : "transparent" }}
+                    style={{
+                      backgroundColor:
+                        activePageIndex === idx ? primaryColor : "transparent",
+                    }}
                   />
                   <span className="truncate flex-1">{page.title}</span>
                   {pages.length > 1 && (
@@ -709,42 +795,44 @@ export default function AddQuestions() {
         </div>
 
         <div className="p-4 border-t border-gray-100 bg-gray-50">
-          <button 
+          <button
             onClick={async () => {
               // Conditional POST or PUT based on existence of surveyId
-              const url = surveyId ? `http://localhost:5000/api/surveys/${surveyId}` : 'http://localhost:5000/api/surveys';
-              const method = surveyId ? 'PUT' : 'POST';
+              const url = surveyId
+                ? `http://localhost:5000/api/surveys/${surveyId}`
+                : "http://localhost:5000/api/surveys";
+              const method = surveyId ? "PUT" : "POST";
 
               try {
                 const res = await fetch(url, {
                   method: method,
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     surveyTitle,
                     primaryColor,
                     themeColor: primaryColor,
                     pages,
-                    status: 'Draft',
-                    tenantId: 'default',
+                    status: "Draft",
+                    tenantId: "default",
                   }),
                 });
                 const data = await res.json();
-                
+
                 // If it was a PUT, data might look different, check response logic
                 const finalId = surveyId || data.survey._id;
 
-                navigate('/created-surveys', {
+                navigate("/created-surveys", {
                   state: {
                     newSurvey: {
-                      id:    finalId,
-                      date:  new Date().toLocaleDateString('en-GB'),
+                      id: finalId,
+                      date: new Date().toLocaleDateString("en-GB"),
                       title: surveyTitle,
-                      status: 'Draft',
-                    }
-                  }
+                      status: "Draft",
+                    },
+                  },
                 });
               } catch (err) {
-                alert('Could not save draft. Is the backend running?');
+                alert("Could not save draft. Is the backend running?");
               }
             }}
             className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 shadow-sm transition-all"
@@ -777,15 +865,17 @@ export default function AddQuestions() {
               <Eye size={16} />
               {isPreviewMode ? "Exit Preview" : "Preview"}
             </button>
-            <button 
-              onClick={() => navigate('/review-publish', {
-                state: {
-                  surveyId,
-                  surveyTitle,
-                  primaryColor,
-                  pages,
-                }
-              })}
+            <button
+              onClick={() =>
+                navigate("/review-publish", {
+                  state: {
+                    surveyId,
+                    surveyTitle,
+                    primaryColor,
+                    pages,
+                  },
+                })
+              }
               style={{ backgroundColor: primaryColor }}
               className="text-white px-6 py-2 rounded-lg text-sm font-semibold hover:opacity-90 shadow-lg transition-all"
             >
@@ -800,8 +890,11 @@ export default function AddQuestions() {
             {!isPreviewMode ? (
               <div className="space-y-4">
                 <div className="mb-8">
-                  <span 
-                    style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+                  <span
+                    style={{
+                      backgroundColor: `${primaryColor}20`,
+                      color: primaryColor,
+                    }}
                     className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2"
                   >
                     {activePage.title}
@@ -858,7 +951,10 @@ export default function AddQuestions() {
             ) : (
               /* Preview Mode */
               <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden min-h-[600px] flex flex-col">
-                <div style={{ backgroundColor: primaryColor }} className="h-2" />
+                <div
+                  style={{ backgroundColor: primaryColor }}
+                  className="h-2"
+                />
                 <div className="p-10 flex-1">
                   <h1 className="text-2xl font-bold mb-2">{surveyTitle}</h1>
                   <p className="text-gray-500 mb-8">{activePage.title}</p>
@@ -867,7 +963,10 @@ export default function AddQuestions() {
                     {activePage.questions.map((q, idx) => (
                       <div key={q.id}>
                         <div className="flex gap-2 mb-3">
-                          <span style={{ color: primaryColor }} className="font-bold">
+                          <span
+                            style={{ color: primaryColor }}
+                            className="font-bold"
+                          >
                             {idx + 1}.
                           </span>
                           <h3 className="font-semibold text-gray-800">
@@ -955,7 +1054,10 @@ export default function AddQuestions() {
                       <div
                         key={i}
                         className={`w-2 h-2 rounded-full transition-colors`}
-                        style={{ backgroundColor: activePageIndex === i ? primaryColor : "#D1D5DB" }}
+                        style={{
+                          backgroundColor:
+                            activePageIndex === i ? primaryColor : "#D1D5DB",
+                        }}
                       />
                     ))}
                   </div>
