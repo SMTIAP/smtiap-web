@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -22,26 +22,113 @@ import {
   FileText,
 } from "lucide-react";
 
+type QuestionTypeId =
+  | "short_text"
+  | "long_text"
+  | "multiple_choice"
+  | "checkboxes"
+  | "rating"
+  | "number"
+  | "date";
+
+interface SurveyQuestion {
+  id: string;
+  type: QuestionTypeId;
+  label: string;
+  required: boolean;
+  placeholder?: string;
+  options?: string[];
+  max?: number;
+  min?: number;
+}
+
+interface SurveyPage {
+  id: string;
+  title: string;
+  questions: SurveyQuestion[];
+}
+
+interface SetupFormData {
+  customizeBranding?: boolean;
+  themeColor?: string;
+  surveyTitle?: string;
+}
+
+interface RouteState {
+  formData?: SetupFormData;
+  surveyId?: string;
+}
+
+interface DatePickerCalendarProps {
+  value?: string;
+  onChange: (date: string) => void;
+}
+
+interface QuestionTypeConfig {
+  id: QuestionTypeId;
+  label: string;
+  icon: ReactNode;
+  defaultData: Partial<SurveyQuestion>;
+}
+
+interface QuestionCardProps {
+  question: SurveyQuestion;
+  index: number;
+  isPreview: boolean;
+  selectedQuestionId: string | null;
+  setSelectedQuestionId: (id: string | null) => void;
+  moveQuestion: (index: number, direction: number) => void;
+  duplicateQuestion: (id: string) => void;
+  deleteQuestion: (id: string) => void;
+  totalQuestions: number;
+}
+
+interface PropertyEditorProps {
+  selectedQuestion: SurveyQuestion | null;
+  updateQuestion: (id: string, updates: Partial<SurveyQuestion>) => void;
+  setSelectedQuestionId: (id: string | null) => void;
+}
+
+interface IncomingQuestion {
+  id?: string;
+  _id?: string;
+  type?: string;
+  label?: string;
+  placeholder?: string;
+  options?: string[];
+  required?: boolean;
+  max?: number;
+  min?: number;
+}
+
+interface IncomingPage {
+  id?: string;
+  _id?: string;
+  title?: string;
+  questions?: IncomingQuestion[];
+}
+
 // --- Calendar Component ---
-const DatePickerCalendar = ({ value, onChange }) => {
+const DatePickerCalendar = ({ value, onChange }: DatePickerCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(
     value ? new Date(value) : new Date(),
   );
   const [showCalendar, setShowCalendar] = useState(false);
+  const selectedDate = value ? new Date(value) : null;
 
-  const getDaysInMonth = (date) =>
+  const getDaysInMonth = (date: Date) =>
     new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  const getFirstDayOfMonth = (date) =>
+  const getFirstDayOfMonth = (date: Date) =>
     new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
-  const days = [];
+  const days: Array<number | null> = [];
   const daysInMonth = getDaysInMonth(currentDate);
   const firstDay = getFirstDayOfMonth(currentDate);
 
   for (let i = 0; i < firstDay; i++) days.push(null);
   for (let i = 1; i <= daysInMonth; i++) days.push(i);
 
-  const handleDateSelect = (day) => {
+  const handleDateSelect = (day: number) => {
     const selected = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth(),
@@ -123,9 +210,10 @@ const DatePickerCalendar = ({ value, onChange }) => {
                   p-2 text-sm rounded transition-colors
                   ${!day ? "text-gray-300 cursor-default" : ""}
                   ${
-                    day === new Date(value).getDate() &&
-                    new Date(value).getMonth() === currentDate.getMonth() &&
-                    new Date(value).getFullYear() === currentDate.getFullYear()
+                    selectedDate &&
+                    day === selectedDate.getDate() &&
+                    selectedDate.getMonth() === currentDate.getMonth() &&
+                    selectedDate.getFullYear() === currentDate.getFullYear()
                       ? "bg-indigo-600 text-white font-bold"
                       : day
                         ? "hover:bg-indigo-50 text-gray-800"
@@ -152,7 +240,7 @@ const DatePickerCalendar = ({ value, onChange }) => {
 };
 
 // --- Constants & Types ---
-const QUESTION_TYPES = [
+const QUESTION_TYPES: QuestionTypeConfig[] = [
   {
     id: "short_text",
     label: "Short Text",
@@ -220,7 +308,7 @@ const QuestionCard = ({
   duplicateQuestion,
   deleteQuestion,
   totalQuestions,
-}) => {
+}: QuestionCardProps) => {
   const isActive = selectedQuestionId === question.id && !isPreview;
 
   return (
@@ -304,7 +392,7 @@ const QuestionCard = ({
         {(question.type === "multiple_choice" ||
           question.type === "checkboxes") && (
           <div className="space-y-2">
-            {question.options.map((opt, i) => (
+            {question.options?.map((opt: string, i: number) => (
               <div key={i} className="flex items-center gap-3">
                 <div
                   className={`w-4 h-4 border border-gray-300 ${question.type === "multiple_choice" ? "rounded-full" : "rounded"}`}
@@ -316,7 +404,7 @@ const QuestionCard = ({
         )}
         {question.type === "rating" && (
           <div className="flex gap-2">
-            {[...Array(question.max)].map((_, i) => (
+            {[...Array(question.max ?? 5)].map((_, i: number) => (
               <Star key={i} className="text-gray-300" size={24} />
             ))}
           </div>
@@ -344,17 +432,7 @@ const PropertyEditor = ({
   selectedQuestion,
   updateQuestion,
   setSelectedQuestionId,
-}) => {
-  const [editLabel, setEditLabel] = useState(selectedQuestion?.label || "");
-  const [editPlaceholder, setEditPlaceholder] = useState(
-    selectedQuestion?.placeholder || "",
-  );
-
-  React.useEffect(() => {
-    setEditLabel(selectedQuestion?.label || "");
-    setEditPlaceholder(selectedQuestion?.placeholder || "");
-  }, [selectedQuestion?.id]);
-
+}: PropertyEditorProps) => {
   if (!selectedQuestion) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 text-center">
@@ -383,9 +461,8 @@ const PropertyEditor = ({
           </label>
           <input
             type="text"
-            value={editLabel}
+            value={selectedQuestion.label}
             onChange={(e) => {
-              setEditLabel(e.target.value);
               updateQuestion(selectedQuestion.id, { label: e.target.value });
             }}
             className="mt-1 w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -400,9 +477,8 @@ const PropertyEditor = ({
             </label>
             <input
               type="text"
-              value={editPlaceholder}
+              value={selectedQuestion.placeholder || ""}
               onChange={(e) => {
-                setEditPlaceholder(e.target.value);
                 updateQuestion(selectedQuestion.id, {
                   placeholder: e.target.value,
                 });
@@ -419,13 +495,13 @@ const PropertyEditor = ({
               Options
             </label>
             <div className="space-y-2">
-              {selectedQuestion.options.map((opt, i) => (
+              {selectedQuestion.options?.map((opt: string, i: number) => (
                 <div key={i} className="flex gap-2">
                   <input
                     type="text"
                     value={opt}
                     onChange={(e) => {
-                      const newOpts = [...selectedQuestion.options];
+                      const newOpts = [...(selectedQuestion.options || [])];
                       newOpts[i] = e.target.value;
                       updateQuestion(selectedQuestion.id, { options: newOpts });
                     }}
@@ -433,8 +509,9 @@ const PropertyEditor = ({
                   />
                   <button
                     onClick={() => {
-                      const newOpts = selectedQuestion.options.filter(
-                        (_, idx) => idx !== i,
+                      const currentOptions = selectedQuestion.options || [];
+                      const newOpts = currentOptions.filter(
+                        (_: string, idx: number) => idx !== i,
                       );
                       updateQuestion(selectedQuestion.id, { options: newOpts });
                     }}
@@ -446,10 +523,11 @@ const PropertyEditor = ({
               ))}
               <button
                 onClick={() => {
+                  const currentOptions = selectedQuestion.options || [];
                   updateQuestion(selectedQuestion.id, {
                     options: [
-                      ...selectedQuestion.options,
-                      `Option ${selectedQuestion.options.length + 1}`,
+                      ...currentOptions,
+                      `Option ${currentOptions.length + 1}`,
                     ],
                   });
                 }}
@@ -506,8 +584,9 @@ const PropertyEditor = ({
 export default function AddQuestions() {
   const location = useLocation();
   const navigate = useNavigate();
-  const setupData = location.state?.formData;
-  const surveyId = location.state?.surveyId; // Get ID passed from CreatedSurveys
+  const routeState = (location.state as RouteState | null) ?? {};
+  const setupData = routeState.formData;
+  const surveyId = routeState.surveyId; // Get ID passed from CreatedSurveys
 
   const [primaryColor, setPrimaryColor] = useState(
     setupData?.customizeBranding
@@ -519,64 +598,89 @@ export default function AddQuestions() {
   const [surveyTitle, setSurveyTitle] = useState(
     setupData?.surveyTitle || "Survey creator",
   );
-  const [pages, setPages] = useState([
+  const [pages, setPages] = useState<SurveyPage[]>([
     { id: "page-1", title: "Page 1", questions: [] },
   ]);
   const [activePageIndex, setActivePageIndex] = useState(0);
-  const [selectedQuestionId, setSelectedQuestionId] = useState(null);
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(
+    null,
+  );
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [responses, setResponses] = useState({});
+  const [responses, setResponses] = useState<Record<string, string>>({});
 
-  const normalizeQuestionType = (type) => {
+  const normalizeQuestionType = useCallback((type?: string): QuestionTypeId => {
     if (type === "checkbox") return "checkboxes";
-    return type || "short_text";
-  };
+    const allowedTypes: QuestionTypeId[] = [
+      "short_text",
+      "long_text",
+      "multiple_choice",
+      "checkboxes",
+      "rating",
+      "number",
+      "date",
+    ];
+    return allowedTypes.includes(type as QuestionTypeId)
+      ? (type as QuestionTypeId)
+      : "short_text";
+  }, []);
 
-  const normalizeSurveyPages = (incomingPages) => {
-    if (!Array.isArray(incomingPages) || incomingPages.length === 0) {
-      return [{ id: "page-1", title: "Page 1", questions: [] }];
-    }
+  const normalizeSurveyPages = useCallback(
+    (incomingPages: unknown): SurveyPage[] => {
+      if (!Array.isArray(incomingPages) || incomingPages.length === 0) {
+        return [{ id: "page-1", title: "Page 1", questions: [] }];
+      }
 
-    return incomingPages.map((page, pageIndex) => {
-      const pageQuestions = Array.isArray(page?.questions)
-        ? page.questions
-        : [];
+      return (incomingPages as IncomingPage[]).map((page, pageIndex) => {
+        const pageQuestions = Array.isArray(page?.questions)
+          ? page.questions
+          : [];
 
-      return {
-        id: page?.id || page?._id || `page-${Date.now()}-${pageIndex}`,
-        title: page?.title || `Page ${pageIndex + 1}`,
-        questions: pageQuestions.map((question, questionIndex) => {
-          const type = normalizeQuestionType(question?.type);
-          const supportsOptions =
-            type === "multiple_choice" || type === "checkboxes";
+        return {
+          id: page?.id || page?._id || `page-${Date.now()}-${pageIndex}`,
+          title: page?.title || `Page ${pageIndex + 1}`,
+          questions: pageQuestions.map(
+            (question: IncomingQuestion, questionIndex: number) => {
+              const type = normalizeQuestionType(question?.type);
+              const supportsOptions =
+                type === "multiple_choice" || type === "checkboxes";
 
-          return {
-            id:
-              question?.id ||
-              question?._id ||
-              `q-${Date.now()}-${pageIndex}-${questionIndex}`,
-            type,
-            label: question?.label || "Untitled Question",
-            placeholder:
-              question?.placeholder ||
-              (type === "short_text"
-                ? "Enter text here..."
-                : type === "long_text"
-                  ? "Enter detailed response..."
-                  : undefined),
-            options: supportsOptions
-              ? Array.isArray(question?.options) && question.options.length > 0
-                ? question.options
-                : ["Option 1", "Option 2"]
-              : undefined,
-            required: Boolean(question?.required),
-            max: type === "rating" ? Number(question?.max || 5) : question?.max,
-            min: type === "number" ? Number(question?.min || 0) : question?.min,
-          };
-        }),
-      };
-    });
-  };
+              return {
+                id:
+                  question?.id ||
+                  question?._id ||
+                  `q-${Date.now()}-${pageIndex}-${questionIndex}`,
+                type,
+                label: question?.label || "Untitled Question",
+                placeholder:
+                  question?.placeholder ||
+                  (type === "short_text"
+                    ? "Enter text here..."
+                    : type === "long_text"
+                      ? "Enter detailed response..."
+                      : undefined),
+                options: supportsOptions
+                  ? Array.isArray(question?.options) &&
+                    question.options.length > 0
+                    ? question.options
+                    : ["Option 1", "Option 2"]
+                  : undefined,
+                required: Boolean(question?.required),
+                max:
+                  type === "rating"
+                    ? Number(question?.max || 5)
+                    : question?.max,
+                min:
+                  type === "number"
+                    ? Number(question?.min || 0)
+                    : question?.min,
+              };
+            },
+          ),
+        };
+      });
+    },
+    [normalizeQuestionType],
+  );
 
   // NEW: Effect to load survey data if editing an existing survey
   useEffect(() => {
@@ -605,7 +709,7 @@ export default function AddQuestions() {
       };
       loadSurvey();
     }
-  }, [surveyId]);
+  }, [surveyId, normalizeSurveyPages]);
 
   // --- Actions ---
   const addPage = () => {
@@ -618,15 +722,17 @@ export default function AddQuestions() {
     setActivePageIndex(pages.length);
   };
 
-  const deletePage = (index) => {
+  const deletePage = (index: number) => {
     if (pages.length === 1) return;
     const newPages = pages.filter((_, i) => i !== index);
     setPages(newPages);
     setActivePageIndex(Math.max(0, index - 1));
   };
 
-  const addQuestion = (typeId) => {
+  const addQuestion = (typeId: QuestionTypeId) => {
     const typeDef = QUESTION_TYPES.find((t) => t.id === typeId);
+    if (!typeDef) return;
+
     const newQuestion = {
       id: `q-${Date.now()}`,
       type: typeId,
@@ -635,12 +741,12 @@ export default function AddQuestions() {
     };
 
     const updatedPages = [...pages];
-    updatedPages[activePageIndex].questions.push(newQuestion);
+    updatedPages[activePageIndex].questions.push(newQuestion as SurveyQuestion);
     setPages(updatedPages);
     setSelectedQuestionId(newQuestion.id);
   };
 
-  const updateQuestion = (id, updates) => {
+  const updateQuestion = (id: string, updates: Partial<SurveyQuestion>) => {
     const updatedPages = pages.map((page) => ({
       ...page,
       questions: page.questions.map((q) =>
@@ -650,7 +756,7 @@ export default function AddQuestions() {
     setPages(updatedPages);
   };
 
-  const deleteQuestion = (id) => {
+  const deleteQuestion = (id: string) => {
     const updatedPages = pages.map((page) => ({
       ...page,
       questions: page.questions.filter((q) => q.id !== id),
@@ -659,7 +765,7 @@ export default function AddQuestions() {
     if (selectedQuestionId === id) setSelectedQuestionId(null);
   };
 
-  const duplicateQuestion = (id) => {
+  const duplicateQuestion = (id: string) => {
     const questionToCopy = pages[activePageIndex].questions.find(
       (q) => q.id === id,
     );
@@ -674,7 +780,7 @@ export default function AddQuestions() {
     setPages(updatedPages);
   };
 
-  const moveQuestion = (index, direction) => {
+  const moveQuestion = (index: number, direction: number) => {
     const newIndex = index + direction;
     if (newIndex < 0 || newIndex >= pages[activePageIndex].questions.length)
       return;
@@ -689,9 +795,9 @@ export default function AddQuestions() {
   };
 
   // --- Helpers ---
-  const activePage = pages[activePageIndex];
+  const activePage = pages[activePageIndex] ?? pages[0];
   const selectedQuestion =
-    activePage.questions.find((q) => q.id === selectedQuestionId) ||
+    activePage?.questions.find((q) => q.id === selectedQuestionId) ||
     pages.flatMap((p) => p.questions).find((q) => q.id === selectedQuestionId);
 
   if (loadingSurvey) {
@@ -728,7 +834,7 @@ export default function AddQuestions() {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
           <div>
-            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em] px-2 mb-3">
+            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-3">
               Essentials
             </h3>
             <div className="grid grid-cols-1 gap-2">
@@ -752,7 +858,7 @@ export default function AddQuestions() {
           </div>
 
           <div>
-            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em] px-2 mb-3">
+            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-3">
               Pages
             </h3>
             <div className="space-y-1">
@@ -831,7 +937,7 @@ export default function AddQuestions() {
                     },
                   },
                 });
-              } catch (err) {
+              } catch {
                 alert("Could not save draft. Is the backend running?");
               }
             }}
@@ -950,7 +1056,7 @@ export default function AddQuestions() {
               </div>
             ) : (
               /* Preview Mode */
-              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden min-h-[600px] flex flex-col">
+              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden min-h-150 flex flex-col">
                 <div
                   style={{ backgroundColor: primaryColor }}
                   className="h-2"
@@ -987,14 +1093,14 @@ export default function AddQuestions() {
                           )}
                           {q.type === "long_text" && (
                             <textarea
-                              className="w-full border-2 border-gray-100 rounded-xl p-3 outline-none min-h-[100px] transition-colors focus:border-gray-400"
+                              className="w-full border-2 border-gray-100 rounded-xl p-3 outline-none min-h-25 transition-colors focus:border-gray-400"
                               placeholder={q.placeholder}
                             />
                           )}
                           {(q.type === "multiple_choice" ||
                             q.type === "checkboxes") && (
                             <div className="space-y-3">
-                              {q.options.map((opt, i) => (
+                              {q.options?.map((opt: string, i: number) => (
                                 <label
                                   key={i}
                                   className="flex items-center gap-3 cursor-pointer group"
@@ -1038,7 +1144,10 @@ export default function AddQuestions() {
                             <DatePickerCalendar
                               value={responses[q.id] || ""}
                               onChange={(date) =>
-                                setResponses({ ...responses, [q.id]: date })
+                                setResponses((prev) => ({
+                                  ...prev,
+                                  [q.id]: date,
+                                }))
                               }
                             />
                           )}
@@ -1095,7 +1204,7 @@ export default function AddQuestions() {
       {!isPreviewMode && (
         <aside className="w-80 bg-white border-l border-gray-200 flex flex-col z-10 shadow-sm overflow-y-auto">
           <PropertyEditor
-            selectedQuestion={selectedQuestion}
+            selectedQuestion={selectedQuestion || null}
             updateQuestion={updateQuestion}
             setSelectedQuestionId={setSelectedQuestionId}
           />
