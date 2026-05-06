@@ -9,7 +9,12 @@ import {
   Trash2,
   X,
   Layout,
+  Share2,
+  Copy,
+  Check,
+  Download,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 
 interface SurveyItem {
   _id: string;
@@ -31,38 +36,121 @@ const DeleteConfirmModal = ({ survey, onConfirm, onCancel, deleting }: {
       <button onClick={onCancel} className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-all">
         <X size={14} />
       </button>
-
       <div className="flex items-center gap-3 mb-4">
         <div className="w-9 h-9 bg-rose-50 rounded-xl flex items-center justify-center flex-shrink-0">
           <Trash2 size={16} className="text-rose-500" />
         </div>
         <p className="font-black text-slate-900 text-base">Delete survey?</p>
       </div>
-
       <p className="text-slate-700 text-sm font-semibold truncate mb-1">
         "{survey.surveyTitle || 'Untitled Survey'}"
       </p>
       <p className="text-slate-400 text-xs mb-6">This can't be undone.</p>
-
       <div className="flex gap-2">
-        <button
-          onClick={onCancel}
-          disabled={deleting}
-          className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
-        >
+        <button onClick={onCancel} disabled={deleting} className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all">
           Cancel
         </button>
-        <button
-          onClick={onConfirm}
-          disabled={deleting}
-          className="flex-1 py-2.5 bg-rose-500 text-white rounded-xl font-bold text-sm hover:bg-rose-600 transition-all disabled:opacity-50"
-        >
+        <button onClick={onConfirm} disabled={deleting} className="flex-1 py-2.5 bg-rose-500 text-white rounded-xl font-bold text-sm hover:bg-rose-600 transition-all disabled:opacity-50">
           {deleting ? 'Deleting...' : 'Delete'}
         </button>
       </div>
     </div>
   </div>
 );
+
+// ✅ Share Modal with link + QR
+const ShareModal = ({ survey, onClose }: {
+  survey: SurveyItem;
+  onClose: () => void;
+}) => {
+  const surveyLink = `${window.location.origin}/take-survey/${survey._id}`;
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(surveyLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const downloadQR = () => {
+    const svg = document.getElementById("share-modal-qr") as SVGGraphicsElement;
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx?.drawImage(img, 0, 0);
+      const pngFile = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.download = `${survey.surveyTitle || 'survey'}-QR.png`;
+      downloadLink.href = pngFile;
+      downloadLink.click();
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(svgData);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-black/25 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 max-w-sm w-full z-10">
+
+        <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-all">
+          <X size={14} />
+        </button>
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Share2 size={16} className="text-indigo-600" />
+          </div>
+          <div>
+            <p className="font-black text-slate-900 text-base">Share survey</p>
+            <p className="text-slate-400 text-xs truncate max-w-[200px]">{survey.surveyTitle || 'Untitled Survey'}</p>
+          </div>
+        </div>
+
+        {/* Link */}
+        <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Survey link</p>
+        <div className="flex gap-2 mb-5">
+          <input
+            readOnly
+            value={surveyLink}
+            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-medium text-slate-600 outline-none"
+          />
+          <button
+            onClick={copyToClipboard}
+            className="bg-indigo-600 text-white px-3 rounded-xl hover:bg-indigo-700 transition-all flex items-center justify-center min-w-[40px]"
+          >
+            {copied ? <Check size={15} /> : <Copy size={15} />}
+          </button>
+        </div>
+
+        {/* QR Code */}
+        <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-3">QR code</p>
+        <div className="flex flex-col items-center bg-slate-50 rounded-2xl p-4 border border-slate-100">
+          <div className="bg-white p-3 rounded-xl shadow-sm mb-3">
+            <QRCodeSVG
+              id="share-modal-qr"
+              value={surveyLink}
+              size={140}
+              level="H"
+              includeMargin={true}
+            />
+          </div>
+          <button
+            onClick={downloadQR}
+            className="flex items-center gap-1.5 text-indigo-600 font-bold text-xs hover:text-indigo-800 transition-colors"
+          >
+            <Download size={14} /> Download QR (PNG)
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function CreatedSurveys() {
   const navigate = useNavigate();
@@ -72,6 +160,7 @@ export default function CreatedSurveys() {
   const [deletingSurveyId, setDeletingSurveyId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [surveyToDelete, setSurveyToDelete] = useState<SurveyItem | null>(null);
+  const [surveyToShare, setSurveyToShare] = useState<SurveyItem | null>(null);
 
   useEffect(() => {
     const fetchSurveys = async () => {
@@ -94,6 +183,11 @@ export default function CreatedSurveys() {
     } else if (survey.status === "Running" || survey.status === "Finished") {
       navigate(`/survey-results/${survey._id}`);
     }
+  };
+
+  const handleShareClick = (e: React.MouseEvent, survey: SurveyItem) => {
+    e.stopPropagation();
+    setSurveyToShare(survey);
   };
 
   const handleDeleteClick = (event: React.MouseEvent, survey: SurveyItem) => {
@@ -138,12 +232,19 @@ export default function CreatedSurveys() {
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#FDFDFD]">
 
+      {/* Modals */}
       {showDeleteModal && surveyToDelete && (
         <DeleteConfirmModal
           survey={surveyToDelete}
           onConfirm={handleConfirmDelete}
           onCancel={() => { setShowDeleteModal(false); setSurveyToDelete(null); }}
           deleting={deletingSurveyId === surveyToDelete._id}
+        />
+      )}
+      {surveyToShare && (
+        <ShareModal
+          survey={surveyToShare}
+          onClose={() => setSurveyToShare(null)}
         />
       )}
 
@@ -202,18 +303,37 @@ export default function CreatedSurveys() {
                   isRunning ? "bg-emerald-400" : isDraft ? "bg-amber-400" : "bg-rose-400"
                 }`} />
 
-                <button
-                  type="button"
-                  onClick={(e) => handleDeleteClick(e, survey)}
-                  disabled={deletingSurveyId === survey._id}
-                  className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-white/95 border border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-200 hover:bg-rose-50 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <Trash2 size={14} />
-                </button>
+                {/* ✅ Date moved to LEFT, buttons on RIGHT */}
+                <div className="flex justify-between items-center w-full mb-4">
+                  <span className="text-slate-400 text-[10px] font-extrabold bg-slate-50 px-3 py-1 rounded-full">
+                    {new Date(survey.createdAt).toLocaleDateString("en-GB")}
+                  </span>
 
-                <span className="text-slate-400 text-[10px] font-extrabold self-end mb-4 bg-slate-50 px-3 py-1 rounded-full">
-                  {new Date(survey.createdAt).toLocaleDateString("en-GB")}
-                </span>
+                  <div className="flex items-center gap-1">
+                    {/* ✅ Share button — only on Running */}
+                    {isRunning && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleShareClick(e, survey)}
+                        className="w-8 h-8 rounded-full bg-white/95 border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all flex items-center justify-center"
+                        title="Share survey"
+                      >
+                        <Share2 size={13} />
+                      </button>
+                    )}
+
+                    {/* Delete button */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteClick(e, survey)}
+                      disabled={deletingSurveyId === survey._id}
+                      className="w-8 h-8 rounded-full bg-white/95 border border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-200 hover:bg-rose-50 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="Delete survey"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
 
                 <div className="flex flex-col items-center justify-center flex-grow text-center w-full">
                   <div className={`w-14 h-14 rounded-[1.5rem] flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ${
