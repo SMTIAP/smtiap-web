@@ -12,6 +12,8 @@ import Response from "./pages/Response";
 import Analytics from "./pages/Analytics";
 import RoleManagement from "./pages/RoleManagement";
 import Subscription from "./pages/Subscription";
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentCancel from './pages/PaymentCancel';
 import Audit from "./pages/Audit";
 import NavBar from "./components/NavBar.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
@@ -57,6 +59,8 @@ export default function App() {
           <Route path="/created-surveys" element={<CreatedSurveys />} />
           <Route path="/templates" element={<SearchTemplate />} />
           <Route path="/subscription" element={<Subscription />} />
+          <Route path="/subscription/success" element={<PaymentSuccess />} />
+          <Route path="/subscription/cancel" element={<PaymentCancel />} />
           
 
           {/* Survey Creation Flow */}
