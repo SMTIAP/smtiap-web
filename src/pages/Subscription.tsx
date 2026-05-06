@@ -73,8 +73,8 @@ export default function Subscription() {
       sandbox: true,
       merchant_id: '1233563',
       //for the return fron payhere redirect after opening payment portal
-      return_url: 'http://localhost:3000/subscription/success',
-      cancel_url: 'http://localhost:3000/subscription/cancel',
+      return_url: 'http://127.0.0.1:5173/subscription/success',
+      cancel_url: 'http://127.0.0.1:5173/subscription/cancel',
       notify_url: 'http://localhost:5000/payhere-notify', //for backend notify. no app.post(/payhere-notify) added yet in serverjs. need to later
       
       order_id: orderId,
