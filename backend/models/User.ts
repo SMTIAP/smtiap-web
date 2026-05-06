@@ -1,13 +1,65 @@
-import mongoose, { Schema, type InferSchemaType } from "mongoose";
+import mongoose, { Document, Model, Schema, CallbackWithoutResultAndOptionalError } from "mongoose";
+import bcrypt from "bcryptjs";
 
-const userSchema = new Schema({
-  name: String,
-  email: { type: String, unique: true },
-  password: String,
-  role: { type: String, default: "admin" },
-  tenantId: { type: Schema.Types.ObjectId, ref: "Tenant" },
+
+export interface IUser extends Document {
+  email: string;
+  username: string;
+  password: string;
+  role: "admin" | "creater" | "super_admin";
+
+  resetPasswordToken?: string | null;
+  resetPasswordExpire?: Date | null;
+  matchPassword(enteredPassword: string): Promise<boolean>;
+}
+
+const userSchema = new Schema<IUser>({
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  username: {
+    type: String,
+    required: true
+  },
+  password: {
+    type: String,
+    required: true,
+    select: false
+  },
+  role: {
+    type: String,
+    enum: ["admin", "creater", "super_admin"],
+    default: "admin"
+  },
+  resetPasswordToken: {
+      type: String,
+      default: null
+    },
+
+    resetPasswordExpire: {
+      type: Date,
+      default: null
+    }
+  },
+  {
+    timestamps: true
+  }
+);
+
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+
+  this.password = await bcrypt.hash(this.password, 10);
 });
 
-export type User = InferSchemaType<typeof userSchema>;
+userSchema.methods.matchPassword = async function (
+  enteredPassword: string
+): Promise<boolean> {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 
-export default mongoose.model<User>("User", userSchema);
+const User: Model<IUser> = mongoose.model<IUser>("User", userSchema);
+
+export default User;

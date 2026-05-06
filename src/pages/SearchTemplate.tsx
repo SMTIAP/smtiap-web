@@ -1,83 +1,306 @@
-import { useNavigate } from 'react-router-dom';
-import BackButton from '../components/BackButton';
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import BackButton from "../components/BackButton";
+import { Utensils, Coffee, Plus, Search, Pencil } from "lucide-react";
+
+interface SurveyItem {
+  _id: string;
+  surveyTitle?: string;
+  status?: string;
+  createdAt?: string;
+}
 
 export default function SearchTemplate() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [draftSurveys, setDraftSurveys] = useState<SurveyItem[]>([]);
+  const [loadingDrafts, setLoadingDrafts] = useState(true);
 
   const templates = [
-    { id: 'food-res', title: "Food Satisfaction", date: "25/08/21", category: "Restaurant", icon: "🍴" },
-    { id: 'food-cafe', title: "Food Satisfaction", date: "25/08/21", category: "Cafe", icon: "☕" },
-    { id: 'food-res-2', title: "Food Satisfaction", date: "25/08/21", category: "Restaurant", icon: "🍴" },
-    { id: 'food-cafe-2', title: "Food Satisfaction", date: "25/08/21", category: "Cafe", icon: "☕" },
+    {
+      id: "food-res",
+      title: "Food Satisfaction",
+      category: "Restaurant",
+      icon: <Utensils size={32} />,
+      color: "bg-orange-50 text-orange-500 border-orange-100",
+    },
+    {
+      id: "food-cafe",
+      title: "Daily Cafe Feedback",
+      category: "Cafe",
+      icon: <Coffee size={32} />,
+      color: "bg-amber-50 text-amber-500 border-amber-100",
+    },
+    {
+      id: "food-res-2",
+      title: "Restaurant Quality",
+      category: "Restaurant",
+      icon: <Utensils size={32} />,
+      color: "bg-rose-50 text-rose-500 border-rose-100",
+    },
+    {
+      id: "food-cafe-2",
+      title: "Staff Performance",
+      category: "Cafe",
+      icon: <Coffee size={32} />,
+      color: "bg-blue-50 text-blue-500 border-blue-100",
+    },
   ];
 
+  const templateByTitle = useMemo(
+    () =>
+      templates.reduce(
+        (acc, template) => {
+          acc[template.title.toLowerCase()] = template;
+          return acc;
+        },
+        {} as Record<string, (typeof templates)[number]>,
+      ),
+    [templates],
+  );
+
+  const uniqueDraftSurveys = useMemo(() => {
+    const map = new Map<string, SurveyItem>();
+
+    draftSurveys.forEach((survey) => {
+      const key = (survey.surveyTitle || "untitled survey")
+        .trim()
+        .toLowerCase();
+      const existing = map.get(key);
+
+      if (!existing) {
+        map.set(key, survey);
+        return;
+      }
+
+      const existingDate = new Date(existing.createdAt || 0).getTime();
+      const currentDate = new Date(survey.createdAt || 0).getTime();
+
+      if (currentDate >= existingDate) {
+        map.set(key, survey);
+      }
+    });
+
+    return Array.from(map.values());
+  }, [draftSurveys]);
+
+  const draftTitleSet = useMemo(
+    () =>
+      new Set(
+        uniqueDraftSurveys.map((survey) =>
+          (survey.surveyTitle || "Untitled Survey").trim().toLowerCase(),
+        ),
+      ),
+    [uniqueDraftSurveys],
+  );
+
+  const uniqueTemplateCards = useMemo(
+    () =>
+      templates.filter(
+        (template) => !draftTitleSet.has(template.title.trim().toLowerCase()),
+      ),
+    [draftTitleSet, templates],
+  );
+
+  useEffect(() => {
+    const fetchDraftSurveys = async () => {
+      try {
+        setLoadingDrafts(true);
+        const response = await fetch("http://localhost:5000/api/surveys");
+        const data = await response.json();
+        const list = Array.isArray(data) ? (data as SurveyItem[]) : [];
+        setDraftSurveys(list.filter((survey) => survey.status === "Draft"));
+      } catch (err) {
+        console.error("Failed to load draft surveys:", err);
+        setDraftSurveys([]);
+      } finally {
+        setLoadingDrafts(false);
+      }
+    };
+
+    fetchDraftSurveys();
+  }, []);
+
+  const handleUseTemplate = async (templateTitle: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:5000/api/surveys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          surveyTitle: templateTitle,
+          status: "Draft",
+          questions: [],
+        }),
+      });
+
+      const newSurvey = await response.json();
+      const newSurveyId = newSurvey?._id || newSurvey?.survey?._id;
+
+      if (newSurveyId) {
+        navigate("/add-questions", { state: { surveyId: newSurveyId } });
+      }
+    } catch (err) {
+      console.error("Failed to create survey from template:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC]">
-      <div className="flex max-w-[1152px] py-10 px-6 flex-col items-start gap-10 w-full">
-        
-        <div className="flex justify-between items-center w-full mb-6">
-          <div className="flex items-center gap-4 w-fit">
+    <div className="flex min-h-screen flex-col items-center bg-[#FDFDFD]">
+      <div className="h-1 w-full bg-gradient-to-r from-teal-400 to-blue-500"></div>
+
+      <div className="flex max-w-[1200px] py-12 px-8 flex-col items-start gap-10 w-full">
+        <div className="flex justify-between items-center w-full">
+          <div className="flex items-center gap-6">
             <BackButton />
-            <h1 className="text-[#1E293B] font-inter text-3xl font-bold leading-9 text-center md:text-left">
+            <h1 className="text-[#0F172A] text-4xl font-black tracking-tight">
               Search Template
             </h1>
           </div>
         </div>
 
-        <div className="flex flex-col gap-6 w-full">
-
+        <div className="flex flex-col gap-10 w-full">
           {/* Search Bar */}
-          <div className="relative w-full max-w-2xl self-center md:self-start">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-              <svg className="w-4 h-4 text-[#94A3B8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+          <div className="relative w-full max-w-xl">
+            <span className="absolute inset-y-0 left-4 flex items-center">
+              <Search className="w-5 h-5 text-slate-400" />
             </span>
-            <input 
-              type="text" 
-              placeholder="Search templates..." 
-              className="w-full py-2 pl-10 pr-4 bg-[#EFF6FF] border border-[#DBEAFE] rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+            <input
+              type="text"
+              placeholder="What are you looking for?"
+              className="w-full py-4 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-inner"
             />
           </div>
 
-          {/* Template Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 w-full mt-4">
-            
-            {/* NEW EMPTY TEMPLATE BUTTON */}
-            <div 
-              onClick={() => navigate('/create-new-survey')} 
-              className="flex flex-col items-start gap-2 cursor-pointer group"
-            >
-              <div className="flex flex-col items-center justify-center w-full aspect-square rounded-xl bg-[#2D9596] hover:bg-[#267d7e] transition-all shadow-sm">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
+          {/* Draft Surveys with Edit */}
+          <div className="w-full">
+            <div className="flex items-end justify-between mb-4">
+              <h2 className="text-[#0F172A] text-xl font-black tracking-tight">
+                Survey Drafts
+              </h2>
+              <span className="text-slate-400 text-[11px] font-bold uppercase tracking-widest">
+                Edit existing drafts
+              </span>
+            </div>
+
+            {loadingDrafts ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                Loading drafts...
               </div>
-              <div className="flex flex-col">
-                <p className="text-[#1E293B] font-bold text-xs">New Empty</p>
-                <p className="text-[#94A3B8] text-[10px]">25/08/21</p>
-                <p className="text-[#3B82F6] text-[10px] font-semibold">Running</p>
+            ) : uniqueDraftSurveys.length === 0 ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                No draft surveys found.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8 w-full">
+                {uniqueDraftSurveys.map((survey) => {
+                  const title = survey.surveyTitle || "Untitled Survey";
+                  const matchedTemplate = templateByTitle[title.toLowerCase()];
+                  const icon = matchedTemplate?.icon || <Pencil size={32} />;
+                  const color =
+                    matchedTemplate?.color ||
+                    "bg-indigo-50 text-indigo-500 border-indigo-100";
+
+                  return (
+                    <div
+                      key={survey._id}
+                      onClick={() =>
+                        navigate("/add-questions", {
+                          state: { surveyId: survey._id },
+                        })
+                      }
+                      className="flex flex-col gap-4 cursor-pointer group"
+                    >
+                      <div
+                        className={`relative flex items-center justify-center w-full aspect-square rounded-[2.5rem] border-2 transition-all group-hover:shadow-xl group-hover:-translate-y-2 ${color}`}
+                      >
+                        {icon}
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            navigate("/add-questions", {
+                              state: { surveyId: survey._id },
+                            });
+                          }}
+                          className="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/80 border border-white/60 text-slate-500 hover:text-indigo-600 transition-all flex items-center justify-center"
+                          title="Edit draft"
+                          aria-label="Edit draft"
+                        >
+                          <Pencil size={12} />
+                        </button>
+                      </div>
+
+                      <div className="px-2">
+                        <p className="text-[#1E293B] font-black text-sm line-clamp-1">
+                          {title}
+                        </p>
+                        <p className="text-slate-400 text-[11px] font-bold uppercase tracking-widest">
+                          Draft
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8 w-full">
+            {/* NEW EMPTY TEMPLATE - Updated Navigation */}
+            <div
+              onClick={() => navigate("/create-new-survey")}
+              className="flex flex-col gap-4 cursor-pointer group"
+            >
+              <div className="flex flex-col items-center justify-center w-full aspect-square rounded-[2.5rem] bg-[#2D9596] hover:bg-[#217374] transition-all shadow-xl shadow-teal-100 group-hover:-translate-y-2">
+                <Plus size={48} className="text-white" />
+              </div>
+              <div className="px-2">
+                <p className="text-[#1E293B] font-black text-sm">New Empty</p>
+                <p className="text-[#94A3B8] text-[11px] font-bold uppercase tracking-widest">
+                  Scratch
+                </p>
               </div>
             </div>
 
-            {/* Existing Templates */}
-            {templates.map((temp, index) => (
-              <div key={index} className="flex flex-col items-start gap-2 cursor-pointer group">
-                <div className="flex items-center justify-center w-full aspect-square rounded-xl bg-[#FDF7E7] border border-[#FEF3C7] group-hover:shadow-md transition-all text-4xl">
+            {/* Template Cards (only unique names not already in drafts) */}
+            {uniqueTemplateCards.map((temp) => (
+              <div
+                key={temp.id}
+                onClick={() => handleUseTemplate(temp.title)}
+                className="flex flex-col gap-4 cursor-pointer group"
+              >
+                <div
+                  className={`flex items-center justify-center w-full aspect-square rounded-[2.5rem] border-2 transition-all group-hover:shadow-xl group-hover:-translate-y-2 ${temp.color}`}
+                >
                   {temp.icon}
                 </div>
-                <div className="flex flex-col">
-                  <p className="text-[#1E293B] font-bold text-xs">{temp.title}</p>
-                  <p className="text-[#94A3B8] text-[10px]">{temp.date}</p>
-                  <p className="text-[#64748B] text-[10px]">{temp.category}</p>
+                <div className="px-2">
+                  <p className="text-[#1E293B] font-black text-sm line-clamp-1">
+                    {temp.title}
+                  </p>
+                  <p className="text-slate-400 text-[11px] font-bold uppercase tracking-widest">
+                    {temp.category}
+                  </p>
                 </div>
               </div>
             ))}
-
           </div>
         </div>
       </div>
+
+      {loading && (
+        <div className="fixed inset-0 bg-white/60 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-teal-700 font-black text-xs uppercase tracking-widest">
+              Preparing Template...
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

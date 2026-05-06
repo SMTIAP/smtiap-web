@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom';
 import BackButton from '../components/BackButton';
 import { BarChart3, Users, CreditCard, UserCheck, BookOpen, ShieldCheck, type LucideIcon } from 'lucide-react';
+import { useEffect, useState } from "react";
+import axios from "axios";
+import api from "../api/api";
 
 interface FeatureCardProps {
   to?: string;
@@ -45,6 +48,25 @@ const StatRow = ({ label, value, isLast }: StatRowProps) => (
 );
 
 export default function OrganizationAdmin() {
+
+
+   const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await api.get("/me");
+        setUser(res.data);
+      } catch (err) {
+        console.log("Not logged in");
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  if (!user) return <h2>Loading...</h2>;
+  
   const features = [
     { title: 'Surveys', icon: BarChart3, to: '/created-surveys' },
     { title: 'Employees', icon: Users, to: '/role-management' },
@@ -60,7 +82,7 @@ export default function OrganizationAdmin() {
           <div className="flex items-center gap-4 w-fit">
             <BackButton to="/" />
             <h1 className="text-[#1E293B] font-inter text-3xl font-bold leading-9">
-              Welcome back, Saliya...
+              Welcome back, {user?.username || "Admin"}...
             </h1>
           </div>
         </div>

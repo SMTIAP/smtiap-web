@@ -1,6 +1,4 @@
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
-import Register from "./pages/Register";
-import Login from "./pages/Login";
 import ForgotPassword from "./pages/Forgot-password";
 import OrganizationAdmin from "./pages/OrganizationAdmin";
 import CreatorDashboard from "./pages/CreatorDashboard";
@@ -16,6 +14,12 @@ import RoleManagement from "./pages/RoleManagement";
 import Subscription from "./pages/Subscription";
 import Audit from "./pages/Audit";
 import NavBar from "./components/NavBar.tsx";
+import AuthPage from "./pages/AuthPage.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
+import ProtectedRoute from "./components/ProtectedRoute.tsx";
+import ShareSurvey from './pages/ShareSurvey';
+import TakeSurvey from './pages/TakeSurvey';
+import SurveyResults from './pages/SurveyResults';
 
 function Layout() {
   return (
@@ -30,25 +34,37 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+         <Route path="/take-survey/:surveyId" element={<TakeSurvey />} />
+                {/* Auth Routes */}
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/take-survey/:surveyId" element={<TakeSurvey />} />
+        
         {/* Layout wrapper for all routes */}
         <Route element={<Layout />}>
-          {/* Auth Routes */}
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-
           {/* Dashboard & Survey Management */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/admin" element={<OrganizationAdmin />} />
+           <Route
+      path="/admin"
+      element={
+        <ProtectedRoute>
+          <OrganizationAdmin />
+        </ProtectedRoute>
+      } />
+          
           <Route path="/creator-dashboard" element={<CreatorDashboard />} />
           <Route path="/created-surveys" element={<CreatedSurveys />} />
           <Route path="/templates" element={<SearchTemplate />} />
           <Route path="/subscription" element={<Subscription />} />
+          
 
           {/* Survey Creation Flow */}
           <Route path="/create-new-survey" element={<CreateNewSurvey />} />
           <Route path="/add-questions" element={<AddQuestions />} />
           <Route path="/review-publish" element={<ReviewAndPublish />} />
+          <Route path="/share-survey" element={<ShareSurvey />} />
+          <Route path="/survey-results/:surveyId" element={<SurveyResults />} />
 
           {/* Analytics & Responses */}
           <Route path="/response" element={<Response />} />
@@ -58,6 +74,7 @@ export default function App() {
           {/* Audit Management */}
           <Route path="/audit-log" element={<Audit />} />
         </Route>
+        
       </Routes>
     </BrowserRouter>
   );
