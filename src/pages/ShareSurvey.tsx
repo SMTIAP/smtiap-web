@@ -72,7 +72,7 @@ export default function ShareSurvey() {
         </div>
 
         <div className="flex flex-col items-center bg-slate-50 rounded-3xl p-8 border border-slate-100">
-          <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-6">Scan to Participate</label>
+          <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-6">Download & Share Survey</label>
           <div className="bg-white p-4 rounded-2xl shadow-sm mb-6">
             <QRCodeSVG 
               id="survey-qr"
