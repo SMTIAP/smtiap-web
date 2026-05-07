@@ -25,6 +25,7 @@ import Notification from "./models/Notification.js";
 import AuditLog from "./models/AuditLog.js";
 import surveyRoutes from "./routes/surveyRoutes.js";
 import SurveyResponse from "./models/SurveyResponse.js";
+import roleManagementRoutes from "./routes/roleManagementRoutes.js";
 
 const ensureCollections = async () => {
   await Promise.all([
@@ -63,6 +64,7 @@ app.use(passport.initialize());
 app.use(payhereRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/surveys", surveyRoutes);
+app.use("/api/role-management", roleManagementRoutes)
 app.use(analyticsRoutes);
 app.use(errorHandler);
 
