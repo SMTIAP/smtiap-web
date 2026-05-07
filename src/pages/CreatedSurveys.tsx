@@ -213,7 +213,8 @@ const ShareModal = ({ survey, onClose }: {
             />
           </div>
           <div className="flex flex-col gap-2">
-            <p className="text-xs text-slate-500 font-medium leading-snug">Scan to open survey on any device</p>
+            <p className="text-xs text-slate-500 font-medium leading-snug"> Download & share survey QR
+</p>
             <button
               onClick={downloadQR}
               className="flex items-center gap-1.5 text-indigo-600 font-bold text-xs hover:text-indigo-800 transition-colors"
