@@ -49,14 +49,13 @@ const DeleteConfirmModal = ({ survey, onConfirm, onCancel, deleting }: {
   </div>
 );
 
+// ✅ Compact Share Modal — fits screen without touching navbar
 const ShareModal = ({ survey, onClose }: {
   survey: SurveyItem;
   onClose: () => void;
 }) => {
   const surveyLink = `${window.location.origin}/take-survey/${survey._id}`;
   const [copied, setCopied] = useState(false);
-
-  // ✅ Initialize from existing survey data
   const [isPasswordProtected, setIsPasswordProtected] = useState(survey.isPasswordProtected || false);
   const [password, setPassword] = useState('');
   const [passwordSaved, setPasswordSaved] = useState(false);
@@ -88,7 +87,6 @@ const ShareModal = ({ survey, onClose }: {
     img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
-  // ✅ Toggle — if OFF, clears password in DB immediately
   const handleToggle = async () => {
     const newValue = !isPasswordProtected;
     setIsPasswordProtected(newValue);
@@ -107,7 +105,6 @@ const ShareModal = ({ survey, onClose }: {
     }
   };
 
-  // ✅ Save password to DB
   const handleSavePassword = async () => {
     if (!password) return;
     setSavingPassword(true);
@@ -129,51 +126,53 @@ const ShareModal = ({ survey, onClose }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/25 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 max-w-sm w-full z-10">
+
+      {/* ✅ max-h + overflow-y-auto so it never overflows the screen */}
+      <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 max-w-sm w-full z-10 max-h-[85vh] overflow-y-auto mt-16">
 
         <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-all">
           <X size={14} />
         </button>
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Share2 size={16} className="text-indigo-600" />
+        <div className="flex items-center gap-2.5 mb-4">
+          <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Share2 size={14} className="text-indigo-600" />
           </div>
           <div>
-            <p className="font-black text-slate-900 text-base">Share survey</p>
-            <p className="text-slate-400 text-xs truncate max-w-[200px]">{survey.surveyTitle || 'Untitled Survey'}</p>
+            <p className="font-black text-slate-900 text-sm">Share survey</p>
+            <p className="text-slate-400 text-[10px] truncate max-w-[200px]">{survey.surveyTitle || 'Untitled Survey'}</p>
           </div>
         </div>
 
-        {/* ✅ Password Protection — above link */}
-        <div className="mb-4 bg-slate-50 rounded-2xl p-4 border border-slate-100">
+        {/* Password Protection */}
+        <div className="mb-4 bg-slate-50 rounded-xl p-3 border border-slate-100">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Lock size={13} className="text-slate-500" />
-              <span className="text-xs font-bold text-slate-700">Password Protection</span>
+            <div className="flex items-center gap-1.5">
+              <Lock size={12} className="text-slate-500" />
+              <span className="text-[11px] font-bold text-slate-700">Password Protection</span>
             </div>
             <div
               onClick={handleToggle}
-              className={`w-9 h-5 rounded-full relative cursor-pointer transition-all duration-200 ${isPasswordProtected ? 'bg-indigo-600' : 'bg-slate-200'}`}
+              className={`w-8 h-4 rounded-full relative cursor-pointer transition-all duration-200 ${isPasswordProtected ? 'bg-indigo-600' : 'bg-slate-200'}`}
             >
-              <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-200 ${isPasswordProtected ? 'left-5' : 'left-1'}`} />
+              <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-200 ${isPasswordProtected ? 'left-4' : 'left-0.5'}`} />
             </div>
           </div>
 
           {isPasswordProtected && (
-            <div className="flex gap-2 mt-3">
+            <div className="flex gap-2 mt-2.5">
               <input
                 type="password"
                 placeholder={survey.isPasswordProtected ? "••••••••" : "Set a password"}
                 value={password}
                 onChange={e => { setPassword(e.target.value); setPasswordSaved(false); }}
-                className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-indigo-400 transition-all"
+                className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-indigo-400 transition-all"
               />
               <button
                 onClick={handleSavePassword}
                 disabled={!password || savingPassword}
-                className="px-3 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-40 transition-all min-w-[60px]"
+                className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 disabled:opacity-40 transition-all min-w-[52px]"
               >
                 {passwordSaved ? '✓' : savingPassword ? '...' : 'Save'}
               </button>
@@ -181,44 +180,47 @@ const ShareModal = ({ survey, onClose }: {
           )}
 
           {!isPasswordProtected && (
-            <p className="text-[10px] text-slate-400 mt-1.5">Anyone with the link can access this survey.</p>
+            <p className="text-[10px] text-slate-400 mt-1">Anyone with the link can access this.</p>
           )}
         </div>
 
         {/* Link */}
-        <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">Survey link</p>
-        <div className="flex gap-2 mb-5">
+        <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-1.5">Survey link</p>
+        <div className="flex gap-2 mb-4">
           <input
             readOnly
             value={surveyLink}
-            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-medium text-slate-600 outline-none"
+            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[11px] font-medium text-slate-600 outline-none"
           />
           <button
             onClick={copyToClipboard}
-            className="bg-indigo-600 text-white px-3 rounded-xl hover:bg-indigo-700 transition-all flex items-center justify-center min-w-[40px]"
+            className="bg-indigo-600 text-white px-3 rounded-xl hover:bg-indigo-700 transition-all flex items-center justify-center min-w-[38px]"
           >
-            {copied ? <Check size={15} /> : <Copy size={15} />}
+            {copied ? <Check size={13} /> : <Copy size={13} />}
           </button>
         </div>
 
-        {/* QR Code */}
-        <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-3">QR code</p>
-        <div className="flex flex-col items-center bg-slate-50 rounded-2xl p-4 border border-slate-100">
-          <div className="bg-white p-3 rounded-xl shadow-sm mb-3">
+        {/* QR Code — compact */}
+        <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">QR code</p>
+        <div className="flex items-center gap-4 bg-slate-50 rounded-xl p-3 border border-slate-100">
+          <div className="bg-white p-2 rounded-xl shadow-sm flex-shrink-0">
             <QRCodeSVG
               id="share-modal-qr"
               value={surveyLink}
-              size={140}
+              size={90}
               level="H"
               includeMargin={true}
             />
           </div>
-          <button
-            onClick={downloadQR}
-            className="flex items-center gap-1.5 text-indigo-600 font-bold text-xs hover:text-indigo-800 transition-colors"
-          >
-            <Download size={14} /> Download QR (PNG)
-          </button>
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-slate-500 font-medium leading-snug">Scan to open survey on any device</p>
+            <button
+              onClick={downloadQR}
+              className="flex items-center gap-1.5 text-indigo-600 font-bold text-xs hover:text-indigo-800 transition-colors"
+            >
+              <Download size={13} /> Download PNG
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -383,6 +385,7 @@ export default function CreatedSurveys() {
                         type="button"
                         onClick={(e) => handleShareClick(e, survey)}
                         className="w-8 h-8 rounded-full bg-white/95 border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all flex items-center justify-center"
+                        title="Share survey"
                       >
                         <Share2 size={13} />
                       </button>
@@ -392,6 +395,7 @@ export default function CreatedSurveys() {
                       onClick={(e) => handleDeleteClick(e, survey)}
                       disabled={deletingSurveyId === survey._id}
                       className="w-8 h-8 rounded-full bg-white/95 border border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-200 hover:bg-rose-50 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="Delete survey"
                     >
                       <Trash2 size={14} />
                     </button>
