@@ -39,8 +39,6 @@ export default function RoleManagement(){
     const handleRoleChange = async (user: User) => {
         try {
             const newRole = selectedRole[user._id];
-            // console.log("Updating user:", user._id);
-// console.log("New role:", newRole);
             const response = await fetch (
                 
                 `http://localhost:5000/api/role-management/${user._id}/role`, {

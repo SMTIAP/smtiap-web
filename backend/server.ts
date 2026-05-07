@@ -48,6 +48,7 @@ import { initLinkedInStrategy } from "./config/linkedin.js";
 import passport, { initGoogleStrategy } from "./config/passport.js";
 
 import cookieParser from "cookie-parser";
+import { createOrganization } from "./controllers/organizationRegistrationController.js";
 
 const app = express();
 
@@ -65,6 +66,7 @@ app.use(payhereRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/surveys", surveyRoutes);
 app.use("/api/role-management", roleManagementRoutes)
+app.use("/api/organization-registration", createOrganization)
 app.use(analyticsRoutes);
 app.use(errorHandler);
 

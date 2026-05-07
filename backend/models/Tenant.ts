@@ -19,11 +19,14 @@ const settingsSchema = new Schema(
 const tenantSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
-    plan: { type: String, required: true, trim: true },
-    domain: { type: String, required: true, trim: true },
+    country: { type: String, required: true, trim: true },
+    address: { type: String, required: true, trim: true },
+    description: { type: String, required: true, trim: true },
+    plan: { type: String, trim: true, default: null },
+    domain: { type: String, trim: true, default: null },
     status: {
       type: String,
-      required: true,
+      // required: true,
       enum: ["active", "inactive", "suspended"],
       default: "active",
     },
