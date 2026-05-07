@@ -863,22 +863,17 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
                         ))}
                     </ul>
                   ) : (
-                    <ul className="space-y-2 text-black text-base leading-relaxed">
-                      <li className="flex gap-2">
-                        <span className="font-bold text-green-500">•</span>
-                        Users consistently praised the new responsive UI for
-                        mobile devices.
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="font-bold text-green-500">•</span>
-                        Onboarding flow shows a 15% drop-off at the
-                        &quot;Integration&quot; step.
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="font-bold text-green-500">•</span>
-                        High demand for enterprise-grade reporting features.
-                      </li>
-                    </ul>
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <Sparkles size={32} className="text-slate-200 mb-3" />
+                      <p className="text-slate-400 text-sm font-medium">
+                        No analysis yet
+                      </p>
+                      <p className="text-slate-300 text-xs mt-1">
+                        Click{" "}
+                        <span className="font-semibold">Run AI Analysis</span>{" "}
+                        to generate insights from your responses.
+                      </p>
+                    </div>
                   )}
                 </div>
 
@@ -901,23 +896,11 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
                         />
                       );
                     })
-                  ) : (
-                    <>
-                      <InsightTag label="Quality" count={123} color="#C5EFB5" />
-                      <InsightTag
-                        label="Professional"
-                        count={110}
-                        color="#B5E9EF"
-                      />
-                      <InsightTag
-                        label="Efficient"
-                        count={95}
-                        color="#C0B5EF"
-                      />
-                      <InsightTag label="Timely" count={75} color="#EFCCB5" />
-                      <InsightTag label="Friendly" count={80} color="#EFE4B5" />
-                    </>
-                  )}
+                  ) : summary ? (
+                    <p className="text-slate-300 text-xs">
+                      No keywords extracted.
+                    </p>
+                  ) : null}
                 </div>
               </>
             )}

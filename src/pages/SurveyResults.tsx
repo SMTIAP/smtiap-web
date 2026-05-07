@@ -285,9 +285,15 @@ export default function SurveyResults() {
                 {q.type === "checkboxes" && q.options && (
                   <div className="space-y-3">
                     {q.options.map((opt) => {
-                      const count = answers.filter((a) =>
-                        a.split(",").includes(opt),
-                      ).length;
+                      const count = answers.filter((a) => {
+                        if (Array.isArray(a)) return a.includes(opt);
+                        if (typeof a === "string")
+                          return a
+                            .split(",")
+                            .map((s) => s.trim())
+                            .includes(opt);
+                        return false;
+                      }).length;
                       const pct = answers.length
                         ? Math.round((count / answers.length) * 100)
                         : 0;
@@ -423,9 +429,15 @@ export default function SurveyResults() {
 
             <p className="text-xs text-slate-400 text-center">
               Submitted:{" "}
-              {new Date(
-                responses[activeResponseIndex].createdAt,
-              ).toLocaleString()}
+              {(() => {
+                const raw =
+                  responses[activeResponseIndex]?.submittedAt ??
+                  responses[activeResponseIndex]?.createdAt;
+                const d = raw ? new Date(raw) : null;
+                return d && !Number.isNaN(d.getTime())
+                  ? d.toLocaleString()
+                  : "N/A";
+              })()}
             </p>
 
             {allQuestions.map((q) => {
@@ -438,9 +450,11 @@ export default function SurveyResults() {
                   <p className="font-bold text-slate-700 text-sm mb-2">
                     {q.label}
                   </p>
-                  {answer ? (
+                  {answer !== undefined && answer !== null && answer !== "" ? (
                     <p className="text-slate-800 text-base bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
-                      {answer}
+                      {Array.isArray(answer)
+                        ? answer.join(", ")
+                        : String(answer)}
                     </p>
                   ) : (
                     <p className="text-slate-400 text-sm italic">No answer</p>
