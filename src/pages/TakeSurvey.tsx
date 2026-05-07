@@ -17,6 +17,12 @@ interface Page {
   questions: Question[];
 }
 
+function generateCaptcha() {
+  const a = Math.floor(Math.random() * 10) + 1;
+  const b = Math.floor(Math.random() * 10) + 1;
+  return { a, b, answer: a + b };
+}
+
 export default function TakeSurvey() {
   const { surveyId } = useParams<{ surveyId: string }>();
   const [surveyData, setSurveyData] = useState<any>(null);
@@ -25,6 +31,18 @@ export default function TakeSurvey() {
   const [activePage, setActivePage] = useState(0);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+
+  // Password state
+  const [passwordVerified, setPasswordVerified] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
+  const [checkingPassword, setCheckingPassword] = useState(false);
+
+  // Captcha state
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const [captcha, setCaptcha] = useState(generateCaptcha());
+  const [captchaInput, setCaptchaInput] = useState('');
+  const [captchaError, setCaptchaError] = useState(false);
 
   useEffect(() => {
     const fetchSurvey = async () => {
@@ -42,6 +60,30 @@ export default function TakeSurvey() {
     };
     if (surveyId) fetchSurvey();
   }, [surveyId]);
+
+  const handlePasswordSubmit = async () => {
+    if (!passwordInput) return;
+    setCheckingPassword(true);
+    setPasswordError(false);
+    try {
+      const res = await fetch(`http://localhost:5000/api/surveys/${surveyId}/verify-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passwordInput })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPasswordVerified(true);
+      } else {
+        setPasswordError(true);
+        setPasswordInput('');
+      }
+    } catch (err) {
+      setPasswordError(true);
+    } finally {
+      setCheckingPassword(false);
+    }
+  };
 
   if (loading) return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
@@ -61,7 +103,6 @@ export default function TakeSurvey() {
     </div>
   );
 
-  // ✅ Show closed message if survey is Finished
   if (surveyData.status === 'Finished') return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
       <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
@@ -72,6 +113,44 @@ export default function TakeSurvey() {
         </div>
         <h2 className="text-2xl font-black text-slate-900 mb-2">Survey Closed</h2>
         <p className="text-slate-500 text-sm">This survey is no longer accepting responses.</p>
+      </div>
+    </div>
+  );
+
+  // ✅ Password gate — show before survey if password protected and not yet verified
+  if (surveyData.isPasswordProtected && !passwordVerified) return (
+    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-6">
+      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 w-full max-w-sm text-center">
+        <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <svg width="24" height="24" fill="none" stroke="#6366F1" strokeWidth="2.5" viewBox="0 0 24 24">
+            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round"/>
+          </svg>
+        </div>
+        <h3 className="text-xl font-black text-slate-900 mb-1">Password Required</h3>
+        <p className="text-slate-400 text-xs mb-6">This survey is password protected</p>
+
+        <input
+          type="password"
+          placeholder="Enter password"
+          value={passwordInput}
+          onChange={e => { setPasswordInput(e.target.value); setPasswordError(false); }}
+          onKeyDown={e => e.key === 'Enter' && handlePasswordSubmit()}
+          className={`w-full text-center text-sm font-semibold bg-slate-50 border-2 rounded-2xl px-4 py-3 outline-none transition-all mb-3 ${
+            passwordError ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-indigo-400'
+          }`}
+        />
+
+        {passwordError && (
+          <p className="text-red-400 text-xs mb-3 font-semibold">Incorrect password, try again!</p>
+        )}
+
+        <button
+          onClick={handlePasswordSubmit}
+          disabled={!passwordInput || checkingPassword}
+          className="w-full py-3 bg-indigo-600 text-white rounded-2xl text-sm font-bold hover:bg-indigo-700 disabled:opacity-40 transition-all"
+        >
+          {checkingPassword ? 'Checking...' : 'Enter Survey →'}
+        </button>
       </div>
     </div>
   );
@@ -110,7 +189,21 @@ export default function TakeSurvey() {
     if (activePage > 0) setActivePage(activePage - 1);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmitClick = () => {
+    setCaptcha(generateCaptcha());
+    setCaptchaInput('');
+    setCaptchaError(false);
+    setShowCaptcha(true);
+  };
+
+  const handleCaptchaConfirm = async () => {
+    if (Number(captchaInput) !== captcha.answer) {
+      setCaptchaError(true);
+      setCaptcha(generateCaptcha());
+      setCaptchaInput('');
+      return;
+    }
+    setShowCaptcha(false);
     try {
       await fetch(`http://localhost:5000/api/surveys/${surveyId}/responses`, {
         method: 'POST',
@@ -125,6 +218,48 @@ export default function TakeSurvey() {
 
   return (
     <div className="min-h-screen py-12 px-6" style={{ backgroundColor: '#F8FAFC' }}>
+
+      {/* Captcha Modal */}
+      {showCaptcha && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 w-full max-w-sm mx-4 text-center">
+            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg width="22" height="22" fill="none" stroke="#6366F1" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <h3 className="text-lg font-black text-slate-900 mb-1">Quick Check</h3>
+            <p className="text-slate-400 text-xs mb-6">Solve to verify you're human</p>
+
+            <div className="bg-slate-50 rounded-2xl px-6 py-4 mb-4 inline-block w-full">
+              <p className="text-3xl font-black text-slate-800 tracking-wide">
+                {captcha.a} + {captcha.b} = ?
+              </p>
+            </div>
+
+            <input
+              type="number"
+              value={captchaInput}
+              onChange={e => { setCaptchaInput(e.target.value); setCaptchaError(false); }}
+              onKeyDown={e => e.key === 'Enter' && handleCaptchaConfirm()}
+              placeholder="Your answer"
+              className={`w-full text-center text-lg font-bold bg-slate-50 border-2 rounded-2xl px-4 py-3 outline-none transition-all mb-4 ${
+                captchaError ? 'border-red-300 bg-red-50' : 'border-slate-200 focus:border-indigo-400'
+              }`}
+            />
+
+            {captchaError && (
+              <p className="text-red-400 text-xs mb-4 font-semibold">Wrong answer, try again!</p>
+            )}
+
+            <div className="flex gap-3">
+              <button onClick={() => setShowCaptcha(false)} className="flex-1 px-4 py-3 border border-slate-200 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all">Cancel</button>
+              <button onClick={handleCaptchaConfirm} className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-bold hover:bg-indigo-700 transition-all">Submit ✓</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-2xl mx-auto">
 
         {/* Header */}
@@ -241,7 +376,7 @@ export default function TakeSurvey() {
               {activePage < totalPages - 1 ? (
                 <button onClick={handleNext} style={{ backgroundColor: primaryColor }} className="px-8 py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg transition-all">Next →</button>
               ) : (
-                <button onClick={handleSubmit} className="px-8 py-3 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 shadow-lg transition-all">Submit Response ✓</button>
+                <button onClick={handleSubmitClick} className="px-8 py-3 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 shadow-lg transition-all">Submit Response ✓</button>
               )}
             </div>
           </div>

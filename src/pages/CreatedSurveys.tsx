@@ -1,18 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Plus,
-  ChevronLeft,
-  Activity,
-  Clock,
-  CheckCircle2,
-  Trash2,
-  X,
-  Layout,
-  Share2,
-  Copy,
-  Check,
-  Download,
+  Plus, ChevronLeft, Activity, Clock, CheckCircle2,
+  Trash2, X, Layout, Share2, Copy, Check, Download, Lock,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -21,9 +11,10 @@ interface SurveyItem {
   surveyTitle?: string;
   status: "Draft" | "Running" | "Finished";
   createdAt: string;
+  isPasswordProtected?: boolean;
+  password?: string;
 }
 
-// ✅ Clean minimal Delete Modal
 const DeleteConfirmModal = ({ survey, onConfirm, onCancel, deleting }: {
   survey: SurveyItem;
   onConfirm: () => void;
@@ -58,13 +49,18 @@ const DeleteConfirmModal = ({ survey, onConfirm, onCancel, deleting }: {
   </div>
 );
 
-// ✅ Share Modal with link + QR
 const ShareModal = ({ survey, onClose }: {
   survey: SurveyItem;
   onClose: () => void;
 }) => {
   const surveyLink = `${window.location.origin}/take-survey/${survey._id}`;
   const [copied, setCopied] = useState(false);
+
+  // ✅ Initialize from existing survey data
+  const [isPasswordProtected, setIsPasswordProtected] = useState(survey.isPasswordProtected || false);
+  const [password, setPassword] = useState('');
+  const [passwordSaved, setPasswordSaved] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(surveyLink);
@@ -92,6 +88,44 @@ const ShareModal = ({ survey, onClose }: {
     img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
+  // ✅ Toggle — if OFF, clears password in DB immediately
+  const handleToggle = async () => {
+    const newValue = !isPasswordProtected;
+    setIsPasswordProtected(newValue);
+    setPassword('');
+    setPasswordSaved(false);
+    if (!newValue) {
+      try {
+        await fetch(`http://localhost:5000/api/surveys/${survey._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isPasswordProtected: false, password: '' })
+        });
+      } catch (err) {
+        console.error("Failed to clear password:", err);
+      }
+    }
+  };
+
+  // ✅ Save password to DB
+  const handleSavePassword = async () => {
+    if (!password) return;
+    setSavingPassword(true);
+    try {
+      await fetch(`http://localhost:5000/api/surveys/${survey._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPasswordProtected: true, password })
+      });
+      setPasswordSaved(true);
+      setTimeout(() => setPasswordSaved(false), 2000);
+    } catch (err) {
+      console.error("Failed to save password:", err);
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/25 backdrop-blur-sm" onClick={onClose} />
@@ -110,6 +144,45 @@ const ShareModal = ({ survey, onClose }: {
             <p className="font-black text-slate-900 text-base">Share survey</p>
             <p className="text-slate-400 text-xs truncate max-w-[200px]">{survey.surveyTitle || 'Untitled Survey'}</p>
           </div>
+        </div>
+
+        {/* ✅ Password Protection — above link */}
+        <div className="mb-4 bg-slate-50 rounded-2xl p-4 border border-slate-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Lock size={13} className="text-slate-500" />
+              <span className="text-xs font-bold text-slate-700">Password Protection</span>
+            </div>
+            <div
+              onClick={handleToggle}
+              className={`w-9 h-5 rounded-full relative cursor-pointer transition-all duration-200 ${isPasswordProtected ? 'bg-indigo-600' : 'bg-slate-200'}`}
+            >
+              <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-200 ${isPasswordProtected ? 'left-5' : 'left-1'}`} />
+            </div>
+          </div>
+
+          {isPasswordProtected && (
+            <div className="flex gap-2 mt-3">
+              <input
+                type="password"
+                placeholder={survey.isPasswordProtected ? "••••••••" : "Set a password"}
+                value={password}
+                onChange={e => { setPassword(e.target.value); setPasswordSaved(false); }}
+                className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-indigo-400 transition-all"
+              />
+              <button
+                onClick={handleSavePassword}
+                disabled={!password || savingPassword}
+                className="px-3 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-40 transition-all min-w-[60px]"
+              >
+                {passwordSaved ? '✓' : savingPassword ? '...' : 'Save'}
+              </button>
+            </div>
+          )}
+
+          {!isPasswordProtected && (
+            <p className="text-[10px] text-slate-400 mt-1.5">Anyone with the link can access this survey.</p>
+          )}
         </div>
 
         {/* Link */}
@@ -232,7 +305,6 @@ export default function CreatedSurveys() {
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#FDFDFD]">
 
-      {/* Modals */}
       {showDeleteModal && surveyToDelete && (
         <DeleteConfirmModal
           survey={surveyToDelete}
@@ -278,9 +350,7 @@ export default function CreatedSurveys() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-6 py-2 text-xs font-black uppercase tracking-wider rounded-[0.85rem] transition-all duration-300 ${
-                activeTab === tab
-                  ? "bg-white text-indigo-600 shadow-sm"
-                  : "text-slate-500 hover:text-slate-900 opacity-70"
+                activeTab === tab ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-900 opacity-70"
               }`}
             >
               {tab}
@@ -303,32 +373,25 @@ export default function CreatedSurveys() {
                   isRunning ? "bg-emerald-400" : isDraft ? "bg-amber-400" : "bg-rose-400"
                 }`} />
 
-                {/* ✅ Date moved to LEFT, buttons on RIGHT */}
                 <div className="flex justify-between items-center w-full mb-4">
                   <span className="text-slate-400 text-[10px] font-extrabold bg-slate-50 px-3 py-1 rounded-full">
                     {new Date(survey.createdAt).toLocaleDateString("en-GB")}
                   </span>
-
                   <div className="flex items-center gap-1">
-                    {/* ✅ Share button — only on Running */}
                     {isRunning && (
                       <button
                         type="button"
                         onClick={(e) => handleShareClick(e, survey)}
                         className="w-8 h-8 rounded-full bg-white/95 border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all flex items-center justify-center"
-                        title="Share survey"
                       >
                         <Share2 size={13} />
                       </button>
                     )}
-
-                    {/* Delete button */}
                     <button
                       type="button"
                       onClick={(e) => handleDeleteClick(e, survey)}
                       disabled={deletingSurveyId === survey._id}
                       className="w-8 h-8 rounded-full bg-white/95 border border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-200 hover:bg-rose-50 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
-                      title="Delete survey"
                     >
                       <Trash2 size={14} />
                     </button>
