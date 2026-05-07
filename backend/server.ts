@@ -70,6 +70,10 @@ app.get("/", (req, res) => {
   res.send("🚀 PayHere backend is running");
 });
 
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({ message: "Server is running successfully!" });
+});
+
 const startServer = async () => {
   try {
     initGitHubStrategy();
