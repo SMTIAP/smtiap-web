@@ -19,21 +19,24 @@ const pageSchema = new mongoose.Schema({
 
 const surveySchema = new mongoose.Schema(
   {
-    surveyTitle:       { type: String, required: true },
-    description:       { type: String, default: "" },
-    websiteUrl:        { type: String, default: "" },
-    logo:              { type: String, default: null },
-    themeColor:        { type: String, default: "#6366F1" },
-    primaryColor:      { type: String, default: "#6366F1" },
-    customizeBranding: { type: Boolean, default: false },
-    isAnonymous:       { type: Boolean, default: false },
-    pages:             [pageSchema],
+    surveyTitle:         { type: String, required: true },
+    description:         { type: String, default: "" },
+    websiteUrl:          { type: String, default: "" },
+    logo:                { type: String, default: null },
+    themeColor:          { type: String, default: "#6366F1" },
+    primaryColor:        { type: String, default: "#6366F1" },
+    customizeBranding:   { type: Boolean, default: false },
+    isAnonymous:         { type: Boolean, default: false },
+    pages:               [pageSchema],
     status: {
       type: String,
       enum: ["Draft", "Running", "Finished"],
       default: "Draft",
     },
-    tenantId: { type: String, default: "default" },
+    // ✅ Password protection fields
+    isPasswordProtected: { type: Boolean, default: false },
+    password:            { type: String, default: "" },
+    tenantId:            { type: String, default: "default" },
   },
   { timestamps: true }
 );
