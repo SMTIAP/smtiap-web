@@ -15,7 +15,7 @@ export default function ProtectedRoute({ children }: Props) {
     let mounted = true;
 
     api
-      .get("/me")
+      .get("/users/me")
       .then(() => {
         if (mounted) {
           setAuth(true);
