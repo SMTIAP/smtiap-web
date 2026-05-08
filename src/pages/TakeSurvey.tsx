@@ -1,20 +1,41 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 
+interface BranchRule {
+  value: string;
+  targetQuestionId: string;
+}
+
+interface QuestionBranching {
+  enabled?: boolean;
+  rules?: BranchRule[];
+  defaultTargetQuestionId?: string;
+}
+
 interface Question {
-  _id: string;
+  _id?: string;
+  id?: string;
   type: string;
   label: string;
   required: boolean;
   options?: string[];
   placeholder?: string;
   max?: number;
+  branching?: QuestionBranching;
 }
 
 interface Page {
-  _id: string;
+  _id?: string;
+  id?: string;
   title: string;
   questions: Question[];
+}
+
+interface FlattenedQuestion {
+  pageTitle: string;
+  pageIndex: number;
+  questionIndex: number;
+  question: Question;
 }
 
 function getOrCreateRespondentToken(surveyId: string): string {
@@ -39,12 +60,24 @@ function generateCaptcha() {
 
 export default function TakeSurvey() {
   const { surveyId } = useParams<{ surveyId: string }>();
-  const [surveyData, setSurveyData] = useState<any>(null);
+  const [surveyData, setSurveyData] = useState<{
+    pages: Page[];
+    primaryColor?: string;
+    themeColor?: string;
+    status?: string;
+    isPasswordProtected?: boolean;
+    surveyTitle?: string;
+    description?: string;
+    _id?: string;
+    [key: string]: unknown;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [activePage, setActivePage] = useState(0);
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+  const [questionHistory, setQuestionHistory] = useState<number[]>([]);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [validationError, setValidationError] = useState("");
 
   // Password state
   const [passwordVerified, setPasswordVerified] = useState(false);
@@ -78,6 +111,27 @@ export default function TakeSurvey() {
     if (surveyId) fetchSurvey();
   }, [surveyId]);
 
+  // Must be before any early returns — Rules of Hooks
+  const primaryColor =
+    surveyData?.primaryColor || surveyData?.themeColor || "#6366F1";
+  const flattenedQuestions = useMemo<FlattenedQuestion[]>(() => {
+    const pages: Page[] = surveyData?.pages || [];
+    return pages.flatMap((page, pageIndex) =>
+      (page.questions || []).map((question, questionIndex) => ({
+        pageTitle: page.title || `Page ${pageIndex + 1}`,
+        pageIndex,
+        questionIndex,
+        question,
+      })),
+    );
+  }, [surveyData?.pages]);
+
+  useEffect(() => {
+    setActiveQuestionIndex(0);
+    setQuestionHistory([]);
+    setValidationError("");
+  }, [surveyData?._id]);
+
   const handlePasswordSubmit = async () => {
     if (!passwordInput) return;
     setCheckingPassword(true);
@@ -98,7 +152,7 @@ export default function TakeSurvey() {
         setPasswordError(true);
         setPasswordInput("");
       }
-    } catch (err) {
+    } catch {
       setPasswordError(true);
     } finally {
       setCheckingPassword(false);
@@ -244,25 +298,105 @@ export default function TakeSurvey() {
       </div>
     );
 
-  const pages: Page[] = surveyData.pages || [];
-  const primaryColor =
-    surveyData.primaryColor || surveyData.themeColor || "#6366F1";
-  const currentPage = pages[activePage];
-  const totalPages = pages.length;
+  const totalQuestions = flattenedQuestions.length;
+  const currentFlowItem = flattenedQuestions[activeQuestionIndex];
+  const currentQuestion = currentFlowItem?.question;
+
+  const getQuestionStableId = (question?: Question) =>
+    String(question?.id || question?._id || "").trim();
+
+  const getResponseKey = (question?: Question) =>
+    String(question?._id || question?.id || "").trim();
+
+  const hasValue = (value: string) => value.trim().length > 0;
+
+  const resolveBranchTargetIndex = (question: Question): number | null => {
+    if (!question.branching?.enabled) return null;
+
+    const responseKey = getResponseKey(question);
+    const answerValue = (responses[responseKey] || "").trim();
+    const rules = question.branching.rules || [];
+
+    let targetQuestionId = "";
+    if (
+      (question.type === "multiple_choice" || question.type === "checkboxes") &&
+      question.options?.length
+    ) {
+      const selectedValues = answerValue
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean);
+
+      for (const option of question.options) {
+        if (!selectedValues.includes(option)) continue;
+        const matchedRule = rules.find((rule) => rule.value === option);
+        if (matchedRule?.targetQuestionId) {
+          targetQuestionId = matchedRule.targetQuestionId;
+          break;
+        }
+      }
+    }
+
+    if (!targetQuestionId) {
+      targetQuestionId = question.branching.defaultTargetQuestionId || "";
+    }
+
+    if (!targetQuestionId) return null;
+    if (targetQuestionId === "__END__") return -1;
+
+    const targetIndex = flattenedQuestions.findIndex(
+      (item) => getQuestionStableId(item.question) === targetQuestionId,
+    );
+    return targetIndex >= 0 ? targetIndex : null;
+  };
 
   const handleResponse = (questionId: string, value: string) => {
+    setValidationError("");
     setResponses((prev) => ({ ...prev, [questionId]: value }));
   };
 
-  const handleNext = () => {
-    if (activePage < totalPages - 1) {
-      setActivePage(activePage + 1);
-      window.scrollTo(0, 0);
-    }
+  const handleBack = () => {
+    setValidationError("");
+    setQuestionHistory((prev) => {
+      if (prev.length === 0) return prev;
+      const historyCopy = [...prev];
+      const previousIndex = historyCopy.pop();
+      if (previousIndex !== undefined) {
+        setActiveQuestionIndex(previousIndex);
+      }
+      return historyCopy;
+    });
   };
 
-  const handleBack = () => {
-    if (activePage > 0) setActivePage(activePage - 1);
+  const handleNext = () => {
+    if (!currentQuestion) return;
+
+    const responseKey = getResponseKey(currentQuestion);
+    const currentAnswer = responses[responseKey] || "";
+
+    if (currentQuestion.required && !hasValue(currentAnswer)) {
+      setValidationError("This question is required.");
+      return;
+    }
+
+    setValidationError("");
+    const branchTargetIndex = resolveBranchTargetIndex(currentQuestion);
+    if (branchTargetIndex === -1) {
+      handleSubmitClick();
+      return;
+    }
+
+    const nextIndex =
+      branchTargetIndex !== null ? branchTargetIndex : activeQuestionIndex + 1;
+
+    if (nextIndex >= totalQuestions) {
+      handleSubmitClick();
+      return;
+    }
+
+    setQuestionHistory((prev) => [...prev, activeQuestionIndex]);
+    setActiveQuestionIndex(nextIndex);
+    window.scrollTo(0, 0);
   };
 
   const handleSubmitClick = () => {
@@ -315,6 +449,10 @@ export default function TakeSurvey() {
       );
     }
   };
+
+  const currentResolvedTarget = currentQuestion
+    ? resolveBranchTargetIndex(currentQuestion)
+    : null;
 
   return (
     <div
@@ -408,21 +546,22 @@ export default function TakeSurvey() {
             {surveyData.description && (
               <p className="text-slate-500 text-sm">{surveyData.description}</p>
             )}
-            {totalPages > 1 && (
+            {totalQuestions > 0 && (
               <div className="flex items-center gap-2 mt-4">
-                {pages.map((_: any, i: number) => (
+                {flattenedQuestions.map((_, i: number) => (
                   <div
                     key={i}
                     className="h-1.5 rounded-full transition-all"
                     style={{
-                      width: i === activePage ? "24px" : "8px",
+                      width: i === activeQuestionIndex ? "24px" : "8px",
                       backgroundColor:
-                        i === activePage ? primaryColor : "#E2E8F0",
+                        i === activeQuestionIndex ? primaryColor : "#E2E8F0",
                     }}
                   />
                 ))}
                 <span className="text-xs text-slate-400 ml-2">
-                  Page {activePage + 1} of {totalPages}
+                  Question {Math.min(activeQuestionIndex + 1, totalQuestions)}{" "}
+                  of {totalQuestions}
                 </span>
               </div>
             )}
@@ -430,7 +569,7 @@ export default function TakeSurvey() {
         </div>
 
         {/* Questions */}
-        {currentPage ? (
+        {currentQuestion ? (
           <div className="space-y-4">
             {submitError && (
               <div className="p-3 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm font-medium">
@@ -438,149 +577,189 @@ export default function TakeSurvey() {
               </div>
             )}
 
-            {currentPage.title && totalPages > 1 && (
+            {validationError && (
+              <div className="p-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-sm font-medium">
+                {validationError}
+              </div>
+            )}
+
+            {currentFlowItem?.pageTitle && (
               <p className="text-sm font-bold text-slate-500 uppercase tracking-wider px-2">
-                {currentPage.title}
+                {currentFlowItem.pageTitle}
               </p>
             )}
 
-            {currentPage.questions.length === 0 ? (
-              <div className="p-10 text-center border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 italic">
-                No questions on this page.
-              </div>
-            ) : (
-              currentPage.questions.map((q: Question, index: number) => (
-                <div
-                  key={q._id || index}
-                  className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm"
-                >
-                  <p className="text-base text-slate-800 font-semibold mb-4">
-                    {index + 1}. {q.label || "Untitled Question"}
-                    {q.required && <span className="text-red-500 ml-1">*</span>}
-                  </p>
+            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <p className="text-base text-slate-800 font-semibold mb-4">
+                {activeQuestionIndex + 1}.{" "}
+                {currentQuestion.label || "Untitled Question"}
+                {currentQuestion.required && (
+                  <span className="text-red-500 ml-1">*</span>
+                )}
+              </p>
 
-                  {q.type === "short_text" && (
-                    <input
-                      type="text"
-                      placeholder={q.placeholder || "Your answer here..."}
-                      value={responses[q._id] || ""}
-                      onChange={(e) => handleResponse(q._id, e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
-                    />
-                  )}
+              {currentQuestion.type === "short_text" && (
+                <input
+                  type="text"
+                  placeholder={
+                    currentQuestion.placeholder || "Your answer here..."
+                  }
+                  value={responses[getResponseKey(currentQuestion)] || ""}
+                  onChange={(e) =>
+                    handleResponse(
+                      getResponseKey(currentQuestion),
+                      e.target.value,
+                    )
+                  }
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
+                />
+              )}
 
-                  {q.type === "long_text" && (
-                    <textarea
-                      placeholder={q.placeholder || "Your answer here..."}
-                      value={responses[q._id] || ""}
-                      onChange={(e) => handleResponse(q._id, e.target.value)}
-                      rows={4}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm resize-none"
-                    />
-                  )}
+              {currentQuestion.type === "long_text" && (
+                <textarea
+                  placeholder={
+                    currentQuestion.placeholder || "Your answer here..."
+                  }
+                  value={responses[getResponseKey(currentQuestion)] || ""}
+                  onChange={(e) =>
+                    handleResponse(
+                      getResponseKey(currentQuestion),
+                      e.target.value,
+                    )
+                  }
+                  rows={4}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm resize-none"
+                />
+              )}
 
-                  {q.type === "multiple_choice" && (
-                    <div className="space-y-2">
-                      {q.options?.map((opt: string, i: number) => (
-                        <label
-                          key={i}
-                          className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-indigo-200 cursor-pointer transition-all"
-                        >
-                          <input
-                            type="radio"
-                            name={q._id}
-                            value={opt}
-                            checked={responses[q._id] === opt}
-                            onChange={() => handleResponse(q._id, opt)}
-                            className="w-4 h-4"
-                          />
-                          <span className="text-sm text-slate-700">{opt}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-
-                  {q.type === "checkboxes" && (
-                    <div className="space-y-2">
-                      {q.options?.map((opt: string, i: number) => (
-                        <label
-                          key={i}
-                          className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-indigo-200 cursor-pointer transition-all"
-                        >
-                          <input
-                            type="checkbox"
-                            value={opt}
-                            checked={(responses[q._id] || "")
-                              .split(",")
-                              .includes(opt)}
-                            onChange={(e) => {
-                              const current = responses[q._id]
-                                ? responses[q._id].split(",")
-                                : [];
-                              const updated = e.target.checked
-                                ? [...current, opt]
-                                : current.filter((v) => v !== opt);
-                              handleResponse(q._id, updated.join(","));
-                            }}
-                            className="w-4 h-4 rounded"
-                          />
-                          <span className="text-sm text-slate-700">{opt}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-
-                  {q.type === "rating" && (
-                    <div className="flex gap-2">
-                      {Array.from({ length: q.max || 5 }, (_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => handleResponse(q._id, String(i + 1))}
-                          className="w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all"
-                          style={{
-                            borderColor:
-                              Number(responses[q._id]) > i
-                                ? primaryColor
-                                : "#E2E8F0",
-                            backgroundColor:
-                              Number(responses[q._id]) > i
-                                ? primaryColor
-                                : "white",
-                            color:
-                              Number(responses[q._id]) > i
-                                ? "white"
-                                : "#94A3B8",
-                          }}
-                        >
-                          {i + 1}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {q.type === "number" && (
-                    <input
-                      type="number"
-                      value={responses[q._id] || ""}
-                      onChange={(e) => handleResponse(q._id, e.target.value)}
-                      className="w-32 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
-                    />
-                  )}
-
-                  {q.type === "date" && (
-                    <input
-                      type="date"
-                      value={responses[q._id] || ""}
-                      onChange={(e) => handleResponse(q._id, e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
-                    />
-                  )}
+              {currentQuestion.type === "multiple_choice" && (
+                <div className="space-y-2">
+                  {currentQuestion.options?.map((opt: string, i: number) => (
+                    <label
+                      key={i}
+                      className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-indigo-200 cursor-pointer transition-all"
+                    >
+                      <input
+                        type="radio"
+                        name={getResponseKey(currentQuestion)}
+                        value={opt}
+                        checked={
+                          responses[getResponseKey(currentQuestion)] === opt
+                        }
+                        onChange={() =>
+                          handleResponse(getResponseKey(currentQuestion), opt)
+                        }
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm text-slate-700">{opt}</span>
+                    </label>
+                  ))}
                 </div>
-              ))
-            )}
+              )}
+
+              {currentQuestion.type === "checkboxes" && (
+                <div className="space-y-2">
+                  {currentQuestion.options?.map((opt: string, i: number) => (
+                    <label
+                      key={i}
+                      className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-indigo-200 cursor-pointer transition-all"
+                    >
+                      <input
+                        type="checkbox"
+                        value={opt}
+                        checked={(
+                          responses[getResponseKey(currentQuestion)] || ""
+                        )
+                          .split(",")
+                          .includes(opt)}
+                        onChange={(e) => {
+                          const current = responses[
+                            getResponseKey(currentQuestion)
+                          ]
+                            ? responses[getResponseKey(currentQuestion)].split(
+                                ",",
+                              )
+                            : [];
+                          const updated = e.target.checked
+                            ? [...current, opt]
+                            : current.filter((v) => v !== opt);
+                          handleResponse(
+                            getResponseKey(currentQuestion),
+                            updated.join(","),
+                          );
+                        }}
+                        className="w-4 h-4 rounded"
+                      />
+                      <span className="text-sm text-slate-700">{opt}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {currentQuestion.type === "rating" && (
+                <div className="flex gap-2">
+                  {Array.from({ length: currentQuestion.max || 5 }, (_, i) => (
+                    <button
+                      key={i}
+                      onClick={() =>
+                        handleResponse(
+                          getResponseKey(currentQuestion),
+                          String(i + 1),
+                        )
+                      }
+                      className="w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all"
+                      style={{
+                        borderColor:
+                          Number(responses[getResponseKey(currentQuestion)]) > i
+                            ? primaryColor
+                            : "#E2E8F0",
+                        backgroundColor:
+                          Number(responses[getResponseKey(currentQuestion)]) > i
+                            ? primaryColor
+                            : "white",
+                        color:
+                          Number(responses[getResponseKey(currentQuestion)]) > i
+                            ? "white"
+                            : "#94A3B8",
+                      }}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {currentQuestion.type === "number" && (
+                <input
+                  type="number"
+                  value={responses[getResponseKey(currentQuestion)] || ""}
+                  onChange={(e) =>
+                    handleResponse(
+                      getResponseKey(currentQuestion),
+                      e.target.value,
+                    )
+                  }
+                  className="w-32 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
+                />
+              )}
+
+              {currentQuestion.type === "date" && (
+                <input
+                  type="date"
+                  value={responses[getResponseKey(currentQuestion)] || ""}
+                  onChange={(e) =>
+                    handleResponse(
+                      getResponseKey(currentQuestion),
+                      e.target.value,
+                    )
+                  }
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
+                />
+              )}
+            </div>
 
             <div className="flex justify-between items-center pt-4">
-              {activePage > 0 ? (
+              {questionHistory.length > 0 ? (
                 <button
                   onClick={handleBack}
                   className="px-6 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-gray-50 transition-all"
@@ -591,27 +770,29 @@ export default function TakeSurvey() {
                 <div />
               )}
 
-              {activePage < totalPages - 1 ? (
-                <button
-                  onClick={handleNext}
-                  style={{ backgroundColor: primaryColor }}
-                  className="px-8 py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg transition-all"
-                >
-                  Next →
-                </button>
-              ) : (
-                <button
-                  onClick={handleSubmitClick}
-                  className="px-8 py-3 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 shadow-lg transition-all"
-                >
-                  Submit Response ✓
-                </button>
-              )}
+              <button
+                onClick={handleNext}
+                style={{
+                  backgroundColor:
+                    currentResolvedTarget === -1 ||
+                    (currentResolvedTarget === null &&
+                      activeQuestionIndex >= totalQuestions - 1)
+                      ? "#16A34A"
+                      : primaryColor,
+                }}
+                className="px-8 py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg transition-all"
+              >
+                {currentResolvedTarget === -1 ||
+                (currentResolvedTarget === null &&
+                  activeQuestionIndex >= totalQuestions - 1)
+                  ? "Submit Response ✓"
+                  : "Next →"}
+              </button>
             </div>
           </div>
         ) : (
           <div className="p-10 text-center text-slate-400 italic">
-            No pages found in this survey.
+            No questions found in this survey.
           </div>
         )}
       </div>

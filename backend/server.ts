@@ -26,6 +26,7 @@ import AuditLog from "./models/AuditLog.js";
 import surveyRoutes from "./routes/surveyRoutes.js";
 import SurveyResponse from "./models/SurveyResponse.js";
 import roleManagementRoutes from "./routes/roleManagementRoutes.js";
+import auditRoutes from "./routes/auditRoutes.js";
 
 const ensureCollections = async () => {
   await Promise.all([
@@ -54,7 +55,10 @@ const app = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    origin: (origin, cb) => {
+      if (!origin || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) cb(null, true);
+      else cb(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   }),
 );
@@ -65,8 +69,9 @@ app.use(passport.initialize());
 app.use(payhereRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/surveys", surveyRoutes);
-app.use("/api/role-management", roleManagementRoutes)
-app.use("/api/organization-registration", createOrganization)
+app.use("/api/role-management", roleManagementRoutes);
+app.use("/api/audit-logs", auditRoutes);
+app.use("/api/organization-registration", createOrganization);
 app.use(analyticsRoutes);
 app.use(errorHandler);
 
