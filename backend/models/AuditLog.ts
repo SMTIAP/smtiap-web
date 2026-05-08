@@ -2,8 +2,8 @@ import mongoose, { Schema, type InferSchemaType } from "mongoose";
 
 const auditLogSchema = new Schema(
   {
-    tenant_id: { type: Schema.Types.ObjectId, ref: "Tenant", required: true },
-    user_id: { type: Schema.Types.ObjectId, ref: "TenantUser", required: true },
+    tenant_id: { type: Schema.Types.ObjectId, ref: "Tenant", default: null },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
     action: { type: String, required: true, trim: true },
     entity: { type: String, required: true, trim: true },
     entity_id: { type: Schema.Types.ObjectId, required: true },

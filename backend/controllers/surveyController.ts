@@ -1,13 +1,33 @@
 import { Request, Response } from "express";
 import Survey from "../models/Survey.js";
+import AuditLog from "../models/AuditLog.js";
+
+const logAudit = (req: Request, action: string, entityId: any) => {
+  const user = (req as any).user;
+  if (!user) return;
+  AuditLog.create({
+    user_id: user._id,
+    action,
+    entity: "Survey",
+    entity_id: entityId,
+  } as any).catch(() => {});
+};
 
 // POST /api/surveys
 export const createSurvey = async (req: Request, res: Response) => {
   try {
     const {
-      surveyTitle, description, websiteUrl, logo,
-      themeColor, primaryColor, customizeBranding,
-      isAnonymous, pages, status, tenantId,
+      surveyTitle,
+      description,
+      websiteUrl,
+      logo,
+      themeColor,
+      primaryColor,
+      customizeBranding,
+      isAnonymous,
+      pages,
+      status,
+      tenantId,
     } = req.body;
 
     if (!surveyTitle) {
@@ -16,12 +36,21 @@ export const createSurvey = async (req: Request, res: Response) => {
     }
 
     const survey = new Survey({
-      surveyTitle, description, websiteUrl, logo,
-      themeColor, primaryColor, customizeBranding,
-      isAnonymous, pages, status, tenantId,
+      surveyTitle,
+      description,
+      websiteUrl,
+      logo,
+      themeColor,
+      primaryColor,
+      customizeBranding,
+      isAnonymous,
+      pages,
+      status,
+      tenantId,
     });
 
     await survey.save();
+    logAudit(req, "create", survey._id);
     res.status(201).json({ message: "Survey created", survey });
   } catch (err) {
     res.status(500).json({ message: String(err) });
@@ -60,13 +89,15 @@ export const getSurveyById = async (req: Request, res: Response) => {
 // PUT /api/surveys/:id
 export const updateSurvey = async (req: Request, res: Response) => {
   try {
-    const survey = await Survey.findByIdAndUpdate(
-      req.params.id, req.body, { new: true, runValidators: true }
-    );
+    const survey = await Survey.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
     if (!survey) {
       res.status(404).json({ message: "Survey not found" });
       return;
     }
+    logAudit(req, "update", survey._id);
     res.json({ message: "Survey updated", survey });
   } catch (err) {
     res.status(500).json({ message: String(err) });
@@ -82,12 +113,15 @@ export const updateStatus = async (req: Request, res: Response) => {
       return;
     }
     const survey = await Survey.findByIdAndUpdate(
-      req.params.id, { status }, { new: true }
+      req.params.id,
+      { status },
+      { new: true },
     );
     if (!survey) {
       res.status(404).json({ message: "Survey not found" });
       return;
     }
+    logAudit(req, `status_change_${status.toLowerCase()}`, survey._id);
     res.json({ message: "Status updated", survey });
   } catch (err) {
     res.status(500).json({ message: String(err) });
@@ -97,7 +131,9 @@ export const updateStatus = async (req: Request, res: Response) => {
 // DELETE /api/surveys/:id
 export const deleteSurvey = async (req: Request, res: Response) => {
   try {
-    await Survey.findByIdAndDelete(req.params.id);
+    const surveyId = req.params.id;
+    await Survey.findByIdAndDelete(surveyId);
+    logAudit(req, "delete", surveyId);
     res.json({ message: "Survey deleted" });
   } catch (err) {
     res.status(500).json({ message: String(err) });

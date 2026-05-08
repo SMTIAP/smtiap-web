@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import User from "../models/User.js";
+import AuditLog from "../models/AuditLog.js";
 import sendToken from "../utils/sendToken.js";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
@@ -38,6 +39,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Record audit log
+    await AuditLog.create({
+      user_id: user._id,
+      action: "login",
+      entity: "User",
+      entity_id: user._id,
+    }).catch(() => {});
+
     sendToken(user, res);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -45,6 +54,16 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const logout = async (req: Request, res: Response): Promise<void> => {
+  const user = (req as any).user;
+  if (user) {
+    await AuditLog.create({
+      user_id: user._id,
+      action: "logout",
+      entity: "User",
+      entity_id: user._id,
+    }).catch(() => {});
+  }
+
   res.cookie("token", "", {
     httpOnly: true,
     expires: new Date(0),

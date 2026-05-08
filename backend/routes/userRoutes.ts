@@ -5,7 +5,7 @@ import {
   logout,
   getMe,
   forgotPassword,
-  resetPassword
+  resetPassword,
 } from "../controllers/userController.js";
 import { protect } from "../middleware/auth.js";
 import { authorizeRoles } from "../middleware/role.js";
@@ -17,22 +17,17 @@ const router = express.Router();
 
 router.post("/register", register);
 router.post("/login", login);
-router.post("/logout", logout);
+router.post("/logout", protect, logout);
 router.get("/me", protect, getMe);
 router.post("/forgot-password", forgotPassword);
 router.put("/reset-password/:token", resetPassword);
 
-router.get(
-  "/superadmin",
-  protect,
-  authorizeRoles("superadmin"),
-  (req, res) => {
-    res.json({ message: "Welcome Admin Dashboard" });
-  }
-);
+router.get("/superadmin", protect, authorizeRoles("superadmin"), (req, res) => {
+  res.json({ message: "Welcome Admin Dashboard" });
+});
 router.get(
   "/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
+  passport.authenticate("google", { scope: ["profile", "email"] }),
 );
 
 router.get(
@@ -45,7 +40,7 @@ router.get(
     const token = jwt.sign(
       { id: (req.user as any)._id },
       process.env.JWT_SECRET as string,
-      { expiresIn: "30d" }
+      { expiresIn: "30d" },
     );
 
     res.cookie("token", token, {
@@ -55,12 +50,12 @@ router.get(
     });
 
     res.redirect("http://localhost:5173/admin");
-  }
+  },
 );
 
 router.get(
   "/github",
-  passport.authenticate("github", { scope: ["user:email"] })
+  passport.authenticate("github", { scope: ["user:email"] }),
 );
 
 // callback
@@ -74,7 +69,7 @@ router.get(
     const token = jwt.sign(
       { id: (req.user as any)._id },
       process.env.JWT_SECRET as string,
-      { expiresIn: "30d" }
+      { expiresIn: "30d" },
     );
 
     res.cookie("token", token, {
@@ -84,19 +79,15 @@ router.get(
     });
 
     res.redirect("http://localhost:5173/admin");
-  }
+  },
 );
 
-
-router.get(
-  "/linkedin",
-  passport.authenticate("linkedin")
-);
+router.get("/linkedin", passport.authenticate("linkedin"));
 
 router.get(
   "/linkedin/callback",
   passport.authenticate("linkedin", {
-    session: false
+    session: false,
   }),
   (req, res) => {
     console.log("✅ LinkedIn callback hit");
@@ -105,7 +96,7 @@ router.get(
     const token = jwt.sign(
       { id: (req.user as any)._id },
       process.env.JWT_SECRET as string,
-      { expiresIn: "30d" }
+      { expiresIn: "30d" },
     );
 
     res.cookie("token", token, {
@@ -115,7 +106,7 @@ router.get(
     });
 
     res.redirect("http://localhost:5173/admin");
-  }
+  },
 );
 
 export default router;

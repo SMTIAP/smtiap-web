@@ -10,6 +10,7 @@ import {
 } from "../controllers/surveyController.js";
 import SurveyResponse from "../models/SurveyResponse.js";
 import Survey from "../models/Survey.js";
+import { protect, optionalAuth } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -38,12 +39,12 @@ const getDeviceHash = (req: any): string => {
   return crypto.createHash("sha256").update(rawFingerprint).digest("hex");
 };
 
-router.post("/", createSurvey);
+router.post("/", optionalAuth, createSurvey);
 router.get("/", getSurveys);
 router.get("/:id", getSurveyById);
-router.put("/:id", updateSurvey);
-router.patch("/:id/status", updateStatus);
-router.delete("/:id", deleteSurvey);
+router.put("/:id", optionalAuth, updateSurvey);
+router.patch("/:id/status", optionalAuth, updateStatus);
+router.delete("/:id", optionalAuth, deleteSurvey);
 
 // ✅ Verify survey password
 router.post("/:id/verify-password", async (req, res) => {
