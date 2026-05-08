@@ -1,19 +1,49 @@
 import { Router } from "express";
+import crypto from "crypto";
 import {
-  createSurvey, getSurveys, getSurveyById,
-  updateSurvey, updateStatus, deleteSurvey,
+  createSurvey,
+  getSurveys,
+  getSurveyById,
+  updateSurvey,
+  updateStatus,
+  deleteSurvey,
 } from "../controllers/surveyController.js";
 import SurveyResponse from "../models/SurveyResponse.js";
 import Survey from "../models/Survey.js";
 
 const router = Router();
 
-router.post("/",            createSurvey);
-router.get("/",             getSurveys);
-router.get("/:id",          getSurveyById);
-router.put("/:id",          updateSurvey);
+const getClientIp = (req: any): string => {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string" && forwarded.trim()) {
+    return forwarded.split(",")[0].trim();
+  }
+  return String(req.ip || req.socket?.remoteAddress || "").trim();
+};
+
+const getDeviceHash = (req: any): string => {
+  const userAgent = String(req.headers["user-agent"] || "");
+  const acceptLanguage = String(req.headers["accept-language"] || "");
+  const secChUa = String(req.headers["sec-ch-ua"] || "");
+  const secChUaPlatform = String(req.headers["sec-ch-ua-platform"] || "");
+
+  const rawFingerprint = [userAgent, acceptLanguage, secChUa, secChUaPlatform]
+    .map((value) => value.trim())
+    .join("|");
+
+  if (!rawFingerprint.replace(/\|/g, "")) {
+    return "";
+  }
+
+  return crypto.createHash("sha256").update(rawFingerprint).digest("hex");
+};
+
+router.post("/", createSurvey);
+router.get("/", getSurveys);
+router.get("/:id", getSurveyById);
+router.put("/:id", updateSurvey);
 router.patch("/:id/status", updateStatus);
-router.delete("/:id",       deleteSurvey);
+router.delete("/:id", deleteSurvey);
 
 // ✅ Verify survey password
 router.post("/:id/verify-password", async (req, res) => {
@@ -35,14 +65,25 @@ router.post("/:id/verify-password", async (req, res) => {
 router.post("/:id/responses", async (req, res) => {
   try {
     const respondentToken = String(req.body?.respondentToken || "").trim();
+    const ipAddress = getClientIp(req);
+    const userAgent = String(req.headers["user-agent"] || "").trim();
+    const deviceHash = getDeviceHash(req);
 
     if (!respondentToken) {
       return res.status(400).json({ error: "Respondent token is required" });
     }
 
+    const duplicateFilters: any[] = [{ respondentToken }];
+    if (ipAddress) {
+      duplicateFilters.push({ ipAddress });
+    }
+    if (deviceHash) {
+      duplicateFilters.push({ deviceHash });
+    }
+
     const existing = await SurveyResponse.findOne({
       surveyId: req.params.id,
-      respondentToken,
+      $or: duplicateFilters,
     });
 
     if (existing) {
@@ -54,7 +95,10 @@ router.post("/:id/responses", async (req, res) => {
     const doc = await SurveyResponse.create({
       surveyId: req.params.id,
       respondentToken,
-      responses: req.body.responses
+      ipAddress,
+      userAgent,
+      deviceHash,
+      responses: req.body.responses,
     });
     res.json(doc);
   } catch (err) {
