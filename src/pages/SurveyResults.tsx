@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { BarChart3, ChevronLeft, StopCircle, X } from "lucide-react";
+import AllResponsesTable from "../components/AllResponsesTable";
 
 interface Question {
   _id: string;
@@ -10,7 +11,7 @@ interface Question {
   max?: number;
 }
 
-// ✅ Stop Survey Confirmation Modal
+// ✅ Clean minimal Stop Modal
 const StopConfirmModal = ({
   onConfirm,
   onCancel,
@@ -21,48 +22,43 @@ const StopConfirmModal = ({
   stopping: boolean;
 }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-    {/* Backdrop */}
     <div
-      className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+      className="absolute inset-0 bg-black/25 backdrop-blur-sm"
       onClick={onCancel}
     />
-
-    {/* Modal Card */}
-    <div className="relative bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 max-w-sm w-full z-10">
+    <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 max-w-xs w-full z-10">
       <button
         onClick={onCancel}
-        className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-all"
+        className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-all"
       >
-        <X size={16} />
+        <X size={14} />
       </button>
 
-      {/* Icon */}
-      <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
-        <StopCircle size={28} className="text-red-500" />
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0">
+          <StopCircle size={16} className="text-red-500" />
+        </div>
+        <p className="font-black text-slate-900 text-base">Stop survey?</p>
       </div>
 
-      <h2 className="text-xl font-black text-slate-900 text-center mb-2">
-        Stop this survey?
-      </h2>
-      <p className="text-slate-500 text-sm text-center mb-8">
-        This survey will no longer accept new responses. This action cannot be
-        undone.
+      <p className="text-slate-400 text-xs mb-6">
+        No new responses after this.
       </p>
 
-      <div className="flex flex-col gap-3">
-        <button
-          onClick={onConfirm}
-          disabled={stopping}
-          className="w-full py-3 bg-red-500 text-white rounded-2xl font-bold text-sm hover:bg-red-600 transition-all disabled:opacity-50 shadow-lg shadow-red-100"
-        >
-          {stopping ? "Stopping..." : "Yes, stop survey"}
-        </button>
+      <div className="flex gap-2">
         <button
           onClick={onCancel}
           disabled={stopping}
-          className="w-full py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-all"
+          className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
         >
           Cancel
+        </button>
+        <button
+          onClick={onConfirm}
+          disabled={stopping}
+          className="flex-1 py-2.5 bg-red-500 text-white rounded-xl font-bold text-sm hover:bg-red-600 transition-all disabled:opacity-50"
+        >
+          {stopping ? "Stopping..." : "Stop"}
         </button>
       </div>
     </div>
@@ -75,12 +71,12 @@ export default function SurveyResults() {
   const [survey, setSurvey] = useState<any>(null);
   const [responses, setResponses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"summary" | "individual">(
+  const [activeTab, setActiveTab] = useState<"summary" | "individual" | "all">(
     "summary",
   );
   const [activeResponseIndex, setActiveResponseIndex] = useState(0);
   const [stopping, setStopping] = useState(false);
-  const [showStopModal, setShowStopModal] = useState(false); // ✅ NEW
+  const [showStopModal, setShowStopModal] = useState(false);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -144,7 +140,6 @@ export default function SurveyResults() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-12 px-6">
-      {/* ✅ Stop Modal */}
       {showStopModal && (
         <StopConfirmModal
           onConfirm={handleStopSurvey}
@@ -154,7 +149,6 @@ export default function SurveyResults() {
       )}
 
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header card */}
         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
           <div
             className="h-2 w-full"
@@ -169,7 +163,6 @@ export default function SurveyResults() {
                 <ChevronLeft size={14} /> Back to surveys
               </button>
 
-              {/* ✅ Stop Survey button — opens modal instead of confirm() */}
               {isRunning && (
                 <button
                   onClick={() => setShowStopModal(true)}
@@ -197,7 +190,7 @@ export default function SurveyResults() {
 
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
               <div className="flex gap-2 bg-slate-100 p-1 rounded-2xl w-fit">
-                {(["summary", "individual"] as const).map((tab) => (
+                {(["summary", "individual", "all"] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -207,7 +200,11 @@ export default function SurveyResults() {
                         : "text-slate-400 hover:text-slate-600"
                     }`}
                   >
-                    {tab === "summary" ? "📊 Summary" : "👤 Individual"}
+                    {tab === "summary"
+                      ? "📊 Summary"
+                      : tab === "individual"
+                        ? "👤 Individual"
+                        : "🗂 All"}
                   </button>
                 ))}
               </div>
@@ -225,7 +222,6 @@ export default function SurveyResults() {
           </div>
         </div>
 
-        {/* No responses yet */}
         {totalResponses === 0 && (
           <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-16 text-center">
             <p className="text-4xl mb-4">📭</p>
@@ -236,7 +232,6 @@ export default function SurveyResults() {
           </div>
         )}
 
-        {/* SUMMARY TAB */}
         {activeTab === "summary" &&
           totalResponses > 0 &&
           allQuestions.map((q) => {
@@ -290,9 +285,15 @@ export default function SurveyResults() {
                 {q.type === "checkboxes" && q.options && (
                   <div className="space-y-3">
                     {q.options.map((opt) => {
-                      const count = answers.filter((a) =>
-                        a.split(",").includes(opt),
-                      ).length;
+                      const count = answers.filter((a) => {
+                        if (Array.isArray(a)) return a.includes(opt);
+                        if (typeof a === "string")
+                          return a
+                            .split(",")
+                            .map((s) => s.trim())
+                            .includes(opt);
+                        return false;
+                      }).length;
                       const pct = answers.length
                         ? Math.round((count / answers.length) * 100)
                         : 0;
@@ -396,7 +397,14 @@ export default function SurveyResults() {
             );
           })}
 
-        {/* INDIVIDUAL TAB */}
+        {activeTab === "all" && totalResponses > 0 && (
+          <AllResponsesTable
+            questions={allQuestions}
+            responses={responses}
+            primaryColor={primaryColor}
+          />
+        )}
+
         {activeTab === "individual" && totalResponses > 0 && (
           <div className="space-y-4">
             <div className="flex justify-between items-center bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-4">
@@ -421,9 +429,15 @@ export default function SurveyResults() {
 
             <p className="text-xs text-slate-400 text-center">
               Submitted:{" "}
-              {new Date(
-                responses[activeResponseIndex].createdAt,
-              ).toLocaleString()}
+              {(() => {
+                const raw =
+                  responses[activeResponseIndex]?.submittedAt ??
+                  responses[activeResponseIndex]?.createdAt;
+                const d = raw ? new Date(raw) : null;
+                return d && !Number.isNaN(d.getTime())
+                  ? d.toLocaleString()
+                  : "N/A";
+              })()}
             </p>
 
             {allQuestions.map((q) => {
@@ -436,9 +450,11 @@ export default function SurveyResults() {
                   <p className="font-bold text-slate-700 text-sm mb-2">
                     {q.label}
                   </p>
-                  {answer ? (
+                  {answer !== undefined && answer !== null && answer !== "" ? (
                     <p className="text-slate-800 text-base bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
-                      {answer}
+                      {Array.isArray(answer)
+                        ? answer.join(", ")
+                        : String(answer)}
                     </p>
                   ) : (
                     <p className="text-slate-400 text-sm italic">No answer</p>

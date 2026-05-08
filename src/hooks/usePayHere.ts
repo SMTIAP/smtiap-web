@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 //bridge between ui and backend + payhere. used by payment subscription.tsx for preparing and sending payment request
 
@@ -8,15 +8,58 @@ interface PaymentStatus {
   error?: string;
 }
 
+//declare payHere window object
+declare global {
+  interface Window {
+    payhere: {
+      startPayment: (payment: any) => void;
+      onCompleted: (orderId: string) => void;
+      onDismissed: () => void;
+      onError: (error: string) => void;
+    };
+  }
+}
+
 export const usePayHere = () => {
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>({
     status: "idle",
   });
-
   const [isLoading, setIsLoading] = useState(false);
+
+  //set up payHere event listeners when hook mounts
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.payhere) return;
+
+    window.payhere.onCompleted = (orderId: string) => {
+      console.log('Payment completed:', orderId);
+      setPaymentStatus({
+        status: "success",
+        orderId: orderId,
+      });
+      setIsLoading(false);
+    };
+
+    window.payhere.onDismissed = () => {
+      console.log('Payment dismissed');
+      setPaymentStatus({
+        status: "cancelled",
+      });
+      setIsLoading(false);
+    };
+
+    window.payhere.onError = (error: string) => {
+      console.error('PayHere error:', error);
+      setPaymentStatus({
+        status: "error",
+        error: error,
+      });
+      setIsLoading(false);
+    };
+  }, []);
 
   const startPayment = async (data: any) => {
     setIsLoading(true);
+    setPaymentStatus({ status: "idle" });
 
     try {
       //request hash from backend
@@ -25,7 +68,6 @@ export const usePayHere = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        //sends orderid, amount and currency cause payhere need hash generated using secret key
         body: JSON.stringify({
           order_id: data.order_id,
           amount: data.amount,
@@ -33,17 +75,12 @@ export const usePayHere = () => {
         }),
       });
 
-      //get back verified merchant id and secure hash from serverjs
       const { merchant_id, hash } = await response.json();
 
-      //create a payment form for payhere
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = "https://sandbox.payhere.lk/pay/checkout";
-
-      //attach all the fields
-      const fields: Record<string, string> = {
-        merchant_id,
+      //create payment object for payHere SDK
+      const payment = {
+        sandbox: data.sandbox || true,
+        merchant_id: merchant_id,
         return_url: data.return_url,
         cancel_url: data.cancel_url,
         notify_url: data.notify_url,
@@ -52,9 +89,8 @@ export const usePayHere = () => {
         items: data.items,
         currency: data.currency,
         amount: data.amount,
-        hash,
+        hash: hash,
 
-        //details collect for invoice generation and email send
         first_name: data.first_name,
         last_name: data.last_name,
         email: data.email,
@@ -64,18 +100,12 @@ export const usePayHere = () => {
         country: data.country,
       };
 
-      //create hidden inputs for each field
-      Object.entries(fields).forEach(([key, value]) => {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = key;
-        input.value = value;
-        form.appendChild(input);
-      });
-
-      //submit that created form. this redirects user to form.action url. payhere.lk/pay/checkout. leaves browser and open payhere checkout page.
-      document.body.appendChild(form);
-      form.submit();
+      //use payHere SDK not form submission
+      if (window.payhere) {
+        window.payhere.startPayment(payment);
+      } else {
+        throw new Error("PayHere SDK not loaded");
+      }
 
     } catch (err) {
       console.error("Payment error:", err);
