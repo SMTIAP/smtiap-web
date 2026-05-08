@@ -34,12 +34,35 @@ router.post("/:id/verify-password", async (req, res) => {
 // Save a survey response
 router.post("/:id/responses", async (req, res) => {
   try {
+    const respondentToken = String(req.body?.respondentToken || "").trim();
+
+    if (!respondentToken) {
+      return res.status(400).json({ error: "Respondent token is required" });
+    }
+
+    const existing = await SurveyResponse.findOne({
+      surveyId: req.params.id,
+      respondentToken,
+    });
+
+    if (existing) {
+      return res.status(409).json({
+        error: "You have already submitted a response for this survey.",
+      });
+    }
+
     const doc = await SurveyResponse.create({
       surveyId: req.params.id,
+      respondentToken,
       responses: req.body.responses
     });
     res.json(doc);
   } catch (err) {
+    if ((err as any)?.code === 11000) {
+      return res.status(409).json({
+        error: "You have already submitted a response for this survey.",
+      });
+    }
     res.status(500).json({ error: "Failed to save response" });
   }
 });

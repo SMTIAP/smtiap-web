@@ -17,6 +17,20 @@ interface Page {
   questions: Question[];
 }
 
+function getOrCreateRespondentToken(surveyId: string): string {
+  const key = `survey_respondent_token_${surveyId}`;
+  const existing = localStorage.getItem(key);
+  if (existing) return existing;
+
+  const token =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+
+  localStorage.setItem(key, token);
+  return token;
+}
+
 function generateCaptcha() {
   const a = Math.floor(Math.random() * 10) + 1;
   const b = Math.floor(Math.random() * 10) + 1;
@@ -43,6 +57,7 @@ export default function TakeSurvey() {
   const [captcha, setCaptcha] = useState(generateCaptcha());
   const [captchaInput, setCaptchaInput] = useState('');
   const [captchaError, setCaptchaError] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     const fetchSurvey = async () => {
@@ -190,6 +205,7 @@ export default function TakeSurvey() {
   };
 
   const handleSubmitClick = () => {
+    setSubmitError('');
     setCaptcha(generateCaptcha());
     setCaptchaInput('');
     setCaptchaError(false);
@@ -205,14 +221,32 @@ export default function TakeSurvey() {
     }
     setShowCaptcha(false);
     try {
-      await fetch(`http://localhost:5000/api/surveys/${surveyId}/responses`, {
+      if (!surveyId) {
+        throw new Error('Invalid survey link.');
+      }
+
+      const respondentToken = getOrCreateRespondentToken(surveyId);
+
+      const response = await fetch(`http://localhost:5000/api/surveys/${surveyId}/responses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ responses })
+        body: JSON.stringify({ responses, respondentToken })
       });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(
+          data?.error ||
+          (response.status === 409
+            ? 'You have already submitted this survey.'
+            : 'Failed to submit response.')
+        );
+      }
+
       setSubmitted(true);
     } catch (err) {
       console.error("Submit error:", err);
+      setSubmitError(err instanceof Error ? err.message : 'Failed to submit response.');
     }
   };
 
@@ -295,6 +329,12 @@ export default function TakeSurvey() {
         {/* Questions */}
         {currentPage ? (
           <div className="space-y-4">
+            {submitError && (
+              <div className="p-3 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm font-medium">
+                {submitError}
+              </div>
+            )}
+
             {currentPage.title && totalPages > 1 && (
               <p className="text-sm font-bold text-slate-500 uppercase tracking-wider px-2">
                 {currentPage.title}
