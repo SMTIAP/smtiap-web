@@ -19,9 +19,9 @@ import NavBar from "./components/NavBar.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
-import ShareSurvey from './pages/ShareSurvey';
-import TakeSurvey from './pages/TakeSurvey';
-import SurveyResults from './pages/SurveyResults';
+import ShareSurvey from "./pages/ShareSurvey";
+import TakeSurvey from "./pages/TakeSurvey";
+import SurveyResults from "./pages/SurveyResults";
 import OrganizationRegistration from "./pages/OrganizationRegistration.tsx";
 
 function Layout() {
@@ -169,6 +169,10 @@ export default function App() {
                 <RoleManagement />
               </ProtectedRoute>
             }
+          />
+          <Route
+            path="/organization-registration"
+            element={<OrganizationRegistration />}
           />
           <Route
             path="/audit-log"
