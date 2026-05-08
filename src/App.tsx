@@ -22,6 +22,7 @@ import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import ShareSurvey from './pages/ShareSurvey';
 import TakeSurvey from './pages/TakeSurvey';
 import SurveyResults from './pages/SurveyResults';
+import OrganizationRegistration from "./pages/OrganizationRegistration.tsx";
 
 function Layout() {
   return (
@@ -73,8 +74,13 @@ export default function App() {
           {/* Analytics & Responses */}
           <Route path="/response" element={<Response />} />
           <Route path="/analytics" element={<Analytics />} />
+
+          {/* Organization Registration */}
+          <Route path="/organization-registration" element={<OrganizationRegistration />} />
+
           {/* Role Management */}
           <Route path="/role-management" element={<RoleManagement />} />
+
           {/* Audit Management */}
           <Route path="/audit-log" element={<Audit />} />
         </Route>
