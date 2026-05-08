@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import api from "../api/api";
 import {
   Plus,
   GripVertical,
@@ -688,19 +689,15 @@ export default function AddQuestions() {
       const loadSurvey = async () => {
         try {
           setLoadingSurvey(true);
-          const res = await fetch(
-            `http://localhost:5000/api/surveys/${surveyId}`,
+          const res = await api.get(`/surveys/${surveyId}`);
+          const data = res.data;
+          setSurveyTitle(data?.surveyTitle || "Untitled Survey");
+          setPrimaryColor(
+            data?.primaryColor || data?.themeColor || "#6366F1",
           );
-          if (res.ok) {
-            const data = await res.json();
-            setSurveyTitle(data?.surveyTitle || "Untitled Survey");
-            setPrimaryColor(
-              data?.primaryColor || data?.themeColor || "#6366F1",
-            );
-            setPages(normalizeSurveyPages(data?.pages));
-            setActivePageIndex(0);
-            setSelectedQuestionId(null);
-          }
+          setPages(normalizeSurveyPages(data?.pages));
+          setActivePageIndex(0);
+          setSelectedQuestionId(null);
         } catch (err) {
           console.error("Failed to load existing survey data", err);
         } finally {
@@ -903,26 +900,24 @@ export default function AddQuestions() {
         <div className="p-4 border-t border-gray-100 bg-gray-50">
           <button
             onClick={async () => {
-              // Conditional POST or PUT based on existence of surveyId
-              const url = surveyId
-                ? `http://localhost:5000/api/surveys/${surveyId}`
-                : "http://localhost:5000/api/surveys";
-              const method = surveyId ? "PUT" : "POST";
-
               try {
-                const res = await fetch(url, {
-                  method: method,
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    surveyTitle,
-                    primaryColor,
-                    themeColor: primaryColor,
-                    pages,
-                    status: "Draft",
-                    tenantId: "default",
-                  }),
-                });
-                const data = await res.json();
+                let res;
+                const payload = {
+                  surveyTitle,
+                  primaryColor,
+                  themeColor: primaryColor,
+                  pages,
+                  status: "Draft",
+                  tenantId: "default",
+                };
+
+                if (surveyId) {
+                  res = await api.put(`/surveys/${surveyId}`, payload);
+                } else {
+                  res = await api.post("/surveys", payload);
+                }
+
+                const data = res.data;
 
                 // If it was a PUT, data might look different, check response logic
                 const finalId = surveyId || data.survey._id;

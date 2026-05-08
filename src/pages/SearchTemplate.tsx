@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BackButton from "../components/BackButton";
 import { Utensils, Coffee, Plus, Search, Pencil } from "lucide-react";
+import api from "../api/api";
 
 interface SurveyItem {
   _id: string;
@@ -106,8 +107,8 @@ export default function SearchTemplate() {
     const fetchDraftSurveys = async () => {
       try {
         setLoadingDrafts(true);
-        const response = await fetch("http://localhost:5000/api/surveys");
-        const data = await response.json();
+        const response = await api.get("/surveys");
+        const data = response.data;
         const list = Array.isArray(data) ? (data as SurveyItem[]) : [];
         setDraftSurveys(list.filter((survey) => survey.status === "Draft"));
       } catch (err) {
@@ -124,17 +125,13 @@ export default function SearchTemplate() {
   const handleUseTemplate = async (templateTitle: string) => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/surveys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          surveyTitle: templateTitle,
-          status: "Draft",
-          questions: [],
-        }),
+      const response = await api.post("/surveys", {
+        surveyTitle: templateTitle,
+        status: "Draft",
+        pages: [],
       });
 
-      const newSurvey = await response.json();
+      const newSurvey = response.data;
       const newSurveyId = newSurvey?._id || newSurvey?.survey?._id;
 
       if (newSurveyId) {

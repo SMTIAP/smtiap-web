@@ -10,7 +10,7 @@ export default function ResetPassword() {
 
   const handleReset = async () => {
     try {
-      const res = await api.put(`/reset-password/${token}`, { password });
+      const res = await api.put(`/users/reset-password/${token}`, { password });
       alert(res.data.message);
       navigate("/auth");
     } catch (err: any) {

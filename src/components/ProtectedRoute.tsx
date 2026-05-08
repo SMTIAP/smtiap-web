@@ -13,7 +13,7 @@ export default function ProtectedRoute({ children }: Props) {
 
   useEffect(() => {
   api
-    .get("/me")
+    .get("/users/me")
     .then((res) => {
       console.log("USER:", res.data);
       setAuth(true);

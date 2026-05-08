@@ -9,8 +9,10 @@ import {
 } from "../controllers/userController.js";
 import { protect } from "../middleware/auth.js";
 import { authorizeRoles } from "../middleware/role.js";
+import sendToken from "../utils/sendToken.js";
 import passport from "passport";
 import jwt from "jsonwebtoken";
+import "../utils/sendToken.js";
 import User from "../models/User.js";
 
 const router = express.Router();
@@ -27,7 +29,7 @@ router.get(
   protect,
   authorizeRoles("superadmin"),
   (req, res) => {
-    res.json({ message: "Welcome Admin Dashboard" });
+    res.json({ message: "Welcome Super Admin Dashboard" });
   }
 );
 router.get(
@@ -54,7 +56,7 @@ router.get(
       sameSite: "lax",
     });
 
-    res.redirect("http://localhost:5173/admin");
+    res.redirect("http://localhost:5173");
   }
 );
 
@@ -83,7 +85,7 @@ router.get(
       sameSite: "lax",
     });
 
-    res.redirect("http://localhost:5173/admin");
+    res.redirect("http://localhost:5173");
   }
 );
 
@@ -114,8 +116,41 @@ router.get(
       sameSite: "lax",
     });
 
-    res.redirect("http://localhost:5173/admin");
+    res.redirect("http://localhost:5173");
   }
 );
 
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ message: "JWT_SECRET missing" });
+    }
+
+    const resetToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "10m" }
+    );
+
+    console.log("RESET LINK:");
+    console.log(`http://localhost:5173/reset-password/${resetToken}`);
+
+    res.json({ message: "Reset link sent" });
+
+  } catch (err: any) {
+    console.error("🔥 Forgot password error:", err);
+    res.status(500).json({
+      message: "Server error",
+      error: err.message
+    });
+  }
+});
 export default router;

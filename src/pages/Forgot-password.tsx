@@ -9,7 +9,7 @@ export default function ForgotPassword() {
 
   const handleSubmit = async () => {
     try {
-      const res = await api.post("/forgot-password", { email });
+      const res = await api.post("/users/forgot-password", { email });
       window.location.href = res.data.resetUrl;
     } catch (err: any) {
       alert(err.response?.data?.message || "Error");

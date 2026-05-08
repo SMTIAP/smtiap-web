@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Trash2,
 } from "lucide-react";
+import api from "../api/api";
 
 interface SurveyItem {
   _id: string;
@@ -26,9 +27,8 @@ export default function CreatedSurveys() {
   useEffect(() => {
     const fetchSurveys = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/surveys");
-        const data = await response.json();
-        setSurveys(data);
+        const response = await api.get("/surveys");
+        setSurveys(response.data);
       } catch (err) {
         console.error("Failed to fetch surveys:", err);
       } finally {
@@ -60,16 +60,7 @@ export default function CreatedSurveys() {
 
     try {
       setDeletingSurveyId(survey._id);
-      const response = await fetch(
-        `http://localhost:5000/api/surveys/${survey._id}`,
-        {
-          method: "DELETE",
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to delete survey");
-      }
+      await api.delete(`/surveys/${survey._id}`);
 
       setSurveys((prev) => prev.filter((item) => item._id !== survey._id));
     } catch (err) {

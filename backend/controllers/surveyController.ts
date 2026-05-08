@@ -15,10 +15,12 @@ export const createSurvey = async (req: Request, res: Response) => {
       return;
     }
 
+    const creatorId = (req as any).user._id.toString();
+
     const survey = new Survey({
       surveyTitle, description, websiteUrl, logo,
       themeColor, primaryColor, customizeBranding,
-      isAnonymous, pages, status, tenantId,
+      isAnonymous, pages, status, tenantId, creatorId,
     });
 
     await survey.save();
@@ -32,7 +34,8 @@ export const createSurvey = async (req: Request, res: Response) => {
 export const getSurveys = async (req: Request, res: Response) => {
   try {
     const { tenantId, status } = req.query;
-    const filter: Record<string, unknown> = {};
+    const creatorId = (req as any).user._id.toString();
+    const filter: Record<string, unknown> = { creatorId };
     if (tenantId) filter.tenantId = tenantId;
     if (status) filter.status = status;
 

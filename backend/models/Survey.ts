@@ -34,6 +34,7 @@ const surveySchema = new mongoose.Schema(
       default: "Draft",
     },
     tenantId: { type: String, default: "default" },
+    creatorId: { type: String, required: true },
   },
   { timestamps: true }
 );

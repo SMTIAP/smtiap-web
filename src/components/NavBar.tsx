@@ -21,7 +21,7 @@ export default function NavBar() {
     let mounted = true;
 
     api
-      .get("/me")
+      .get("/users/me")
       .then(() => {
         if (mounted) {
           setIsAuthenticated(true);

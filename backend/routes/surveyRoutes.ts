@@ -4,15 +4,16 @@ import {
   updateSurvey, updateStatus, deleteSurvey,
 } from "../controllers/surveyController.js";
 import SurveyResponse from "../models/SurveyResponse.js";
+import { protect } from "../middleware/auth.js";
 
 const router = Router();
 
-router.post("/",             createSurvey);
-router.get("/",              getSurveys);
+router.post("/",             protect, createSurvey);
+router.get("/",              protect, getSurveys);
 router.get("/:id",           getSurveyById);
-router.put("/:id",           updateSurvey);
-router.patch("/:id/status",  updateStatus);
-router.delete("/:id",        deleteSurvey);
+router.put("/:id",           protect, updateSurvey);
+router.patch("/:id/status",  protect, updateStatus);
+router.delete("/:id",        protect, deleteSurvey);
 
 // Save a survey response
 router.post("/:id/responses", async (req, res) => {

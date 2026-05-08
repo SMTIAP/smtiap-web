@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, CheckCircle2, FileText, Layout } from 'lucide-react';
+import api from '../api/api';
 
 export default function ReviewAndPublish() {
   const navigate = useNavigate();
@@ -22,25 +23,14 @@ export default function ReviewAndPublish() {
       };
 
       // If surveyId exists, we update (PUT), otherwise create (POST)
-      const url = surveyId 
-        ? `http://localhost:5000/api/surveys/${surveyId}` 
-        : "http://localhost:5000/api/surveys";
-      
-      const method = surveyId ? "PUT" : "POST";
-
-      const res = await fetch(url, {
-        method: method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        alert(`Error: ${err.message}`);
-        return;
+      let res;
+      if (surveyId) {
+        res = await api.put(`/surveys/${surveyId}`, payload);
+      } else {
+        res = await api.post("/surveys", payload);
       }
 
-      const data = await res.json();
+      const data = res.data;
       const savedSurvey = data.survey;
 
       // Logic: If published (Running), go to Share page. If Draft, go to Dashboard.
