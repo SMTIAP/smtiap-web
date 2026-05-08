@@ -1,6 +1,5 @@
-import { useNavigate } from "react-router-dom";
 import BackButton from "../components/BackButton";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../api/api";
 
 interface AuditLogEntry {
@@ -20,7 +19,6 @@ interface PaginationInfo {
 }
 
 export default function Audit() {
-  const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -36,7 +34,7 @@ export default function Audit() {
   const [toDate, setToDate] = useState("");
   const [actionFilter, setActionFilter] = useState("");
   const [userFilter, setUserFilter] = useState("");
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<{ _id: string; username: string }[]>([]);
   const [actions, setActions] = useState<string[]>([]);
 
   // Fetch filter options
@@ -59,37 +57,40 @@ export default function Audit() {
   }, []);
 
   // Fetch logs
-  const fetchLogs = async (page: number = 1) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.append("page", page.toString());
-      params.append("limit", "10");
+  const fetchLogs = useCallback(
+    async (page: number = 1) => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        params.append("page", page.toString());
+        params.append("limit", "10");
 
-      if (fromDate) params.append("fromDate", fromDate);
-      if (toDate) params.append("toDate", toDate);
-      if (actionFilter) params.append("action", actionFilter);
-      if (userFilter) params.append("userId", userFilter);
+        if (fromDate) params.append("fromDate", fromDate);
+        if (toDate) params.append("toDate", toDate);
+        if (actionFilter) params.append("action", actionFilter);
+        if (userFilter) params.append("userId", userFilter);
 
-      const response = await api.get(
-        `http://localhost:5000/api/audit-logs?${params.toString()}`,
-      );
+        const response = await api.get(
+          `http://localhost:5000/api/audit-logs?${params.toString()}`,
+        );
 
-      if (response.data.success) {
-        setLogs(response.data.data);
-        setPagination(response.data.pagination);
+        if (response.data.success) {
+          setLogs(response.data.data);
+          setPagination(response.data.pagination);
+        }
+      } catch (error) {
+        console.error("Error fetching audit logs:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching audit logs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [fromDate, toDate, actionFilter, userFilter],
+  );
 
   // Fetch logs on filter change
   useEffect(() => {
     fetchLogs(1);
-  }, [fromDate, toDate, actionFilter, userFilter]);
+  }, [fetchLogs]);
 
   const handleClear = () => {
     setFromDate("");
@@ -130,7 +131,7 @@ export default function Audit() {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC]">
-      <div className="w-full max-w-[1152px] px-6 py-10 flex flex-col gap-10">
+      <div className="w-full max-w-6xl px-6 py-10 flex flex-col gap-10">
         <div className="flex justify-between items-center w-full">
           <div className="flex items-center gap-4 w-fit">
             <BackButton />
@@ -140,7 +141,7 @@ export default function Audit() {
           </div>
         </div>
 
-        <div className="flex flex-col w-full max-w-[600px] gap-4">
+        <div className="flex flex-col w-full max-w-150 gap-4">
           <div className="flex items-center gap-4">
             {/* From Date */}
             <div className="flex flex-col gap-2 flex-1">

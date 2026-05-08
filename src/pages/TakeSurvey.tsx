@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 
 interface BranchRule {
@@ -60,7 +60,17 @@ function generateCaptcha() {
 
 export default function TakeSurvey() {
   const { surveyId } = useParams<{ surveyId: string }>();
-  const [surveyData, setSurveyData] = useState<any>(null);
+  const [surveyData, setSurveyData] = useState<{
+    pages: Page[];
+    primaryColor?: string;
+    themeColor?: string;
+    status?: string;
+    isPasswordProtected?: boolean;
+    surveyTitle?: string;
+    description?: string;
+    _id?: string;
+    [key: string]: unknown;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
@@ -102,21 +112,19 @@ export default function TakeSurvey() {
   }, [surveyId]);
 
   // Must be before any early returns — Rules of Hooks
-  const pages: Page[] = surveyData?.pages || [];
   const primaryColor =
     surveyData?.primaryColor || surveyData?.themeColor || "#6366F1";
-  const flattenedQuestions = useMemo<FlattenedQuestion[]>(
-    () =>
-      pages.flatMap((page, pageIndex) =>
-        (page.questions || []).map((question, questionIndex) => ({
-          pageTitle: page.title || `Page ${pageIndex + 1}`,
-          pageIndex,
-          questionIndex,
-          question,
-        })),
-      ),
-    [pages],
-  );
+  const flattenedQuestions = useMemo<FlattenedQuestion[]>(() => {
+    const pages: Page[] = surveyData?.pages || [];
+    return pages.flatMap((page, pageIndex) =>
+      (page.questions || []).map((question, questionIndex) => ({
+        pageTitle: page.title || `Page ${pageIndex + 1}`,
+        pageIndex,
+        questionIndex,
+        question,
+      })),
+    );
+  }, [surveyData?.pages]);
 
   useEffect(() => {
     setActiveQuestionIndex(0);
@@ -144,7 +152,7 @@ export default function TakeSurvey() {
         setPasswordError(true);
         setPasswordInput("");
       }
-    } catch (err) {
+    } catch {
       setPasswordError(true);
     } finally {
       setCheckingPassword(false);
