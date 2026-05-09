@@ -1,10 +1,16 @@
 import { Router } from "express";
-import { getAllUsers, updateUserRole } from "../controllers/roleManagementController.js";
+import { getAllTenants, getAllUsers, updateUserRole, addUserToOrganization, getUserTenantData, updateOrgRole, removeOrgUser } from "../controllers/roleManagementController.js";
 import User from "../models/User.js";
 
 const router = Router();
 
 router.get("/", getAllUsers);
 router.put("/:userId/role", updateUserRole)
+router.get("/tenants", getAllTenants);
+router.put("/:userId/:tenantId/role", addUserToOrganization);
+router.put("/:userId/:tenantId/role", updateOrgRole);
+router.get("/user-tenant", getUserTenantData);
+router.delete("/:userId/:tenantId", removeOrgUser);
+// router.get("/tenants/:userId/tenantId/role");
 
 export default router;

@@ -10,12 +10,43 @@ interface User {
     role: string;
 }
 
+interface Tenant {
+    _id: string;
+    name: string;
+}
+
+interface UserTenantRole {
+    _id: string;
+    role: string;
+    userId: {
+        _id: string;
+        username: string;
+        email: string;
+    };
+    tenantId: {
+        _id: string;
+        name: string;
+    };
+}
+
 export default function RoleManagement(){
 
     const navigate = useNavigate();
     const [users, setUsers] = useState<User[]>([]);
+    const [tenants, setTenants] = useState<Tenant[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
+    const [searchOrganization, setSearchOrganization] = useState("");
     const [selectedRole, setSelectedRole] = useState<{[key: string]: string}>({});
+    const [selectedTenantId, setSelectedTenantId] = useState<string>("");
+    const [orgUsers, setOrgUsers] = useState<UserTenantRole[]>([]);
+
+    const roleLabels: Record<string, string> = {
+        super_admin: "Organization Admin",
+        admin: "Tenant Admin",
+        viewer: "Viewer",
+        creator: "Creator",
+        billing_manager: "Billing Manager"
+    };
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -23,6 +54,7 @@ export default function RoleManagement(){
                 const response = await fetch("http://localhost:5000/api/role-management");
 
                 const data = await response.json();
+                console.log("TENANTS FROM BACKEND 1:", data); // 👈 add this
 
                 setUsers(data);
             } catch (error) {
@@ -33,47 +65,195 @@ export default function RoleManagement(){
         fetchUsers();
     }, []);
 
-    const filteredUsers = users.filter((user) => user.email.toLowerCase().includes(searchTerm.toLowerCase()))
-
-
-    const handleRoleChange = async (user: User) => {
-        try {
-            const newRole = selectedRole[user._id];
-            const response = await fetch (
-                
-                `http://localhost:5000/api/role-management/${user._id}/role`, {
-                    method: "PUT",
-                    headers: {
-                        "Content-type": "application/json"
-                    },
-                    body: JSON.stringify({ role: newRole })
-                }
-            )
-
-            if(!response.ok) {
-                throw new Error("Failed to update role");
+    useEffect(() => {
+        const fetchTenants = async () => {
+            try {
+                const response = await fetch("http://localhost:5000/api/role-management/tenants");
+                const data = await response.json();
+                console.log("TENANTS FROM BACKEND 2:", data); // 👈 add this
+                setTenants(data);
+            } catch(error){
+                console.error("Error fetching tenants:", error);
             }
+        };
+        fetchTenants();
+    }, []);
 
-            const updatedUser = await response.json();
+    useEffect(() => {
+        const fetchOrganizationData = async () => {
+            try {
+                const response = await fetch("http://localhost:5000/api/role-management/user-tenant");
+                const data = await response.json();
+                setOrgUsers(data);
 
-            // update UI immediately
-            setUsers((prev) =>
-                prev.map((u) =>
-                    u._id === user._id ? { ...u, role: updatedUser.role } : u
-                )
-            );
+                console.log("JOINED DATA:", data);
+            } catch (error) {
+                console.error(error);
+            }
+        };
 
-            // clear selection after success
-            setSelectedRole((prev) => {
-                const updated = { ...prev };
-                delete updated[user._id];
-                return updated;
-            });
+        fetchOrganizationData();
+}, []);
 
-        } catch(error){
-            console.error("Error updating role:", error);
+    const filteredUsers = users.filter((user) => user.email.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredOrgUsers = orgUsers.filter((item) => item.tenantId.name.toLowerCase().includes(searchOrganization.toLowerCase()));
+ // const filteredOrganizations = tenants.filter((tenant) => tenant.name.toLowerCase().includes(searchOrganization.toLowerCase()))
+
+
+
+    // const handleRoleChange = async (user: User) => {
+    //     try {
+    //         const newRole = selectedRole[user._id];
+    //         const response = await fetch (
+                
+    //             `http://localhost:5000/api/role-management/${user._id}/role`, {
+    //                 method: "PUT",
+    //                 headers: {
+    //                     "Content-type": "application/json"
+    //                 },
+    //                 body: JSON.stringify({ role: newRole })
+    //             }
+    //         )
+
+    //         if(!response.ok) {
+    //             throw new Error("Failed to update role");
+    //         }
+
+    //         const updatedUser = await response.json();
+
+    //         // update UI immediately
+    //         setUsers((prev) =>
+    //             prev.map((u) =>
+    //                 u._id === user._id ? { ...u, role: updatedUser.role } : u
+    //             )
+    //         );
+
+    //         // clear selection after success
+    //         setSelectedRole((prev) => {
+    //             const updated = { ...prev };
+    //             delete updated[user._id];
+    //             return updated;
+    //         });
+
+    //     } catch(error){
+    //         console.error("Error updating role:", error);
+    //     }
+    // }
+
+    const handleAddUser = async (user: User, tenant: Tenant) => {
+
+    const confirmAdd = window.confirm(
+        "Are you sure you want to add this user to the organization?"
+    );
+
+    if (!confirmAdd) return;
+    try {
+        const newRole = selectedRole[user._id];
+
+        const response = await fetch(
+            `http://localhost:5000/api/role-management/${user._id}/${tenant._id}/role`,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ role: newRole })
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to assign user to tenant");
         }
+
+        const data = await response.json();
+        alert("User role updated successfully");
+
+    } catch (err) {
+        console.error(err);
     }
+};
+
+const handleUpdateOrgRole = async (item: UserTenantRole) => {
+    const confirmUpdate = window.confirm(
+        "Are you sure you want to update the user role of this organization?"
+    );
+
+    if (!confirmUpdate) return;
+
+    try {
+        const newRole = selectedRole[item._id];
+
+        const response = await fetch(
+            `http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}/role`,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ role: newRole })
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to update role");
+        }
+
+        const updated = await response.json();
+
+        setOrgUsers((prev) =>
+            prev.map((u) =>
+                u._id === item._id
+                    ? { ...u, role: updated.role }
+                    : u
+            )
+        );
+
+        // clear selection
+        setSelectedRole((prev) => {
+            const copy = { ...prev };
+            delete copy[item._id];
+            return copy;
+        });
+
+        alert("User role updated successfully");
+
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+const handleRemoveOrgUser = async (item: UserTenantRole) => {
+    const confirmDelete = window.confirm(
+        "Are you sure you want to remove this user from the organization?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+        const response = await fetch(
+            `http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}`,
+            {
+                method: "DELETE"
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to remove user");
+        }
+
+        // remove from UI immediately
+        setOrgUsers((prev) =>
+            prev.filter((u) => u._id !== item._id)
+        );
+
+        alert("User removed from organization successfully");
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+
+
     return (
         <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC]">
             <div className="w-full max-w-[1152px] px-6 py-10 flex flex-col gap-10">
@@ -100,99 +280,35 @@ export default function RoleManagement(){
                 </div>
 
                 {/* Search Bar */}
-                <div className="relative w-full max-w-md">
-                    <input
-                        type="text"
-                        placeholder="Search emails..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <Search
-                        size={16}
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                    />
+                <div className="flex flex-col md:flex-row gap-4 w-full">
+                    <div className="relative w-full max-w-md">
+                        <input
+                            type="text"
+                            placeholder="Search emails..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <Search
+                            size={16}
+                            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                        />
+                            
+   
+                    </div>
+                    <select
+                        value={selectedTenantId}
+                        onChange={(e) => setSelectedTenantId(e.target.value)}
+                        className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-md shadow-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="">Select Organization</option>
+                        {tenants.map((tenant) => (
+                            <option key={tenant._id} value={tenant._id}>{tenant.name}</option>
+                        ))}
+                    </select>
                 </div>
 
                 <div className="w-full overflow-x-auto mt-6">
-                    <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-                        <thead className="bg-gray-100">
-                            <tr>
-                                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">Name</th>
-                                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">Email</th>
-                                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">Current Role</th>
-                                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredUsers.map((user) => (
-
-                            
-                                <tr key={user._id} className="border-b border-gray-300 hover:bg-gray-50">
-                                    <td className="px-6 py-4 text-gray-800">{user.username}</td>
-                                    <td className="px-6 py-4 text-gray-800">{user.email}</td>
-                                    <td className="px-6 py-4 text-gray-800">
-                                        <select value={selectedRole[user._id] || user.role} 
-                                            onChange={(e) => {
-                                                const value = e.target.value;
-
-                                                setSelectedRole((prev) => {
-                                                    const updated = { ...prev };
-
-                                                    if (value === user.role) {
-                                                        delete updated[user._id]; // remove if same as original
-                                                    } else {
-                                                        updated[user._id] = value;
-                                                    }
-
-                                                    return updated;
-                                                });
-                                            }}
-                                            className="w-50 border border-gray-300 rounded-md px-3 py-1 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                            <option value="super_admin">Organization Admin</option>
-                                            <option value="admin">Tenant Admin</option>
-                                            <option value="viewer">Viewer</option>
-                                            <option value="creator">Creator</option>
-                                            <option value="billing_manager">Billing Manager</option>
-                                        </select>
-                                    </td>
-                                    <td className="px-6 py-4 text-gray-800 flex gap-2">
-                                    <button 
-                                        onClick={() => handleRoleChange(user)}
-                                        disabled={!selectedRole[user._id] || selectedRole[user._id] === user.role}
-                                        className={`px-3 py-1 bg-blue-500 text-white text-sm rounded ${
-                                            !selectedRole[user._id] ?
-                                                "bg-gray-400 cursor-not-allowed" :
-                                                "bg-blue-500 hover:bg-blue-600"
-                                        }`}>
-                                            Change
-                                    </button>
-                                    <button 
-                                        disabled={user.role === "viewer"}
-                                        className={`px-3 py-1 bg-blue-500 text-white text-sm rounded ${
-                                            user.role === "viewer" ?
-                                                "bg-gray-400 cursor-not-allowed" :
-                                                "bg-blue-500 hover:bg-blue-600"   }`}
-                                            >
-                                        Remove
-                                    </button>
-                                    </td>
-                                </tr>
-                            ))}
-                            
-                        </tbody>
-                    </table>
-                </div>
-                
-                <br/>
-                
-                <div className="flex items-center w-fit">
-                    <h3 className="text-[#1E293B] font-inter font-bold text-2xl leading-9">
-                        Pending Role Requests
-                    </h3>
-                </div>
-
-                <div className="w-full overflow-x-auto">
                     <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                         <thead className="bg-gray-100">
                             <tr>
@@ -203,38 +319,187 @@ export default function RoleManagement(){
                             </tr>
                         </thead>
                         <tbody>
-                            <tr className="border-b border-gray-300 hover:bg-gray-50">
-                                <td className="px-6 py-4 text-gray-800">Ruwan Gamage</td>
-                                <td className="px-6 py-4 text-gray-800">ruwan@comp.com</td>
-                                <td className="px-6 py-4 text-gray-800">Creator</td>
-                                <td className="px-6 py-4 text-gray-800">
-                                    <div className="flex gap-2">
-                                        <button className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
-                                            Approve
-                                        </button>
-                                        <button className="px-3 py-1 bg-gray-400 text-white text-sm rounded hover:bg-blue-600">
-                                            Deny
-                                        </button>
-                                    </div>
+                            {filteredUsers.length > 0 ? (
+                                filteredUsers.map((user) => (
+
+                            
+                                    <tr key={user._id} className="border-b border-gray-300 hover:bg-gray-50">
+                                        <td className="px-6 py-4 text-gray-800">{user.username}</td>
+                                        <td className="px-6 py-4 text-gray-800">{user.email}</td>
+                                        <td className="px-6 py-4 text-gray-800">
+                                            <select value={selectedRole[user._id] || user.role} 
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+
+                                                    setSelectedRole((prev) => {
+                                                        const updated = { ...prev };
+
+                                                        if (value === user.role) {
+                                                            delete updated[user._id]; // remove if same as original
+                                                        } else {
+                                                            updated[user._id] = value;
+                                                        }
+
+                                                        return updated;
+                                                    });
+                                                }}
+                                                className="w-50 border border-gray-300 rounded-md px-3 py-1 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                                <option value="super_admin">Organization Admin</option>
+                                                <option value="admin">Tenant Admin</option>
+                                                <option value="viewer">Viewer</option>
+                                                <option value="creator">Creator</option>
+                                                <option value="billing_manager">Billing Manager</option>
+                                            </select>
+                                        </td>
+                                        <td className="px-6 py-4 text-gray-800 flex gap-2">
+                                            <button 
+                                                onClick={() => {const tenant = tenants.find(t => t._id === selectedTenantId);
+                                                if (!tenant) return;
+                                                handleAddUser(user, tenant)}}
+                                                disabled={!selectedTenantId}
+                                                title={
+                                                    !selectedTenantId
+                                                        ? "Select an organization first"
+                                                        : "Add user to organization"
+                                                }
+                                                className={`px-3 py-1 text-white text-sm rounded ${
+                                                    !selectedTenantId
+                                                        ? "bg-gray-400 cursor-not-allowed"
+                                                        : "bg-blue-500 hover:bg-blue-600"
+                                                }`}>
+                                                Add User
+                                                
+                                            </button>
+
+                                            {/* <button 
+                                                onClick={() => handleRoleChange(user)}
+                                                disabled={!selectedRole[user._id] || selectedRole[user._id] === user.role}
+                                                className={`px-3 py-1 bg-blue-500 text-white text-sm rounded ${
+                                                    !selectedRole[user._id] ?
+                                                        "bg-gray-400 cursor-not-allowed" :
+                                                        "bg-blue-500 hover:bg-blue-600"
+                                                }`}>
+                                                    Change
+                                            </button> */}
+                                            {/* <button 
+                                                disabled={user.role === "viewer"}
+                                                className={`px-3 py-1 bg-blue-500 text-white text-sm rounded ${
+                                                    user.role === "viewer" ?
+                                                        "bg-gray-400 cursor-not-allowed" :
+                                                        "bg-blue-500 hover:bg-blue-600"   }`}
+                                                    >
+                                                Remove
+                                            </button> */}
+                                        </td>
+                                        
+                                    </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td
+                                    colSpan={4}
+                                    className="px-6 py-4 text-center text-gray-700"
+                                >
+                                    No Users Found
                                 </td>
                             </tr>
-                            <tr className="border-b border-gray-300 hover:bg-gray-50">
-                                <td className="px-6 py-4 text-gray-800">Hiruna Lakmal</td>
-                                <td className="px-6 py-4 text-gray-800">hiruna@comp.com</td>
-                                <td className="px-6 py-4 text-gray-800">Tenant Admin</td>
-                                <td className="px-6 py-4 text-gray-800">
-                                    <div className="flex gap-2">
-                                        <button className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
-                                            Approve
-                                        </button>
-                                        <button className="px-3 py-1 bg-gray-400 text-white text-sm rounded hover:bg-blue-600">
-                                            Deny
-                                        </button>
-                                    </div>
+                        )}
+                            
+                            
+                        </tbody>
+                    </table>
+                </div>
+                
+                <br/>
+                
+                <div className="flex items-center w-fit">
+                    <h3 className="text-[#1E293B] font-inter font-bold text-2xl leading-9">
+                        Organization Members
+                    </h3>
+                </div>
+                    <div className="relative w-full max-w-md">
+                        <input
+                            type="text"
+                            placeholder="Search organization..."
+                            value={searchOrganization}
+                            onChange={(e) => setSearchOrganization(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <Search
+                            size={16}
+                            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                        />
+                    </div>
+                <div className="w-full overflow-x-auto">
+                    <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                        <thead className="bg-gray-100">
+                            <tr>
+                                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">Name</th>
+                                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">Email</th>
+                                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">Current Role</th>
+                                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">Organization</th>
+                                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">Actions</th>
+                            </tr>
+                        </thead>
+
+                        
+                        <tbody>
+                            {filteredOrgUsers.length > 0 ? (
+                            filteredOrgUsers.map((item) => (
+                                <tr key={item._id} className="border-b border-gray-300 hover:bg-gray-50">
+                                    <td className="px-6 py-4 text-gray-800">{item.userId.username}</td>
+                                    <td className="px-6 py-4 text-gray-800">{item.userId.email}</td>
+                                    <td className="px-6 py-4 text-gray-800">
+                                        <select 
+                                            value={selectedRole[item._id] || item.role}
+                                            onChange={(e) => {
+                                                setSelectedRole((prev) => ({
+                                                    ...prev,
+                                                    [item._id]: e.target.value
+                                                }));
+                                            }}
+                                            className="w-50 border border-gray-300 rounded-md px-3 py-1 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            >{Object.entries(roleLabels).map(([key, label]) => (
+                                                <option key={key} value={key}>
+                                                    {label}
+                                                </option>
+                                            ))}</select>
+                                    </td>
+                                    <td className="px-6 py-4 text-gray-800">{item.tenantId.name}</td>
+                                    <td className="px-6 py-4 text-gray-800">
+                                        <div className="flex gap-2">
+                                            <button
+                                    onClick={() => handleUpdateOrgRole(item)}
+                                    disabled={
+                                        !selectedRole[item._id] ||
+                                        selectedRole[item._id] === item.role
+                                    }
+                                    className={`px-3 py-1 text-white text-sm rounded ${
+                                        !selectedRole[item._id] ||
+                                        selectedRole[item._id] === item.role
+                                            ? "bg-gray-400 cursor-not-allowed"
+                                            : "bg-blue-500 hover:bg-blue-600"
+                                    }`}
+                                >
+                                    Change
+                                </button>
+                                            <button onClick={() => handleRemoveOrgUser(item)} className="px-3 py-1 px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td
+                                    colSpan={5}
+                                    className="px-6 py-4 text-center text-gray-700"
+                                >
+                                    No Organizations Found
                                 </td>
                             </tr>
-                            
-                            
+                        )}
                         </tbody>
                     </table>
                 </div>
