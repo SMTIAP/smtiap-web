@@ -24,6 +24,7 @@ router.get("/stats", protect, async (req: Request, res: Response) => {
       userId: userObjectId,
     }).lean();
     const tenantIds = memberships.map((m) => m.tenantId);
+    const tenantIdStrings = tenantIds.map((id) => String(id));
 
     // --- USER ROLE COUNTS ---
     // Count from both User.role (global) and UserTenantRole (per-tenant).
@@ -38,19 +39,26 @@ router.get("/stats", protect, async (req: Request, res: Response) => {
       ]);
 
     // Count surveys in user's tenant(s) OR created by this user
-    const surveyFilter = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const surveyFilter: any = {
       $or: [
-        ...(tenantIds.length ? [{ tenantId: { $in: tenantIds } }] : []),
+        ...(tenantIdStrings.length
+          ? [{ tenantId: { $in: tenantIdStrings } }]
+          : []),
         { createdBy: userObjectId },
       ],
     };
 
+    const withStatus = (status: string) => ({
+      $and: [surveyFilter, { status }],
+    });
+
     const [totalSurveys, draftCount, runningCount, finishedCount] =
       await Promise.all([
         Survey.countDocuments(surveyFilter),
-        Survey.countDocuments({ ...surveyFilter, status: "Draft" }),
-        Survey.countDocuments({ ...surveyFilter, status: "Running" }),
-        Survey.countDocuments({ ...surveyFilter, status: "Finished" }),
+        Survey.countDocuments(withStatus("Draft")),
+        Survey.countDocuments(withStatus("Running")),
+        Survey.countDocuments(withStatus("Finished")),
       ]);
 
     // --- SUBSCRIPTION ---

@@ -49,11 +49,7 @@ const surveySchema = new mongoose.Schema(
     // ✅ Password protection fields
     isPasswordProtected: { type: Boolean, default: false },
     password: { type: String, default: "" },
-    tenantId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Tenant",
-      default: null,
-    },
+    tenantId: { type: String, default: null },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
