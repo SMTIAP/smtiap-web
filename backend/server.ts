@@ -28,7 +28,7 @@ import SurveyResponse from "./models/SurveyResponse.js";
 import roleManagementRoutes from "./routes/roleManagementRoutes.js";
 import organizationRegistrationRoutes from "./routes/organizationRegistrationRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
-
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 
 const ensureCollections = async () => {
   await Promise.all([
@@ -43,7 +43,6 @@ const ensureCollections = async () => {
     CreditLedger.createCollection(),
     Notification.createCollection(),
     AuditLog.createCollection(),
-
   ]);
   console.log("All collections ensured.");
 };
@@ -58,7 +57,11 @@ const app = express();
 app.use(
   cors({
     origin: (origin, cb) => {
-      if (!origin || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) cb(null, true);
+      if (
+        !origin ||
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+      )
+        cb(null, true);
       else cb(new Error("Not allowed by CORS"));
     },
     credentials: true,
@@ -71,9 +74,10 @@ app.use(passport.initialize());
 app.use(payhereRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/surveys", surveyRoutes);
-app.use("/api/role-management", roleManagementRoutes)
-app.use("/api/organization-registration", organizationRegistrationRoutes)
+app.use("/api/role-management", roleManagementRoutes);
+app.use("/api/organization-registration", organizationRegistrationRoutes);
 app.use("/api/audit-logs", auditRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.use(analyticsRoutes);
 app.use(errorHandler);
 

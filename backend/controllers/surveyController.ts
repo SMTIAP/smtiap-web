@@ -35,6 +35,7 @@ export const createSurvey = async (req: Request, res: Response) => {
       return;
     }
 
+    const user = (req as any).user;
     const survey = new Survey({
       surveyTitle,
       description,
@@ -46,7 +47,8 @@ export const createSurvey = async (req: Request, res: Response) => {
       isAnonymous,
       pages,
       status,
-      tenantId,
+      tenantId: tenantId ?? null,
+      createdBy: user?._id ?? null,
     });
 
     await survey.save();

@@ -786,6 +786,21 @@ export default function AddQuestions() {
   );
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [responses, setResponses] = useState<Record<string, string>>({});
+  const [tenantId, setTenantId] = useState<string | null>(null);
+
+  // Fetch real tenantId for the logged-in user on mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    fetch("http://localhost:5000/api/users/me/tenant", {
+      credentials: "include",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.tenantId) setTenantId(d.tenantId);
+      })
+      .catch(() => {});
+  }, []);
 
   const normalizeQuestionType = useCallback((type?: string): QuestionTypeId => {
     if (type === "checkbox") return "checkboxes";
@@ -1148,16 +1163,21 @@ export default function AddQuestions() {
               const method = surveyId ? "PUT" : "POST";
 
               try {
+                const token = localStorage.getItem("token");
                 const res = await fetch(url, {
                   method: method,
-                  headers: { "Content-Type": "application/json" },
+                  credentials: "include",
+                  headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                  },
                   body: JSON.stringify({
                     surveyTitle,
                     primaryColor,
                     themeColor: primaryColor,
                     pages,
                     status: "Draft",
-                    tenantId: "default",
+                    tenantId: tenantId ?? undefined,
                   }),
                 });
                 const data = await res.json();
