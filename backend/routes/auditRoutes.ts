@@ -9,21 +9,17 @@ const router = Router();
 // Get all audit logs with filters
 router.get("/", protect, async (req: Request, res: Response) => {
   try {
-    const {
-      fromDate,
-      toDate,
-      action,
-      userId,
-      page = 1,
-      limit = 10,
-    } = req.query;
+    const { fromDate, toDate, action, page = 1, limit = 10 } = req.query;
 
     const pageNum = parseInt(page as string) || 1;
     const limitNum = parseInt(limit as string) || 10;
     const skip = (pageNum - 1) * limitNum;
 
-    // Build filter object - get all logs (no tenant restriction for now)
-    const filter: Record<string, unknown> = {};
+    // Restrict logs to the currently logged-in user only
+    const currentUser = (req as Request & { user?: { _id: unknown } }).user;
+    const filter: Record<string, unknown> = {
+      user_id: currentUser?._id,
+    };
 
     if (fromDate || toDate) {
       filter.timestamp = {};
@@ -41,10 +37,6 @@ router.get("/", protect, async (req: Request, res: Response) => {
 
     if (action) {
       filter.action = action;
-    }
-
-    if (userId) {
-      filter.user_id = userId;
     }
 
     // Get total count
@@ -82,22 +74,16 @@ router.get("/", protect, async (req: Request, res: Response) => {
 // Get distinct values for filters
 router.get("/filters/options", protect, async (req: Request, res: Response) => {
   try {
-    const actions = await AuditLog.distinct("action");
+    const currentUser = (req as Request & { user?: { _id: unknown } }).user;
+    const userId = currentUser?._id;
 
-    // Get unique user ids from logs
-    const userIds = await AuditLog.distinct("user_id");
-
-    // Import User model to get user info
-    const User = (await import("../models/User.js")).default;
-    const users = await User.find({ _id: { $in: userIds } })
-      .select("_id username email")
-      .lean();
+    const actions = await AuditLog.distinct("action", { user_id: userId });
 
     res.json({
       success: true,
       data: {
         actions,
-        users,
+        users: [],
       },
     });
   } catch (error) {

@@ -33,8 +33,6 @@ export default function Audit() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [actionFilter, setActionFilter] = useState("");
-  const [userFilter, setUserFilter] = useState("");
-  const [users, setUsers] = useState<{ _id: string; username: string }[]>([]);
   const [actions, setActions] = useState<string[]>([]);
 
   // Fetch filter options
@@ -46,7 +44,6 @@ export default function Audit() {
         );
         if (response.data.success) {
           setActions(response.data.data.actions || []);
-          setUsers(response.data.data.users || []);
         }
       } catch (error) {
         console.error("Error fetching filter options:", error);
@@ -68,7 +65,6 @@ export default function Audit() {
         if (fromDate) params.append("fromDate", fromDate);
         if (toDate) params.append("toDate", toDate);
         if (actionFilter) params.append("action", actionFilter);
-        if (userFilter) params.append("userId", userFilter);
 
         const response = await api.get(
           `http://localhost:5000/api/audit-logs?${params.toString()}`,
@@ -84,7 +80,7 @@ export default function Audit() {
         setLoading(false);
       }
     },
-    [fromDate, toDate, actionFilter, userFilter],
+    [fromDate, toDate, actionFilter],
   );
 
   // Fetch logs on filter change
@@ -96,7 +92,6 @@ export default function Audit() {
     setFromDate("");
     setToDate("");
     setActionFilter("");
-    setUserFilter("");
   };
 
   const getActionColor = (action: string) => {
@@ -197,29 +192,6 @@ export default function Audit() {
                 {actions.map((action) => (
                   <option key={action} value={action}>
                     {action.charAt(0).toUpperCase() + action.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* User */}
-            <div className="flex flex-col gap-2 flex-1">
-              <label
-                htmlFor="user"
-                className="text-gray-700 font-inter text-sm font-medium"
-              >
-                Select User
-              </label>
-              <select
-                id="user"
-                value={userFilter}
-                onChange={(e) => setUserFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Select User</option>
-                {users.map((user) => (
-                  <option key={user._id} value={user._id}>
-                    {user.username}
                   </option>
                 ))}
               </select>
