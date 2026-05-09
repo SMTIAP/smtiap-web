@@ -2,6 +2,11 @@ import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  return "Unknown error";
+};
+
 export const protect = async (
   req: Request,
   res: Response,
@@ -20,12 +25,10 @@ export const protect = async (
 
     if (!token) {
       console.log("No token found in cookies or headers.");
-      res
-        .status(401)
-        .json({
-          message: "Not authorized. No token found.",
-          receivedCookies: req.cookies || "none",
-        });
+      res.status(401).json({
+        message: "Not authorized. No token found.",
+        receivedCookies: req.cookies || "none",
+      });
       return;
     }
 
@@ -33,21 +36,23 @@ export const protect = async (
       id: string;
     };
 
-    (req as any).user = await User.findById(decoded.id).select("-password");
-
-    if (!(req as any).user) {
+    const foundUser = await User.findById(decoded.id).select("-password");
+    if (!foundUser) {
       res
         .status(401)
         .json({ message: "User not found in database for this token." });
       return;
     }
 
+    (req as Request & Record<string, unknown>).user = foundUser;
+
     next();
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Token verification error:", error);
-    res
-      .status(401)
-      .json({ message: "Token verification failed.", error: error.message });
+    res.status(401).json({
+      message: "Token verification failed.",
+      error: getErrorMessage(error),
+    });
   }
 };
 
@@ -67,7 +72,10 @@ export const optionalAuth = async (
       const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
         id: string;
       };
-      (req as any).user = await User.findById(decoded.id).select("-password");
+      const foundUser = await User.findById(decoded.id).select("-password");
+      if (foundUser) {
+        (req as Request & Record<string, unknown>).user = foundUser;
+      }
     }
   } catch {
     // invalid token — ignore, proceed without user

@@ -19,7 +19,6 @@ interface PaginationInfo {
 }
 
 export default function Audit() {
-  const [showDropdown, setShowDropdown] = useState(false);
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState<PaginationInfo>({
@@ -33,8 +32,6 @@ export default function Audit() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [actionFilter, setActionFilter] = useState("");
-  const [userFilter, setUserFilter] = useState("");
-  const [users, setUsers] = useState<{ _id: string; username: string }[]>([]);
   const [actions, setActions] = useState<string[]>([]);
 
   // Fetch filter options
@@ -46,7 +43,6 @@ export default function Audit() {
         );
         if (response.data.success) {
           setActions(response.data.data.actions || []);
-          setUsers(response.data.data.users || []);
         }
       } catch (error) {
         console.error("Error fetching filter options:", error);
@@ -68,7 +64,6 @@ export default function Audit() {
         if (fromDate) params.append("fromDate", fromDate);
         if (toDate) params.append("toDate", toDate);
         if (actionFilter) params.append("action", actionFilter);
-        if (userFilter) params.append("userId", userFilter);
 
         const response = await api.get(
           `http://localhost:5000/api/audit-logs?${params.toString()}`,
@@ -84,7 +79,7 @@ export default function Audit() {
         setLoading(false);
       }
     },
-    [fromDate, toDate, actionFilter, userFilter],
+    [fromDate, toDate, actionFilter],
   );
 
   // Fetch logs on filter change
@@ -96,7 +91,38 @@ export default function Audit() {
     setFromDate("");
     setToDate("");
     setActionFilter("");
-    setUserFilter("");
+  };
+
+  const handleExportCSV = () => {
+    if (logs.length === 0) return;
+    const headers = [
+      "Timestamp",
+      "User",
+      "Email",
+      "Action",
+      "Entity",
+      "Entity ID",
+    ];
+    const rows = logs.map((log) => [
+      new Date(log.timestamp).toLocaleString(),
+      log.user_id?.username ?? "",
+      log.user_id?.email ?? "",
+      log.action,
+      log.entity,
+      log.entity_id,
+    ]);
+    const csv = [headers, ...rows]
+      .map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
+      )
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const getActionColor = (action: string) => {
@@ -201,29 +227,6 @@ export default function Audit() {
                 ))}
               </select>
             </div>
-
-            {/* User */}
-            <div className="flex flex-col gap-2 flex-1">
-              <label
-                htmlFor="user"
-                className="text-gray-700 font-inter text-sm font-medium"
-              >
-                Select User
-              </label>
-              <select
-                id="user"
-                value={userFilter}
-                onChange={(e) => setUserFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Select User</option>
-                {users.map((user) => (
-                  <option key={user._id} value={user._id}>
-                    {user.username}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
         </div>
 
@@ -237,25 +240,12 @@ export default function Audit() {
             </button>
             <div className="relative inline-block">
               <button
-                onClick={() => setShowDropdown(!showDropdown)}
-                className="bg-gray-400 cursor-pointer text-nowrap py-2 px-6 flex justify-center items-center gap-2 rounded-md text-[#FFF] font-inter text-sm font-medium transition-opacity hover:opacity-90"
+                onClick={handleExportCSV}
+                disabled={logs.length === 0}
+                className="bg-blue-400 cursor-pointer text-nowrap py-2 px-6 flex justify-center items-center gap-2 rounded-md text-[#FFF] font-inter text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Export
+                Export CSV
               </button>
-
-              {showDropdown && (
-                <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-md shadow-lg z-10">
-                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
-                    PDF
-                  </button>
-                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
-                    Excel
-                  </button>
-                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">
-                    CSV
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>

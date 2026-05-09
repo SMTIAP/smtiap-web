@@ -1,8 +1,15 @@
-import { Link } from 'react-router-dom';
-import BackButton from '../components/BackButton';
-import { BarChart3, Users, CreditCard, UserCheck, BookOpen, ShieldCheck, type LucideIcon } from 'lucide-react';
+import { Link } from "react-router-dom";
+import BackButton from "../components/BackButton";
+import {
+  BarChart3,
+  Users,
+  CreditCard,
+  UserCheck,
+  BookOpen,
+  ShieldCheck,
+  type LucideIcon,
+} from "lucide-react";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import api from "../api/api";
 
 interface FeatureCardProps {
@@ -28,9 +35,7 @@ const FeatureCard = ({ to, icon: Icon, title }: FeatureCardProps) => {
       {content}
     </Link>
   ) : (
-    <div className="w-full h-full">
-      {content}
-    </div>
+    <div className="w-full h-full">{content}</div>
   );
 };
 
@@ -40,44 +45,97 @@ interface StatRowProps {
   isLast?: boolean;
 }
 
+interface DashboardUser {
+  username?: string;
+}
+
+interface DashboardStats {
+  roles: {
+    admin: number;
+    creator: number;
+    billing_manager: number;
+    viewer: number;
+  };
+  surveys: {
+    total: number;
+    draft: number;
+    published: number;
+    ended: number;
+  };
+  subscription: {
+    plan: string;
+    startDate: string;
+    endDate: string;
+    remainingDays: number;
+    progressPct: number;
+  } | null;
+}
+
 const StatRow = ({ label, value, isLast }: StatRowProps) => (
-  <div className={`flex py-3 justify-between items-center ${!isLast ? 'border-b border-b-[#F8FAFC]' : ''} w-full`}>
+  <div
+    className={`flex py-3 justify-between items-center ${!isLast ? "border-b border-b-[#F8FAFC]" : ""} w-full`}
+  >
     <p className="text-[#64748B] font-inter text-sm md:text-base">{label}</p>
-    <p className="text-[#1E293B] font-inter text-md md:text-lg font-bold">{value}</p>
+    <p className="text-[#1E293B] font-inter text-md md:text-lg font-bold">
+      {value}
+    </p>
   </div>
 );
 
 export default function OrganizationAdmin() {
-
-
-   const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<DashboardUser | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
+    let statsTimer: ReturnType<typeof setInterval> | null = null;
+
     const fetchUser = async () => {
       try {
         const res = await api.get("/me");
         setUser(res.data);
-      } catch (err) {
+      } catch {
         console.log("Not logged in");
       }
     };
 
+    const fetchStats = async () => {
+      try {
+        const res = await api.get("http://localhost:5000/api/dashboard/stats");
+        if (res.data.success) setStats(res.data.data);
+      } catch (err) {
+        console.error("Failed to fetch dashboard stats", err);
+      }
+    };
+
+    const handleWindowFocus = () => {
+      fetchStats();
+    };
+
     fetchUser();
+    fetchStats();
+
+    // Keep dashboard values fresh while page is open.
+    statsTimer = setInterval(fetchStats, 15000);
+    window.addEventListener("focus", handleWindowFocus);
+
+    return () => {
+      if (statsTimer) clearInterval(statsTimer);
+      window.removeEventListener("focus", handleWindowFocus);
+    };
   }, []);
 
   if (!user) return <h2>Loading...</h2>;
-  
+
   const features = [
-    { title: 'Surveys', icon: BarChart3, to: '/created-surveys' },
-    { title: 'Employees', icon: Users, to: '/role-management' },
-    { title: 'Billing', icon: CreditCard, to: '/subscription' },
+    { title: "Surveys", icon: BarChart3, to: "/created-surveys" },
+    { title: "Employees", icon: Users, to: "/role-management" },
+    { title: "Billing", icon: CreditCard, to: "/subscription" },
   ];
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC]">
-      <div className="flex max-w-[1152px] py-10 px-6 flex-col items-start gap-10 w-full">
-        
-        {/* Header Section */} 
+      <div className="flex max-w-6xl py-10 px-6 flex-col items-start gap-10 w-full">
+        {/* Header Section */}
         <div className="flex justify-between items-center w-full">
           <div className="flex items-center gap-4 w-fit">
             <BackButton to="/" />
@@ -99,19 +157,25 @@ export default function OrganizationAdmin() {
           <h2 className="text-[#1E293B] font-inter text-2xl font-bold leading-8 w-full">
             Organization Status:
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
-            
             {/* Roles Status */}
             <div className="flex p-8 flex-col items-center gap-6 rounded-2xl border border-[#F1F5F9] bg-[#FFF] shadow-sm w-full">
               <div className="flex justify-center items-center rounded-full bg-[#EFF6FF] w-14 h-14 mb-2">
                 <UserCheck size={28} className="text-[#3B82F6]" />
               </div>
               <div className="flex flex-col items-start w-full">
-                <StatRow label="Admins" value="3" />
-                <StatRow label="Creators" value="2" />
-                <StatRow label="Billing" value="1" />
-                <StatRow label="Viewers" value="5" isLast />
+                <StatRow label="Admins" value={stats?.roles.admin ?? "—"} />
+                <StatRow label="Creators" value={stats?.roles.creator ?? "—"} />
+                <StatRow
+                  label="Billing"
+                  value={stats?.roles.billing_manager ?? "—"}
+                />
+                <StatRow
+                  label="Viewers"
+                  value={stats?.roles.viewer ?? "—"}
+                  isLast
+                />
               </div>
             </div>
 
@@ -121,10 +185,17 @@ export default function OrganizationAdmin() {
                 <BookOpen size={28} className="text-[#6366F1]" />
               </div>
               <div className="flex flex-col items-start w-full">
-                <StatRow label="Created" value="3" />
-                <StatRow label="Draft" value="2" />
-                <StatRow label="Published" value="7" />
-                <StatRow label="Ended" value="8" isLast />
+                <StatRow label="Created" value={stats?.surveys.total ?? "—"} />
+                <StatRow label="Draft" value={stats?.surveys.draft ?? "—"} />
+                <StatRow
+                  label="Published"
+                  value={stats?.surveys.published ?? "—"}
+                />
+                <StatRow
+                  label="Ended"
+                  value={stats?.surveys.ended ?? "—"}
+                  isLast
+                />
               </div>
             </div>
 
@@ -134,32 +205,49 @@ export default function OrganizationAdmin() {
                 <ShieldCheck size={28} className="text-[#F97316]" />
               </div>
               <div className="flex py-2 px-0 flex-col items-center rounded-lg bg-[#EFF6FF] w-full">
-                <p className="text-[#2563EB] font-inter text-sm font-bold">Type: Premium</p>
+                <p className="text-[#2563EB] font-inter text-sm font-bold">
+                  Type: {stats?.subscription?.plan ?? "—"}
+                </p>
               </div>
               <div className="flex flex-col items-start gap-4 w-full mt-2">
                 <div className="flex justify-between items-center w-full">
-                  <p className="text-[#94A3B8] font-inter text-sm">Start Date</p>
-                  <p className="text-[#334155] font-inter text-sm font-bold">25/02/12</p>
+                  <p className="text-[#94A3B8] font-inter text-sm">
+                    Start Date
+                  </p>
+                  <p className="text-[#334155] font-inter text-sm font-bold">
+                    {stats?.subscription?.startDate ?? "—"}
+                  </p>
                 </div>
                 <div className="flex justify-between items-center w-full">
                   <p className="text-[#94A3B8] font-inter text-sm">End Date</p>
-                  <p className="text-[#334155] font-inter text-sm font-bold">26/05/27</p>
+                  <p className="text-[#334155] font-inter text-sm font-bold">
+                    {stats?.subscription?.endDate ?? "—"}
+                  </p>
                 </div>
               </div>
               <div className="flex flex-col items-start gap-2 w-full mt-4">
                 <div className="flex justify-between items-end w-full">
-                  <p className="text-[#94A3B8] font-inter text-[10px] font-bold tracking-[0.05em] uppercase">Remaining</p>
-                  <p className="text-[#3B82F6] font-inter text-xl md:text-2xl font-bold">100 days</p>
+                  <p className="text-[#94A3B8] font-inter text-[10px] font-bold tracking-[0.05em] uppercase">
+                    Remaining
+                  </p>
+                  <p className="text-[#3B82F6] font-inter text-xl md:text-2xl font-bold">
+                    {stats?.subscription
+                      ? `${stats.subscription.remainingDays} days`
+                      : "—"}
+                  </p>
                 </div>
                 <div className="w-full h-2 rounded-full border border-[#F1F5F9] bg-[#F1F5F9] relative overflow-hidden">
-                  <div className="absolute top-0 left-0 bg-[#3B82F6] h-full rounded-full" style={{ width: '65%' }}></div>
+                  <div
+                    className="absolute top-0 left-0 bg-[#3B82F6] h-full rounded-full"
+                    style={{
+                      width: `${stats?.subscription?.progressPct ?? 0}%`,
+                    }}
+                  ></div>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
-
       </div>
     </div>
   );

@@ -38,56 +38,17 @@ export const saveAnalyticsResult = async (
       last_updated: new Date(),
     };
 
-    const existingBySurvey = await AnalyticsResult.findOne({
-      surveyId: payload.surveyId,
-    });
-
-    if (existingBySurvey) {
-      const updated = await AnalyticsResult.findByIdAndUpdate(
-        existingBySurvey._id,
-        payload,
-        {
-          returnDocument: "after",
-          runValidators: true,
-        },
-      );
-      res.json(updated);
-      return;
-    }
-
-    const legacyWithoutSurvey = await AnalyticsResult.findOne({
-      $or: [{ surveyId: { $exists: false } }, { surveyId: "" }],
-    }).sort({ createdAt: -1 });
-
-    if (legacyWithoutSurvey) {
-      const migrated = await AnalyticsResult.findByIdAndUpdate(
-        legacyWithoutSurvey._id,
-        payload,
-        {
-          returnDocument: "after",
-          runValidators: true,
-        },
-      );
-      res.json(migrated);
-      return;
-    }
-
-    try {
-      const created = await AnalyticsResult.create(payload);
-      res.status(201).json(created);
-    } catch {
-      const upserted = await AnalyticsResult.findOneAndUpdate(
-        { surveyId: payload.surveyId },
-        payload,
-        {
-          upsert: true,
-          returnDocument: "after",
-          runValidators: true,
-          setDefaultsOnInsert: true,
-        },
-      );
-      res.json(upserted);
-    }
+    const result = await AnalyticsResult.findOneAndUpdate(
+      { surveyId: payload.surveyId },
+      { $set: payload },
+      {
+        upsert: true,
+        returnDocument: "after",
+        runValidators: true,
+        setDefaultsOnInsert: true,
+      },
+    );
+    res.json(result);
   } catch (err) {
     next(err);
   }
@@ -102,13 +63,13 @@ export const getAnalyticsResults = async (
     const surveyIdParam =
       typeof req.query.surveyId === "string" ? req.query.surveyId.trim() : "";
 
-    const query = surveyIdParam ? { surveyId: surveyIdParam } : {};
+    if (!surveyIdParam) {
+      res.status(400).json({ error: "surveyId query parameter is required" });
+      return;
+    }
 
-    const results = await AnalyticsResult.find(query)
-      .sort({ createdAt: -1 })
-      .limit(20);
-
-    res.json(results);
+    const result = await AnalyticsResult.findOne({ surveyId: surveyIdParam });
+    res.json(result ? [result] : []);
   } catch (err) {
     next(err);
   }
