@@ -1,6 +1,10 @@
-import { useEffect, useState } from "react";
-import { NavLink, Link, useLocation } from "react-router-dom";
-import { FileChartColumnIncreasing } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  FileChartColumnIncreasing,
+  LogOut,
+  LayoutDashboard,
+} from "lucide-react";
 import api from "../api/api";
 
 const links = [
@@ -14,22 +18,30 @@ const links = [
 
 export default function NavBar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isLanding = location.pathname === "/";
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<{ username: string; email: string } | null>(
+    null,
+  );
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let mounted = true;
 
     api
       .get("/me")
-      .then(() => {
+      .then((res) => {
         if (mounted) {
           setIsAuthenticated(true);
+          setUser({ username: res.data.username, email: res.data.email });
         }
       })
       .catch(() => {
         if (mounted) {
           setIsAuthenticated(false);
+          setUser(null);
         }
       });
 
@@ -38,11 +50,42 @@ export default function NavBar() {
     };
   }, [location.pathname]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await api.post("/logout");
+    } catch {
+      // proceed regardless
+    }
+    localStorage.removeItem("token");
+    setIsAuthenticated(false);
+    setUser(null);
+    setDropdownOpen(false);
+    navigate("/auth");
+  };
+
+  const initials = user?.username
+    ? user.username.slice(0, 2).toUpperCase()
+    : "?";
+
   return (
     <nav className="sticky top-0 z-[100] bg-[#F4F6FA]/80 backdrop-blur-xl border-b border-white/30 h-[70px]">
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
         <Link
-          to="/"
+          to={isAuthenticated ? "/admin" : "/"}
           className="flex items-center gap-2 text-[20px] font-[900] tracking-tighter font-manrope"
         >
           <span className="w-8 h-8 bg-[#5C38E1] rounded-lg rotate-12 flex items-center justify-center shadow-lg shadow-[#5C38E1]/20">
@@ -71,22 +114,80 @@ export default function NavBar() {
           </div>
         )}
 
-        {isLanding && (
-          <div className="flex items-center gap-3">
-            <Link
-              to="/auth"
-              className="text-[14px] font-[700] text-[#475569] hover:text-[#5C38E1] transition-colors"
-            >
-              Sign In
-            </Link>
-            <Link
-              to="/auth"
-              className="bg-gradient-to-br from-[#5C38E1] to-[#8E6BFF] text-white px-5 py-2 rounded-full font-[700] text-[13px] shadow-xl shadow-purple-500/20 hover:scale-105 transition-transform"
-            >
-              Free Register
-            </Link>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {isLanding && !isAuthenticated && (
+            <>
+              <Link
+                to="/auth"
+                className="text-[14px] font-[700] text-[#475569] hover:text-[#5C38E1] transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/auth"
+                className="bg-gradient-to-br from-[#5C38E1] to-[#8E6BFF] text-white px-5 py-2 rounded-full font-[700] text-[13px] shadow-xl shadow-purple-500/20 hover:scale-105 transition-transform"
+              >
+                Free Register
+              </Link>
+            </>
+          )}
+
+          {isAuthenticated && user && (
+            <div className="flex items-center gap-3">
+              {isLanding && (
+                <Link
+                  to="/admin"
+                  className="p-2 rounded-full hover:bg-slate-100 transition-colors"
+                  title="Go to Dashboard"
+                >
+                  <LayoutDashboard className="w-5 h-5 text-[#5C38E1]" />
+                </Link>
+              )}
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setDropdownOpen((prev) => !prev)}
+                  className="flex items-center gap-2 focus:outline-none"
+                >
+                  <span className="w-9 h-9 rounded-full bg-gradient-to-br from-[#5C38E1] to-[#8E6BFF] flex items-center justify-center text-white text-[13px] font-[800] shadow-md select-none">
+                    {initials}
+                  </span>
+                  <span className="hidden md:block text-[14px] font-[700] text-[#1e1b4b] max-w-[120px] truncate">
+                    {user.username}
+                  </span>
+                </button>
+
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50">
+                    <div className="px-4 py-3 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <span className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5C38E1] to-[#8E6BFF] flex items-center justify-center text-white text-[14px] font-[800] shrink-0">
+                          {initials}
+                        </span>
+                        <div className="overflow-hidden">
+                          <p className="text-[13px] font-[700] text-[#1e1b4b] truncate">
+                            {user.username}
+                          </p>
+                          <p className="text-[11px] text-slate-400 truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="px-2 pt-1">
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-[600] text-red-500 hover:bg-red-50 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </nav>
   );

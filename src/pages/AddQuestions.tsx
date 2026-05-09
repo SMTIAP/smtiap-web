@@ -1,4 +1,10 @@
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  type ReactNode,
+} from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -31,6 +37,22 @@ type QuestionTypeId =
   | "number"
   | "date";
 
+interface BranchRule {
+  value: string;
+  targetQuestionId: string;
+}
+
+interface QuestionBranching {
+  enabled: boolean;
+  rules: BranchRule[];
+  defaultTargetQuestionId?: string;
+}
+
+interface BranchTargetOption {
+  id: string;
+  label: string;
+}
+
 interface SurveyQuestion {
   id: string;
   type: QuestionTypeId;
@@ -40,6 +62,7 @@ interface SurveyQuestion {
   options?: string[];
   max?: number;
   min?: number;
+  branching?: QuestionBranching;
 }
 
 interface SurveyPage {
@@ -87,6 +110,7 @@ interface PropertyEditorProps {
   selectedQuestion: SurveyQuestion | null;
   updateQuestion: (id: string, updates: Partial<SurveyQuestion>) => void;
   setSelectedQuestionId: (id: string | null) => void;
+  branchTargets: BranchTargetOption[];
 }
 
 interface IncomingQuestion {
@@ -99,6 +123,11 @@ interface IncomingQuestion {
   required?: boolean;
   max?: number;
   min?: number;
+  branching?: {
+    enabled?: boolean;
+    rules?: Array<{ value?: string; targetQuestionId?: string }>;
+    defaultTargetQuestionId?: string;
+  };
 }
 
 interface IncomingPage {
@@ -432,6 +461,7 @@ const PropertyEditor = ({
   selectedQuestion,
   updateQuestion,
   setSelectedQuestionId,
+  branchTargets,
 }: PropertyEditorProps) => {
   if (!selectedQuestion) {
     return (
@@ -441,6 +471,33 @@ const PropertyEditor = ({
       </div>
     );
   }
+
+  const supportsBranching =
+    selectedQuestion.type === "multiple_choice" ||
+    selectedQuestion.type === "checkboxes";
+
+  const branching = selectedQuestion.branching || {
+    enabled: false,
+    rules: [],
+    defaultTargetQuestionId: "",
+  };
+
+  const updateBranchRule = (value: string, targetQuestionId: string) => {
+    const nextRules = (branching.rules || []).filter(
+      (rule) => rule.value !== value,
+    );
+    if (targetQuestionId) {
+      nextRules.push({ value, targetQuestionId });
+    }
+
+    updateQuestion(selectedQuestion.id, {
+      branching: {
+        enabled: true,
+        rules: nextRules,
+        defaultTargetQuestionId: branching.defaultTargetQuestionId,
+      },
+    });
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -502,18 +559,45 @@ const PropertyEditor = ({
                     value={opt}
                     onChange={(e) => {
                       const newOpts = [...(selectedQuestion.options || [])];
+                      const oldValue = newOpts[i];
                       newOpts[i] = e.target.value;
-                      updateQuestion(selectedQuestion.id, { options: newOpts });
+                      const nextBranching = selectedQuestion.branching
+                        ? {
+                            ...selectedQuestion.branching,
+                            rules: (selectedQuestion.branching.rules || []).map(
+                              (rule) =>
+                                rule.value === oldValue
+                                  ? { ...rule, value: e.target.value }
+                                  : rule,
+                            ),
+                          }
+                        : undefined;
+                      updateQuestion(selectedQuestion.id, {
+                        options: newOpts,
+                        branching: nextBranching,
+                      });
                     }}
                     className="flex-1 border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                   <button
                     onClick={() => {
                       const currentOptions = selectedQuestion.options || [];
+                      const removedOption = currentOptions[i];
                       const newOpts = currentOptions.filter(
                         (_: string, idx: number) => idx !== i,
                       );
-                      updateQuestion(selectedQuestion.id, { options: newOpts });
+                      const nextBranching = selectedQuestion.branching
+                        ? {
+                            ...selectedQuestion.branching,
+                            rules: (
+                              selectedQuestion.branching.rules || []
+                            ).filter((rule) => rule.value !== removedOption),
+                          }
+                        : undefined;
+                      updateQuestion(selectedQuestion.id, {
+                        options: newOpts,
+                        branching: nextBranching,
+                      });
                     }}
                     className="p-2 text-gray-400 hover:text-red-500"
                   >
@@ -536,6 +620,101 @@ const PropertyEditor = ({
                 <Plus size={14} /> Add Option
               </button>
             </div>
+          </div>
+        )}
+
+        {supportsBranching && (
+          <div className="pt-4 border-t border-gray-100 space-y-3">
+            <label className="flex items-center justify-between cursor-pointer">
+              <span className="text-sm font-medium text-gray-700">
+                Enable Conditional Branching
+              </span>
+              <div
+                onClick={() =>
+                  updateQuestion(selectedQuestion.id, {
+                    branching: branching.enabled
+                      ? undefined
+                      : {
+                          enabled: true,
+                          rules: branching.rules || [],
+                          defaultTargetQuestionId:
+                            branching.defaultTargetQuestionId || "",
+                        },
+                  })
+                }
+                className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${branching.enabled ? "bg-indigo-600" : "bg-gray-200"}`}
+              >
+                <div
+                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${branching.enabled ? "translate-x-5" : ""}`}
+                />
+              </div>
+            </label>
+
+            {branching.enabled && (
+              <div className="space-y-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
+                <p className="text-xs text-gray-600">
+                  Map each answer to the next question.
+                </p>
+                {(selectedQuestion.options || []).map((optionValue) => {
+                  const selectedTarget = (branching.rules || []).find(
+                    (rule) => rule.value === optionValue,
+                  )?.targetQuestionId;
+
+                  return (
+                    <div
+                      key={optionValue}
+                      className="grid grid-cols-2 gap-2 items-center"
+                    >
+                      <span className="text-xs font-semibold text-gray-700 truncate">
+                        {optionValue}
+                      </span>
+                      <select
+                        value={selectedTarget || ""}
+                        onChange={(e) =>
+                          updateBranchRule(optionValue, e.target.value)
+                        }
+                        className="border border-gray-300 rounded-lg p-2 text-xs bg-white"
+                      >
+                        <option value="">Next question (default order)</option>
+                        <option value="__END__">End survey</option>
+                        {branchTargets.map((target) => (
+                          <option key={target.id} value={target.id}>
+                            {target.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                })}
+
+                <div className="grid grid-cols-2 gap-2 items-center pt-1 border-t border-indigo-100">
+                  <span className="text-xs font-semibold text-gray-700">
+                    Otherwise
+                  </span>
+                  <select
+                    value={branching.defaultTargetQuestionId || ""}
+                    onChange={(e) =>
+                      updateQuestion(selectedQuestion.id, {
+                        branching: {
+                          enabled: true,
+                          rules: branching.rules || [],
+                          defaultTargetQuestionId: e.target.value,
+                        },
+                      })
+                    }
+                    className="border border-gray-300 rounded-lg p-2 text-xs bg-white"
+                  >
+                    <option value="">Next question (default order)</option>
+                    <option value="__END__">End survey</option>
+                    {branchTargets.map((target) => (
+                      <option key={target.id} value={target.id}>
+                        {target.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -673,6 +852,25 @@ export default function AddQuestions() {
                   type === "number"
                     ? Number(question?.min || 0)
                     : question?.min,
+                branching: question?.branching?.enabled
+                  ? {
+                      enabled: true,
+                      rules: Array.isArray(question.branching.rules)
+                        ? question.branching.rules
+                            .filter(
+                              (rule) =>
+                                Boolean(rule?.value) &&
+                                Boolean(rule?.targetQuestionId),
+                            )
+                            .map((rule) => ({
+                              value: String(rule!.value),
+                              targetQuestionId: String(rule!.targetQuestionId),
+                            }))
+                        : [],
+                      defaultTargetQuestionId:
+                        question.branching.defaultTargetQuestionId || "",
+                    }
+                  : undefined,
               };
             },
           ),
@@ -759,7 +957,27 @@ export default function AddQuestions() {
   const deleteQuestion = (id: string) => {
     const updatedPages = pages.map((page) => ({
       ...page,
-      questions: page.questions.filter((q) => q.id !== id),
+      questions: page.questions
+        .filter((q) => q.id !== id)
+        .map((q) => {
+          if (!q.branching?.enabled) return q;
+
+          const nextRules = (q.branching.rules || []).filter(
+            (rule) => rule.targetQuestionId !== id,
+          );
+
+          return {
+            ...q,
+            branching: {
+              ...q.branching,
+              rules: nextRules,
+              defaultTargetQuestionId:
+                q.branching.defaultTargetQuestionId === id
+                  ? ""
+                  : q.branching.defaultTargetQuestionId,
+            },
+          };
+        }),
     }));
     setPages(updatedPages);
     if (selectedQuestionId === id) setSelectedQuestionId(null);
@@ -771,7 +989,11 @@ export default function AddQuestions() {
     );
     if (!questionToCopy) return;
 
-    const newQuestion = { ...questionToCopy, id: `q-${Date.now()}` };
+    const newQuestion = {
+      ...questionToCopy,
+      id: `q-${Date.now()}`,
+      branching: undefined,
+    };
     const updatedPages = [...pages];
     const index = updatedPages[activePageIndex].questions.findIndex(
       (q) => q.id === id,
@@ -799,6 +1021,22 @@ export default function AddQuestions() {
   const selectedQuestion =
     activePage?.questions.find((q) => q.id === selectedQuestionId) ||
     pages.flatMap((p) => p.questions).find((q) => q.id === selectedQuestionId);
+
+  const branchTargets = useMemo(() => {
+    const flattened = pages.flatMap((page, pageIndex) =>
+      page.questions.map((question, questionIndex) => ({
+        id: question.id,
+        label: `P${pageIndex + 1} Q${questionIndex + 1} - ${question.label || "Untitled"}`,
+      })),
+    );
+
+    const selectedIndex = flattened.findIndex(
+      (target) => target.id === selectedQuestionId,
+    );
+    if (selectedIndex < 0) return flattened;
+
+    return flattened.filter((_, index) => index > selectedIndex);
+  }, [pages, selectedQuestionId]);
 
   if (loadingSurvey) {
     return (
@@ -1151,6 +1389,11 @@ export default function AddQuestions() {
                               }
                             />
                           )}
+                          {q.branching?.enabled && (
+                            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-semibold text-indigo-700">
+                              Conditional flow mapped
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -1207,6 +1450,7 @@ export default function AddQuestions() {
             selectedQuestion={selectedQuestion || null}
             updateQuestion={updateQuestion}
             setSelectedQuestionId={setSelectedQuestionId}
+            branchTargets={branchTargets}
           />
         </aside>
       )}

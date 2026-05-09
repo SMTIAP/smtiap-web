@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Plus, ChevronLeft, Activity, Clock, CheckCircle2,
+  Plus, ChevronLeft, ArrowLeft, Activity, Clock, CheckCircle2,
   Trash2, X, Layout, Share2, Copy, Check, Download, Lock,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -15,7 +15,9 @@ interface SurveyItem {
   password?: string;
 }
 
-const DeleteConfirmModal = ({ survey, onConfirm, onCancel, deleting }: {
+const DeleteConfirmModal = ({
+  survey, onConfirm, onCancel, deleting,
+}: {
   survey: SurveyItem;
   onConfirm: () => void;
   onCancel: () => void;
@@ -28,13 +30,13 @@ const DeleteConfirmModal = ({ survey, onConfirm, onCancel, deleting }: {
         <X size={14} />
       </button>
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-9 h-9 bg-rose-50 rounded-xl flex items-center justify-center flex-shrink-0">
+        <div className="w-9 h-9 bg-rose-50 rounded-xl flex items-center justify-center shrink-0">
           <Trash2 size={16} className="text-rose-500" />
         </div>
         <p className="font-black text-slate-900 text-base">Delete survey?</p>
       </div>
       <p className="text-slate-700 text-sm font-semibold truncate mb-1">
-        "{survey.surveyTitle || 'Untitled Survey'}"
+        "{survey.surveyTitle || "Untitled Survey"}"
       </p>
       <p className="text-slate-400 text-xs mb-6">This can't be undone.</p>
       <div className="flex gap-2">
@@ -42,22 +44,23 @@ const DeleteConfirmModal = ({ survey, onConfirm, onCancel, deleting }: {
           Cancel
         </button>
         <button onClick={onConfirm} disabled={deleting} className="flex-1 py-2.5 bg-rose-500 text-white rounded-xl font-bold text-sm hover:bg-rose-600 transition-all disabled:opacity-50">
-          {deleting ? 'Deleting...' : 'Delete'}
+          {deleting ? "Deleting..." : "Delete"}
         </button>
       </div>
     </div>
   </div>
 );
 
-// ✅ Compact Share Modal — fits screen without touching navbar
-const ShareModal = ({ survey, onClose }: {
+const ShareModal = ({
+  survey, onClose,
+}: {
   survey: SurveyItem;
   onClose: () => void;
 }) => {
   const surveyLink = `${window.location.origin}/take-survey/${survey._id}`;
   const [copied, setCopied] = useState(false);
   const [isPasswordProtected, setIsPasswordProtected] = useState(survey.isPasswordProtected || false);
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState("");
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
 
@@ -68,7 +71,7 @@ const ShareModal = ({ survey, onClose }: {
   };
 
   const downloadQR = () => {
-    const svg = document.getElementById("share-modal-qr") as SVGGraphicsElement;
+    const svg = document.getElementById("share-modal-qr") as SVGElement | null;
     if (!svg) return;
     const svgData = new XMLSerializer().serializeToString(svg);
     const canvas = document.createElement("canvas");
@@ -80,7 +83,7 @@ const ShareModal = ({ survey, onClose }: {
       ctx?.drawImage(img, 0, 0);
       const pngFile = canvas.toDataURL("image/png");
       const downloadLink = document.createElement("a");
-      downloadLink.download = `${survey.surveyTitle || 'survey'}-QR.png`;
+      downloadLink.download = `${survey.surveyTitle || "survey"}-QR.png`;
       downloadLink.href = pngFile;
       downloadLink.click();
     };
@@ -90,14 +93,14 @@ const ShareModal = ({ survey, onClose }: {
   const handleToggle = async () => {
     const newValue = !isPasswordProtected;
     setIsPasswordProtected(newValue);
-    setPassword('');
+    setPassword("");
     setPasswordSaved(false);
     if (!newValue) {
       try {
         await fetch(`http://localhost:5000/api/surveys/${survey._id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ isPasswordProtected: false, password: '' })
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isPasswordProtected: false, password: "" }),
         });
       } catch (err) {
         console.error("Failed to clear password:", err);
@@ -110,9 +113,9 @@ const ShareModal = ({ survey, onClose }: {
     setSavingPassword(true);
     try {
       await fetch(`http://localhost:5000/api/surveys/${survey._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isPasswordProtected: true, password })
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPasswordProtected: true, password }),
       });
       setPasswordSaved(true);
       setTimeout(() => setPasswordSaved(false), 2000);
@@ -126,26 +129,23 @@ const ShareModal = ({ survey, onClose }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/25 backdrop-blur-sm" onClick={onClose} />
-
-      {/* ✅ max-h + overflow-y-auto so it never overflows the screen */}
       <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 max-w-sm w-full z-10 max-h-[85vh] overflow-y-auto mt-16">
-
         <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-all">
           <X size={14} />
         </button>
 
-        {/* Header */}
         <div className="flex items-center gap-2.5 mb-4">
-          <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
             <Share2 size={14} className="text-indigo-600" />
           </div>
           <div>
             <p className="font-black text-slate-900 text-sm">Share survey</p>
-            <p className="text-slate-400 text-[10px] truncate max-w-[200px]">{survey.surveyTitle || 'Untitled Survey'}</p>
+            <p className="text-slate-400 text-[10px] truncate max-w-[200px]">
+              {survey.surveyTitle || "Untitled Survey"}
+            </p>
           </div>
         </div>
 
-        {/* Password Protection */}
         <div className="mb-4 bg-slate-50 rounded-xl p-3 border border-slate-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
@@ -154,9 +154,9 @@ const ShareModal = ({ survey, onClose }: {
             </div>
             <div
               onClick={handleToggle}
-              className={`w-8 h-4 rounded-full relative cursor-pointer transition-all duration-200 ${isPasswordProtected ? 'bg-indigo-600' : 'bg-slate-200'}`}
+              className={`w-8 h-4 rounded-full relative cursor-pointer transition-all duration-200 ${isPasswordProtected ? "bg-indigo-600" : "bg-slate-200"}`}
             >
-              <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-200 ${isPasswordProtected ? 'left-4' : 'left-0.5'}`} />
+              <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-200 ${isPasswordProtected ? "left-4" : "left-0.5"}`} />
             </div>
           </div>
 
@@ -166,15 +166,15 @@ const ShareModal = ({ survey, onClose }: {
                 type="password"
                 placeholder={survey.isPasswordProtected ? "••••••••" : "Set a password"}
                 value={password}
-                onChange={e => { setPassword(e.target.value); setPasswordSaved(false); }}
+                onChange={(e) => { setPassword(e.target.value); setPasswordSaved(false); }}
                 className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-indigo-400 transition-all"
               />
               <button
                 onClick={handleSavePassword}
                 disabled={!password || savingPassword}
-                className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 disabled:opacity-40 transition-all min-w-[52px]"
+                className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 disabled:opacity-40 transition-all min-w-[50px]"
               >
-                {passwordSaved ? '✓' : savingPassword ? '...' : 'Save'}
+                {passwordSaved ? "✓" : savingPassword ? "..." : "Save"}
               </button>
             </div>
           )}
@@ -184,7 +184,6 @@ const ShareModal = ({ survey, onClose }: {
           )}
         </div>
 
-        {/* Link */}
         <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-1.5">Survey link</p>
         <div className="flex gap-2 mb-4">
           <input
@@ -200,25 +199,14 @@ const ShareModal = ({ survey, onClose }: {
           </button>
         </div>
 
-        {/* QR Code — compact */}
         <p className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2">QR code</p>
         <div className="flex items-center gap-4 bg-slate-50 rounded-xl p-3 border border-slate-100">
-          <div className="bg-white p-2 rounded-xl shadow-sm flex-shrink-0">
-            <QRCodeSVG
-              id="share-modal-qr"
-              value={surveyLink}
-              size={90}
-              level="H"
-              includeMargin={true}
-            />
+          <div className="bg-white p-2 rounded-xl shadow-sm shrink-0">
+            <QRCodeSVG id="share-modal-qr" value={surveyLink} size={90} level="H" includeMargin={true} />
           </div>
           <div className="flex flex-col gap-2">
-            <p className="text-xs text-slate-500 font-medium leading-snug"> Download & share survey QR
-</p>
-            <button
-              onClick={downloadQR}
-              className="flex items-center gap-1.5 text-indigo-600 font-bold text-xs hover:text-indigo-800 transition-colors"
-            >
+            <p className="text-xs text-slate-500 font-medium leading-snug">Download & share survey QR</p>
+            <button onClick={downloadQR} className="flex items-center gap-1.5 text-indigo-600 font-bold text-xs hover:text-indigo-800 transition-colors">
               <Download size={13} /> Download PNG
             </button>
           </div>
@@ -307,7 +295,6 @@ export default function CreatedSurveys() {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#FDFDFD]">
-
       {showDeleteModal && surveyToDelete && (
         <DeleteConfirmModal
           survey={surveyToDelete}
@@ -317,32 +304,33 @@ export default function CreatedSurveys() {
         />
       )}
       {surveyToShare && (
-        <ShareModal
-          survey={surveyToShare}
-          onClose={() => setSurveyToShare(null)}
-        />
+        <ShareModal survey={surveyToShare} onClose={() => setSurveyToShare(null)} />
       )}
 
       <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
 
       <div className="flex max-w-[1200px] py-12 px-8 flex-col items-start gap-10 w-full">
-        <div className="flex justify-between items-end w-full">
+        <div className="flex justify-between items-center w-full">
           <div>
             <h1 className="text-[#0F172A] text-5xl font-black tracking-tight mb-2">My Surveys</h1>
             <p className="text-[#64748B] text-base font-medium">Track performance and draft new insights.</p>
           </div>
-          <div className="flex gap-4">
+
+          {/* ✅ Buttons — exactly matching OrgAdmin BackButton style */}
+          <div className="flex items-center gap-3">
+            {/* ✅ Square add button — same height as back button */}
             <button
               onClick={() => navigate("/templates")}
-              className="group h-12 w-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 hover:-translate-y-1"
+              className="group cursor-pointer py-2 px-3 flex justify-center items-center rounded-md bg-indigo-600 text-white transition-opacity hover:opacity-90"
             >
-              <Plus size={24} className="group-hover:rotate-90 transition-transform duration-300" />
+              <Plus size={16} className="group-hover:rotate-90 transition-transform duration-300" />
             </button>
+            {/* ✅ Exact same style as BackButton component */}
             <button
-              onClick={() => navigate("/")}
-              className="flex items-center gap-2 px-8 h-12 rounded-2xl bg-[#1E293B] text-white text-sm font-bold shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all hover:-translate-y-1"
+              onClick={() => navigate("/admin")}
+              className="cursor-pointer text-nowrap py-2 px-6 flex justify-center items-center gap-2 rounded-md bg-[#1E293B] text-white font-inter text-sm font-medium transition-opacity hover:opacity-90"
             >
-              <ChevronLeft size={18} /> Back
+              <ArrowLeft size={16} /> Back
             </button>
           </div>
         </div>
@@ -404,7 +392,7 @@ export default function CreatedSurveys() {
                 </div>
 
                 <div className="flex flex-col items-center justify-center flex-grow text-center w-full">
-                  <div className={`w-14 h-14 rounded-[1.5rem] flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ${
+                  <div className={`w-14 h-14 rounded-3xl flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ${
                     isRunning ? "bg-emerald-50 text-emerald-500" :
                     isDraft ? "bg-amber-50 text-amber-500" :
                     "bg-rose-50 text-rose-500"
@@ -433,7 +421,9 @@ export default function CreatedSurveys() {
             <div className="p-4 bg-white rounded-full shadow-md text-slate-300">
               <Layout size={40} />
             </div>
-            <p className="text-slate-400 font-bold text-xl">No {activeTab.toLowerCase()} surveys found.</p>
+            <p className="text-slate-400 font-bold text-xl">
+              No {activeTab.toLowerCase()} surveys found.
+            </p>
           </div>
         )}
       </div>
