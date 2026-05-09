@@ -9,7 +9,8 @@ export default function OrganizationRegistration() {
         country: "",
         address: "",
         description: "",
-        orgType: ""
+        orgType: "",
+        domain: "",
     })
 
     const handleChange = (
@@ -28,13 +29,16 @@ export default function OrganizationRegistration() {
         
     const handleSubmit = async () => {
         try {
+            const token = localStorage.getItem("token");
             const response = await fetch(
                 
                 "http://localhost:5000/api/organization-registration",
                 {
                     method: "POST",
+                    credentials: "include",
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`
                     },
                     body: JSON.stringify(formData)
                 }
@@ -44,6 +48,7 @@ export default function OrganizationRegistration() {
             console.log(data);
             console.log("BACKEND RESPONSE:", data);
             alert("Organization Registered");
+            navigate("/role-management");
 
         } catch (error) {
             console.error(error);
@@ -206,6 +211,21 @@ export default function OrganizationRegistration() {
                             onChange={handleChange}
                             type="text"
                             placeholder="Enter address"
+                            className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
+                        />
+                    </div>
+
+                    {/* Organization Domain */}
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-slate-600">
+                            Organization Domain
+                        </label>
+                        <input
+                            onChange={handleChange}
+                            name="domain"
+                            value={formData.domain}
+                            type="text"
+                            placeholder="Enter organization domain"
                             className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
                         />
                     </div>

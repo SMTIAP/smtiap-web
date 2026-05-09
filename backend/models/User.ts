@@ -1,4 +1,4 @@
-import mongoose, { Document, Model, Schema, CallbackWithoutResultAndOptionalError } from "mongoose";
+import mongoose, { Document, Model, Schema, CallbackWithoutResultAndOptionalError, Types } from "mongoose";
 import bcrypt from "bcryptjs";
 
 
@@ -31,7 +31,7 @@ const userSchema = new Schema<IUser>({
   role: {
     type: String,
     enum: ["viewer", "admin", "creater", "super_admin", "billing_manager"],
-    default: "viewer"
+    default: "admin"
   },
   resetPasswordToken: {
       type: String,
