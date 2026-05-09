@@ -23,7 +23,7 @@ const tenantSchema = new Schema(
     address: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
     plan: { type: String, trim: true, default: null },
-    domain: { type: String, trim: true, default: null },
+    domain: { type: String, trim: true, required: true },
     status: {
       type: String,
       // required: true,

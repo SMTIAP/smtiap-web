@@ -84,7 +84,12 @@ export default function RoleManagement(){
                         All Employees and Role Management
                         </h1>
                     </div>
+                    
                     <div className="flex justify-end gap-2">
+                        <button onClick={() => navigate("/organization-registration")}
+                            className="cursor-pointer text-nowrap py-2 px-6 flex justify-center items-center gap-2 rounded-md bg-[#3B82F6] text-[#FFF] font-inter text-sm font-medium transition-opacity hover:opacity-90">
+                            Create Organization
+                        </button>
                         <button onClick={() => navigate("/audit-log")}
                             className="cursor-pointer text-nowrap py-2 px-6 flex justify-center items-center gap-2 rounded-md bg-[#3B82F6] text-[#FFF] font-inter text-sm font-medium transition-opacity hover:opacity-90">
                             Audit Logs
@@ -174,43 +179,7 @@ export default function RoleManagement(){
                                     </td>
                                 </tr>
                             ))}
-                            {/* // <tr className="border-b border-gray-300 hover:bg-gray-50">
-                            //     <td className="px-6 py-4 text-gray-800">Namal Kumara</td>
-                            //     <td className="px-6 py-4 text-gray-800">namal@comp.com</td>
-                            //     <td className="px-6 py-4 text-gray-800">
-                            //         <select className="w-50 border border-gray-300 rounded-md px-3 py-1 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            //             <option>Organization Admin</option>
-                            //             <option>Tenant Admin</option>
-                            //             <option>Viewer</option>
-                            //             <option>Creator</option>
-                            //             <option>Billing Manager</option>
-                            //         </select>
-                            //     </td>
-                            //     <td className="px-6 py-4 text-gray-800">
-                            //     <button className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
-                            //         Remove
-                            //     </button>
-                            //     </td>
-                            // </tr>
-                             */}
-                            {/* <tr className="border-b border-gray-300 hover:bg-gray-50">
-                                <td className="px-6 py-4 text-gray-800">Chamil Gamage</td>
-                                <td className="px-6 py-4 text-gray-800">chamil@comp.com</td>
-                                <td className="px-6 py-4 text-gray-800">
-                                    <select className="w-50 border border-gray-300 rounded-md px-3 py-1 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        <option>Organization Admin</option>
-                                        <option>Tenant Admin</option>
-                                        <option>Viewer</option>
-                                        <option>Creator</option>
-                                        <option>Billing Manager</option>
-                                    </select>
-                                </td>
-                                <td className="px-6 py-4 text-gray-800">
-                                <button className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600">
-                                    Remove
-                                </button>
-                                </td>
-                            </tr> */}
+                            
                         </tbody>
                     </table>
                 </div>

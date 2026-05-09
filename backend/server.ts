@@ -26,7 +26,9 @@ import AuditLog from "./models/AuditLog.js";
 import surveyRoutes from "./routes/surveyRoutes.js";
 import SurveyResponse from "./models/SurveyResponse.js";
 import roleManagementRoutes from "./routes/roleManagementRoutes.js";
+import organizationRegistrationRoutes from "./routes/organizationRegistrationRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
+
 
 const ensureCollections = async () => {
   await Promise.all([
@@ -41,6 +43,7 @@ const ensureCollections = async () => {
     CreditLedger.createCollection(),
     Notification.createCollection(),
     AuditLog.createCollection(),
+
   ]);
   console.log("All collections ensured.");
 };
@@ -49,7 +52,6 @@ import { initLinkedInStrategy } from "./config/linkedin.js";
 import passport, { initGoogleStrategy } from "./config/passport.js";
 
 import cookieParser from "cookie-parser";
-import { createOrganization } from "./controllers/organizationRegistrationController.js";
 
 const app = express();
 
@@ -69,9 +71,9 @@ app.use(passport.initialize());
 app.use(payhereRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/surveys", surveyRoutes);
-app.use("/api/role-management", roleManagementRoutes);
+app.use("/api/role-management", roleManagementRoutes)
+app.use("/api/organization-registration", organizationRegistrationRoutes)
 app.use("/api/audit-logs", auditRoutes);
-app.use("/api/organization-registration", createOrganization);
 app.use(analyticsRoutes);
 app.use(errorHandler);
 
