@@ -95,7 +95,12 @@ export default function RoleManagement(){
         fetchOrganizationData();
 }, []);
 
-    const filteredUsers = users.filter((user) => user.email.toLowerCase().includes(searchTerm.toLowerCase()));
+    // const filteredUsers = users.filter((user) => user.email.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredUsers = searchTerm.trim()
+  ? users.filter((user) =>
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  : [];
     const filteredOrgUsers = orgUsers.filter((item) => item.tenantId.name.toLowerCase().includes(searchOrganization.toLowerCase()));
  // const filteredOrganizations = tenants.filter((tenant) => tenant.name.toLowerCase().includes(searchOrganization.toLowerCase()))
 
