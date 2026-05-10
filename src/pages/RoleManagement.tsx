@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import BackButton from '../components/BackButton';
 import { Search, Target } from 'lucide-react';
+import { jwtDecode } from "jwt-decode";
+
 
 interface User {
     _id: string;
@@ -13,6 +15,7 @@ interface User {
 interface Tenant {
     _id: string;
     name: string;
+    createdBy: string;
 }
 
 interface UserTenantRole {
@@ -95,6 +98,23 @@ export default function RoleManagement(){
         fetchOrganizationData();
 }, []);
 
+
+//Get User ID
+const token = localStorage.getItem("token");
+// console.log("TOKEN:", token);
+// console.log({
+//     Authorization: `Bearer ${token}`
+// });
+
+let currentUserId = "";
+
+if (token) {
+    const decoded: any = jwtDecode(token);
+    console.log(decoded);
+    currentUserId = decoded.id;
+    console.log("USER ID:", currentUserId);
+}
+
     // const filteredUsers = users.filter((user) => user.email.toLowerCase().includes(searchTerm.toLowerCase()));
     const filteredUsers = searchTerm.trim()
   ? users.filter((user) =>
@@ -102,48 +122,17 @@ export default function RoleManagement(){
     )
   : [];
     const filteredOrgUsers = orgUsers.filter((item) => item.tenantId.name.toLowerCase().includes(searchOrganization.toLowerCase()));
- // const filteredOrganizations = tenants.filter((tenant) => tenant.name.toLowerCase().includes(searchOrganization.toLowerCase()))
+    // const org = 
+//  const filteredOrganizations = tenants.filter((tenant) => tenant.name.toLowerCase().includes(searchOrganization.toLowerCase()))
 
-
-
-    // const handleRoleChange = async (user: User) => {
-    //     try {
-    //         const newRole = selectedRole[user._id];
-    //         const response = await fetch (
-                
-    //             `http://localhost:5000/api/role-management/${user._id}/role`, {
-    //                 method: "PUT",
-    //                 headers: {
-    //                     "Content-type": "application/json"
-    //                 },
-    //                 body: JSON.stringify({ role: newRole })
-    //             }
-    //         )
-
-    //         if(!response.ok) {
-    //             throw new Error("Failed to update role");
-    //         }
-
-    //         const updatedUser = await response.json();
-
-    //         // update UI immediately
-    //         setUsers((prev) =>
-    //             prev.map((u) =>
-    //                 u._id === user._id ? { ...u, role: updatedUser.role } : u
-    //             )
-    //         );
-
-    //         // clear selection after success
-    //         setSelectedRole((prev) => {
-    //             const updated = { ...prev };
-    //             delete updated[user._id];
-    //             return updated;
-    //         });
-
-    //     } catch(error){
-    //         console.error("Error updating role:", error);
-    //     }
-    // }
+const filteredOrganizations = tenants.filter(
+    (tenant) => tenant.createdBy === currentUserId
+);// const filteredOrganizations = tenants.filter(
+//     (tenant) =>
+//         tenant.createdBy === currentUserId 
+//         // tenant.name.toLowerCase().includes(searchOrganization.toLowerCase())
+// );
+    
 
     const handleAddUser = async (user: User, tenant: Tenant) => {
 
@@ -156,7 +145,7 @@ export default function RoleManagement(){
         const newRole = selectedRole[user._id];
 
         const response = await fetch(
-            `http://localhost:5000/api/role-management/${user._id}/${tenant._id}/role`,
+            `http://localhost:5000/api/role-management/${user._id}/${tenant._id}`,
             {
                 method: "PUT",
                 headers: {
@@ -166,12 +155,17 @@ export default function RoleManagement(){
             }
         );
 
-        if (!response.ok) {
-            throw new Error("Failed to assign user to tenant");
-        }
+        // if (!response.ok) {
+        //     throw new Error("Failed to assign user to tenant");
+        // }
 
         const data = await response.json();
-        alert("User role updated successfully");
+        if (!response.ok) {
+            // ❌ THIS handles "already assigned"
+            alert(data.message || "User already assigned to this organization");
+            return;
+        }
+        alert("User added successfully");
 
     } catch (err) {
         console.error(err);
@@ -198,17 +192,20 @@ const handleUpdateOrgRole = async (item: UserTenantRole) => {
                 body: JSON.stringify({ role: newRole })
             }
         );
+        const data = await response.json().catch(() => null);
 
+console.log("STATUS:", response.status);
+console.log("RESPONSE:", data);
         if (!response.ok) {
             throw new Error("Failed to update role");
         }
 
-        const updated = await response.json();
+        // const updated = await response.json();
 
         setOrgUsers((prev) =>
             prev.map((u) =>
                 u._id === item._id
-                    ? { ...u, role: updated.role }
+                    ? { ...u, role: data.role ?? newRole }
                     : u
             )
         );
@@ -259,6 +256,10 @@ const handleRemoveOrgUser = async (item: UserTenantRole) => {
 
 
 
+// const filteredTenants = tenants.filter(
+//     (tenant) => tenant.createdBy === currentUserId
+// );
+
     return (
         <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC]">
             <div className="w-full max-w-[1152px] px-6 py-10 flex flex-col gap-10">
@@ -307,9 +308,12 @@ const handleRemoveOrgUser = async (item: UserTenantRole) => {
                         className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-md shadow-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                         <option value="">Select Organization</option>
-                        {tenants.map((tenant) => (
-                            <option key={tenant._id} value={tenant._id}>{tenant.name}</option>
-                        ))}
+                        {/* <option value="">Select Organization</option> */}
+{filteredOrganizations.map((tenant) => (
+    <option key={tenant._id} value={tenant._id}>
+        {tenant.name}
+    </option>
+))}
                     </select>
                 </div>
 
