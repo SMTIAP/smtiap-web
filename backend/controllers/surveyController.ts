@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Survey from "../models/Survey.js";
 import AuditLog from "../models/AuditLog.js";
 
+// Records an audit trail entry for survey actions
 const logAudit = (req: Request, action: string, entityId: any) => {
   const user = (req as any).user;
   if (!user) return;
@@ -13,21 +14,13 @@ const logAudit = (req: Request, action: string, entityId: any) => {
   } as any).catch(() => {});
 };
 
-// POST /api/surveys
+// POST /api/surveys — Creates a new survey with pages and branding settings
 export const createSurvey = async (req: Request, res: Response) => {
   try {
     const {
-      surveyTitle,
-      description,
-      websiteUrl,
-      logo,
-      themeColor,
-      primaryColor,
-      customizeBranding,
-      isAnonymous,
-      pages,
-      status,
-      tenantId,
+      surveyTitle, description, websiteUrl, logo,
+      themeColor, primaryColor, customizeBranding,
+      isAnonymous, pages, status, tenantId,
     } = req.body;
 
     if (!surveyTitle) {
@@ -37,16 +30,9 @@ export const createSurvey = async (req: Request, res: Response) => {
 
     const user = (req as any).user;
     const survey = new Survey({
-      surveyTitle,
-      description,
-      websiteUrl,
-      logo,
-      themeColor,
-      primaryColor,
-      customizeBranding,
-      isAnonymous,
-      pages,
-      status,
+      surveyTitle, description, websiteUrl, logo,
+      themeColor, primaryColor, customizeBranding,
+      isAnonymous, pages, status,
       tenantId: tenantId ?? null,
       createdBy: user?._id ?? null,
     });
@@ -59,7 +45,7 @@ export const createSurvey = async (req: Request, res: Response) => {
   }
 };
 
-// GET /api/surveys
+// GET /api/surveys — Returns all surveys, optionally filtered by tenantId or status
 export const getSurveys = async (req: Request, res: Response) => {
   try {
     const { tenantId, status } = req.query;
@@ -74,7 +60,7 @@ export const getSurveys = async (req: Request, res: Response) => {
   }
 };
 
-// GET /api/surveys/:id
+// GET /api/surveys/:id — Returns a single survey by ID
 export const getSurveyById = async (req: Request, res: Response) => {
   try {
     const survey = await Survey.findById(req.params.id);
@@ -88,7 +74,7 @@ export const getSurveyById = async (req: Request, res: Response) => {
   }
 };
 
-// PUT /api/surveys/:id
+// PUT /api/surveys/:id — Updates all survey fields including pages, branding and password settings
 export const updateSurvey = async (req: Request, res: Response) => {
   try {
     const survey = await Survey.findByIdAndUpdate(req.params.id, req.body, {
@@ -106,7 +92,7 @@ export const updateSurvey = async (req: Request, res: Response) => {
   }
 };
 
-// PATCH /api/surveys/:id/status
+// PATCH /api/surveys/:id/status — Updates survey status between Draft, Running and Finished
 export const updateStatus = async (req: Request, res: Response) => {
   try {
     const { status } = req.body;
@@ -115,9 +101,7 @@ export const updateStatus = async (req: Request, res: Response) => {
       return;
     }
     const survey = await Survey.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true },
+      req.params.id, { status }, { new: true }
     );
     if (!survey) {
       res.status(404).json({ message: "Survey not found" });
@@ -130,7 +114,7 @@ export const updateStatus = async (req: Request, res: Response) => {
   }
 };
 
-// DELETE /api/surveys/:id
+// DELETE /api/surveys/:id — Permanently removes a survey and logs the action
 export const deleteSurvey = async (req: Request, res: Response) => {
   try {
     const surveyId = req.params.id;

@@ -15,6 +15,7 @@ interface SurveyItem {
   password?: string;
 }
 
+// Confirmation modal before permanently deleting a survey
 const DeleteConfirmModal = ({
   survey, onConfirm, onCancel, deleting,
 }: {
@@ -51,6 +52,7 @@ const DeleteConfirmModal = ({
   </div>
 );
 
+// Share modal with survey link, QR code download, and optional password protection
 const ShareModal = ({
   survey, onClose,
 }: {
@@ -70,6 +72,7 @@ const ShareModal = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Converts QR SVG to PNG and triggers a download
   const downloadQR = () => {
     const svg = document.getElementById("share-modal-qr") as SVGElement | null;
     if (!svg) return;
@@ -90,6 +93,7 @@ const ShareModal = ({
     img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
+  // Toggles password protection; clears password in DB when turned off
   const handleToggle = async () => {
     const newValue = !isPasswordProtected;
     setIsPasswordProtected(newValue);
@@ -108,6 +112,7 @@ const ShareModal = ({
     }
   };
 
+  // Saves password protection settings to the backend
   const handleSavePassword = async () => {
     if (!password) return;
     setSavingPassword(true);
@@ -146,6 +151,7 @@ const ShareModal = ({
           </div>
         </div>
 
+        {/* Password protection toggle and input */}
         <div className="mb-4 bg-slate-50 rounded-xl p-3 border border-slate-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
@@ -226,6 +232,7 @@ export default function CreatedSurveys() {
   const [surveyToDelete, setSurveyToDelete] = useState<SurveyItem | null>(null);
   const [surveyToShare, setSurveyToShare] = useState<SurveyItem | null>(null);
 
+  // Fetches all surveys from the backend on mount
   useEffect(() => {
     const fetchSurveys = async () => {
       try {
@@ -241,6 +248,7 @@ export default function CreatedSurveys() {
     fetchSurveys();
   }, []);
 
+  // Routes to editor for drafts, or results page for running/finished surveys
   const handleCardClick = (survey: SurveyItem) => {
     if (survey.status === "Draft") {
       navigate("/add-questions", { state: { surveyId: survey._id } });
@@ -260,6 +268,7 @@ export default function CreatedSurveys() {
     setShowDeleteModal(true);
   };
 
+  // Sends DELETE request and removes the survey from local state on success
   const handleConfirmDelete = async () => {
     if (!surveyToDelete) return;
     try {
@@ -316,16 +325,13 @@ export default function CreatedSurveys() {
             <p className="text-[#64748B] text-base font-medium">Track performance and draft new insights.</p>
           </div>
 
-          {/* ✅ Buttons — exactly matching OrgAdmin BackButton style */}
           <div className="flex items-center gap-3">
-            {/* ✅ Square add button — same height as back button */}
             <button
               onClick={() => navigate("/templates")}
               className="group cursor-pointer py-2 px-3 flex justify-center items-center rounded-md bg-indigo-600 text-white transition-opacity hover:opacity-90"
             >
               <Plus size={16} className="group-hover:rotate-90 transition-transform duration-300" />
             </button>
-            {/* ✅ Exact same style as BackButton component */}
             <button
               onClick={() => navigate("/admin")}
               className="cursor-pointer text-nowrap py-2 px-6 flex justify-center items-center gap-2 rounded-md bg-[#1E293B] text-white font-inter text-sm font-medium transition-opacity hover:opacity-90"
@@ -335,6 +341,7 @@ export default function CreatedSurveys() {
           </div>
         </div>
 
+        {/* Status filter tabs */}
         <div className="flex bg-slate-100/80 p-1.5 rounded-[1.25rem] self-end backdrop-blur-md border border-slate-200/50">
           {["All", "Running", "Draft", "Finished"].map((tab) => (
             <button
@@ -360,6 +367,7 @@ export default function CreatedSurveys() {
                 onClick={() => handleCardClick(survey)}
                 className="group relative flex flex-col items-center p-8 bg-white border border-slate-100 rounded-3xl shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-2 cursor-pointer aspect-[3/4] overflow-hidden"
               >
+                {/* Status color indicator bar at top of card */}
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${
                   isRunning ? "bg-emerald-400" : isDraft ? "bg-amber-400" : "bg-rose-400"
                 }`} />
@@ -369,6 +377,7 @@ export default function CreatedSurveys() {
                     {new Date(survey.createdAt).toLocaleDateString("en-GB")}
                   </span>
                   <div className="flex items-center gap-1">
+                    {/* Share button only visible on running surveys */}
                     {isRunning && (
                       <button
                         type="button"

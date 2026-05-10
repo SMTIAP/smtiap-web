@@ -24,15 +24,18 @@ export default function CreateNewSurvey() {
     isAnonymous: false,
   });
 
+  // Updates text/textarea fields in form state
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Toggles boolean fields (e.g. customizeBranding, isAnonymous)
   const toggleField = (field: keyof SurveyFormData) => {
     setFormData((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
+  // Stores the uploaded file name as the logo identifier
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -128,7 +131,7 @@ export default function CreateNewSurvey() {
             </div>
           </section>
 
-          {/* ✅ Fixed button — saves as Untitled Survey if skipped */}
+          {/* Passes form data to AddQuestions via route state. Falls back to 'Untitled Survey' if title is empty */}
           <div className="flex justify-end mt-4">
             <button
               onClick={() => {
