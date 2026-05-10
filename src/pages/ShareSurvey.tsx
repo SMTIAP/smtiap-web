@@ -23,6 +23,7 @@ export default function ShareSurvey() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Converts QR SVG to PNG and triggers browser download
   const downloadQR = () => {
     const svg = document.getElementById("survey-qr") as SVGGraphicsElement;
     if (!svg) return;
@@ -43,23 +44,19 @@ export default function ShareSurvey() {
     img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
-  // ✅ Save when toggle changes too
+  // Toggles password protection; clears password in DB when turned off
   const handleToggle = async () => {
     const newValue = !isPasswordProtected;
     setIsPasswordProtected(newValue);
     setPasswordSaved(false);
     setPassword('');
 
-    // If turning OFF → immediately save to DB with no password
     if (!newValue && surveyId) {
       try {
         await fetch(`http://localhost:5000/api/surveys/${surveyId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            isPasswordProtected: false,
-            password: ''
-          })
+          body: JSON.stringify({ isPasswordProtected: false, password: '' })
         });
       } catch (err) {
         console.error("Failed to clear password:", err);
@@ -67,6 +64,7 @@ export default function ShareSurvey() {
     }
   };
 
+  // Saves password protection settings to the backend
   const handleSavePassword = async () => {
     if (!surveyId || !password) return;
     setSavingPassword(true);
@@ -74,10 +72,7 @@ export default function ShareSurvey() {
       await fetch(`http://localhost:5000/api/surveys/${surveyId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          isPasswordProtected: true,
-          password: password
-        })
+        body: JSON.stringify({ isPasswordProtected: true, password })
       });
       setPasswordSaved(true);
       setTimeout(() => setPasswordSaved(false), 2000);
@@ -102,16 +97,15 @@ export default function ShareSurvey() {
         </div>
 
         <h1 className="text-2xl font-black text-slate-900 mb-2">Survey Published!</h1>
-        <p className="text-slate-500 text-sm mb-8">Your survey is now live and ready to collect responses.</p>
+        <p className="text-slate-500 text-sm mb-8">Share the link or download the QR code to start collecting responses.</p>
 
-        {/* ✅ Password Protection — MOVED ABOVE link */}
+        {/* Password protection section — shown above the link */}
         <div className="mb-6 text-left bg-slate-50 rounded-2xl p-5 border border-slate-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Lock size={15} className="text-slate-500" />
               <span className="text-sm font-bold text-slate-700">Password Protection</span>
             </div>
-            {/* ✅ Toggle now calls handleToggle */}
             <div
               onClick={handleToggle}
               className={`w-10 h-5 rounded-full relative cursor-pointer transition-all duration-200 ${isPasswordProtected ? 'bg-indigo-600' : 'bg-slate-200'}`}
@@ -120,7 +114,6 @@ export default function ShareSurvey() {
             </div>
           </div>
 
-          {/* ✅ Only shows when toggle is ON */}
           {isPasswordProtected && (
             <div className="flex gap-2 mt-4">
               <input
@@ -145,7 +138,6 @@ export default function ShareSurvey() {
           )}
         </div>
 
-        {/* Survey Link — NOW BELOW password section */}
         <div className="mb-8 text-left">
           <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2 block">Unique Survey Link</label>
           <div className="flex gap-2">
@@ -163,17 +155,10 @@ export default function ShareSurvey() {
           </div>
         </div>
 
-        {/* QR Code */}
         <div className="flex flex-col items-center bg-slate-50 rounded-3xl p-8 border border-slate-100">
           <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-6">Download & Share Survey</label>
           <div className="bg-white p-4 rounded-2xl shadow-sm mb-6">
-            <QRCodeSVG
-              id="survey-qr"
-              value={surveyLink}
-              size={180}
-              level={"H"}
-              includeMargin={true}
-            />
+            <QRCodeSVG id="survey-qr" value={surveyLink} size={180} level={"H"} includeMargin={true} />
           </div>
           <button
             onClick={downloadQR}
