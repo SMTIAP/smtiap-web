@@ -1,10 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import BackButton from "../components/BackButton";
-import SurveyCard from "../components/SurveyCard";
-import ExportPdfButton from "../components/ExportPdfButton";
-import { Filter, BarChart, Sparkles, Loader2 } from "lucide-react";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -18,9 +13,19 @@ import {
   LineElement,
   Filler,
 } from "chart.js";
-import { Bar, Pie } from "react-chartjs-2";
 
-// Register ChartJS components
+// Custom hooks — own all state, effects, and chart computation
+import { useAnalyticsData } from "../hooks/useAnalyticsData";
+import { useAnalyticsCharts } from "../hooks/useAnalyticsCharts";
+
+// Analytics sub-components
+import SurveySelectorView from "../components/analytics/SurveySelectorView";
+import AnalyticsTopBar from "../components/analytics/AnalyticsTopBar";
+import AnalyticsDashboardHeader from "../components/analytics/AnalyticsDashboardHeader";
+import AnalyticsChartsSection from "../components/analytics/AnalyticsChartsSection";
+import AiInsightsSection from "../components/analytics/AiInsightsSection";
+
+// Register Chart.js modules needed for Bar and Pie charts
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -34,100 +39,13 @@ ChartJS.register(
   Filler,
 );
 
-interface StatCardProps {
-  label: string;
-  value: string;
-}
-
-const StatCard = ({ label, value }: StatCardProps) => (
-  <div className="flex min-w-[158px] p-6 flex-col items-start gap-2 rounded-lg border border-[#CFDBE8] w-full bg-white shadow-sm">
-    <p className="text-[#0D141C] font-inter text-base font-medium leading-6">
-      {label}
-    </p>
-    <p className="text-[#0D141C] font-inter text-2xl font-bold leading-[30px]">
-      {value}
-    </p>
-  </div>
-);
-
-interface TagProps {
-  label: string;
-  count: number;
-  color: string;
-}
-
-interface SurveyResponseDoc {
-  createdAt?: string;
-  responses?: Record<string, unknown>;
-}
-
-interface SurveyQuestion {
-  _id?: string;
-  id?: string;
-  type?: string;
-  label?: string;
-  options?: string[];
-  max?: number;
-}
-
-interface SurveyDoc {
-  surveyTitle?: string;
-  title?: string;
-  pages?: { questions?: SurveyQuestion[] }[];
-}
-
-interface AnalyticsResultDoc {
-  summary?: string;
-  topKeywords?: { keyword: string; count: number }[];
-}
-
-interface SurveyListItem {
-  _id: string;
-  surveyTitle?: string;
-  createdAt?: string;
-  status?: string;
-}
-
-const getQuestionId = (question: SurveyQuestion): string =>
-  String(question._id ?? question.id ?? "").trim();
-
-const normalizeAnswer = (value: unknown): string => {
-  if (value === null || value === undefined) return "";
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => String(item).trim())
-      .filter(Boolean)
-      .join(", ");
-  }
-  return String(value).trim();
-};
-
-const toCheckboxValues = (value: unknown): string[] => {
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item).trim()).filter(Boolean);
-  }
-  const normalized = normalizeAnswer(value);
-  return normalized
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
-};
-
-const InsightTag = ({ label, count, color }: TagProps) => (
-  <div
-    className="flex items-center px-4 py-1.5 rounded-lg text-sm font-medium"
-    style={{ backgroundColor: color }}
-  >
-    <span className="text-[#4D7399]">
-      {label} ({count})
-    </span>
-  </div>
-);
-
+// Main page component — thin orchestrator, no business logic
 export default function Analytics() {
   const [searchParams] = useSearchParams();
   const apiBaseUrl =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+  // surveyId comes from ?surveyId= query param. If absent, show survey list.
   const surveyId = useMemo(
     () =>
       searchParams.get("surveyId")?.trim() ||
@@ -136,784 +54,78 @@ export default function Analytics() {
     [searchParams],
   );
 
-  const [surveyTitle, setSurveyTitle] = useState("Survey");
-  const [totalResponses, setTotalResponses] = useState(0);
-  const [surveyQuestions, setSurveyQuestions] = useState<SurveyQuestion[]>([]);
-  const [surveyResponses, setSurveyResponses] = useState<SurveyResponseDoc[]>(
-    [],
-  );
-  const [aiInputLines, setAiInputLines] = useState<string[]>([]);
-  const [summary, setSummary] = useState<string | null>(null);
-  const [keywords, setKeywords] = useState<
-    { keyword: string; count: number }[]
-  >([]);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
-  const [finishedSurveys, setFinishedSurveys] = useState<SurveyListItem[]>([]);
-  const [surveysLoading, setSurveysLoading] = useState(true);
+  // All data-fetching state, side-effects, and runAnalysis handler
+  const {
+    surveyTitle,
+    totalResponses,
+    surveyQuestions,
+    surveyResponses,
+    summary,
+    keywords,
+    isAnalyzing,
+    aiError,
+    finishedSurveys,
+    surveysLoading,
+    runAnalysis,
+  } = useAnalyticsData(surveyId, apiBaseUrl);
 
-  useEffect(() => {
-    const fetchFinishedSurveys = async () => {
-      if (surveyId) {
-        setSurveysLoading(false);
-        return;
-      }
+  // All chart datasets, options, and derived stats (memoised)
+  const {
+    ratingQuestions,
+    multipleChoiceQuestions,
+    checkboxQuestions,
+    completionRate,
+    averageRating,
+    ratingData,
+    ratingOptions,
+    buildOptionChartData,
+    optionChartOptions,
+  } = useAnalyticsCharts(surveyQuestions, surveyResponses);
 
-      setSurveysLoading(true);
-      try {
-        const response = await fetch(`${apiBaseUrl}/api/surveys`);
-        const data = await response.json();
-        const surveyList = Array.isArray(data)
-          ? (data as SurveyListItem[])
-          : [];
-        setFinishedSurveys(
-          surveyList.filter((survey) => survey.status === "Finished"),
-        );
-      } catch (err) {
-        console.error("Failed to load finished surveys:", err);
-        setFinishedSurveys([]);
-      } finally {
-        setSurveysLoading(false);
-      }
-    };
-
-    void fetchFinishedSurveys();
-  }, [apiBaseUrl, surveyId]);
-
-  useEffect(() => {
-    const fetchSurveyContext = async () => {
-      if (!surveyId) {
-        return;
-      }
-
-      try {
-        const [surveyRes, responsesRes, analyticsRes] = await Promise.all([
-          fetch(`${apiBaseUrl}/api/surveys/${surveyId}`),
-          fetch(`${apiBaseUrl}/api/surveys/${surveyId}/responses`),
-          fetch(
-            `${apiBaseUrl}/api/analytics?surveyId=${encodeURIComponent(surveyId)}`,
-          ),
-        ]);
-
-        const surveyJson = (await surveyRes.json()) as SurveyDoc;
-        const responsesJson = await responsesRes.json();
-        const analyticsJson = analyticsRes.ok ? await analyticsRes.json() : [];
-
-        const responseDocs = Array.isArray(responsesJson)
-          ? (responsesJson as SurveyResponseDoc[])
-          : [];
-
-        const pages = Array.isArray(surveyJson?.pages) ? surveyJson.pages : [];
-        const questions = pages.flatMap((page) =>
-          Array.isArray(page.questions) ? page.questions : [],
-        );
-
-        const questionById = new Map(
-          questions
-            .map((question) => [getQuestionId(question), question] as const)
-            .filter(([id]) => Boolean(id)),
-        );
-
-        const extractedText = responseDocs.flatMap(
-          (responseDoc, responseIndex) =>
-            Object.entries(responseDoc.responses ?? {}).flatMap(
-              ([questionId, value]) => {
-                const question = questionById.get(questionId);
-                if (!question) return [];
-
-                const answer = normalizeAnswer(value);
-                if (!answer) return [];
-
-                return [
-                  `Response ${responseIndex + 1} | Question (${question.type ?? "unknown"}): ${question.label ?? "Untitled"} | Answer: ${answer}`,
-                ];
-              },
-            ),
-        );
-
-        const analyticsResults = Array.isArray(analyticsJson)
-          ? (analyticsJson as AnalyticsResultDoc[])
-          : [];
-
-        setSurveyTitle(
-          String(
-            surveyJson?.surveyTitle ?? surveyJson?.title ?? "Untitled Survey",
-          ),
-        );
-        setTotalResponses(responseDocs.length);
-        setSurveyQuestions(questions);
-        setSurveyResponses(responseDocs);
-        setAiInputLines(extractedText);
-
-        const latestResult = analyticsResults[0];
-        if (latestResult) {
-          setSummary(
-            typeof latestResult.summary === "string"
-              ? latestResult.summary
-              : null,
-          );
-          setKeywords(
-            Array.isArray(latestResult.topKeywords)
-              ? latestResult.topKeywords.slice(0, 5)
-              : [],
-          );
-        }
-      } catch (err) {
-        console.error("Failed to load survey analytics context:", err);
-        setAiError("Failed to load survey data from database.");
-      }
-    };
-
-    void fetchSurveyContext();
-  }, [apiBaseUrl, surveyId]);
-
-  const runAnalysis = async () => {
-    if (isAnalyzing) return;
-    setIsAnalyzing(true);
-    setAiError(null);
-    setSummary(null);
-    setKeywords([]);
-    try {
-      if (!surveyId) {
-        throw new Error("Survey ID is missing.");
-      }
-
-      if (aiInputLines.length === 0) {
-        throw new Error("No responses found in database for this survey.");
-      }
-
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey)
-        throw new Error(
-          "VITE_GEMINI_API_KEY is not set in environment variables.",
-        );
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-      const questionCatalogue = surveyQuestions
-        .map(
-          (question, index) =>
-            `${index + 1}. [${question.type ?? "unknown"}] ${question.label ?? "Untitled"}`,
-        )
-        .join("\n");
-
-      const allText = aiInputLines.join("\n");
-      const prompt = `Analyze the survey responses for this exact survey.
-
-Survey Questions:
-${questionCatalogue}
-
-Response Records:
-${allText}
-
-Instructions:
-1. Provide a concise summary grounded only in the provided responses.
-2. Identify top 5 recurring keywords/topics with estimated counts.
-3. Align findings with the survey questions and response patterns.
-
-Return a purely JSON object (no markdown formatting, no code fence) with this structure:
-{"summary":"...","top_5_keywords":[{"keyword":"Quality","count":15}]}
-`;
-      const result = await model.generateContent(prompt);
-      const text = result.response
-        .text()
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
-      const analysis = JSON.parse(text) as {
-        summary?: unknown;
-        top_5_keywords?: unknown;
-      };
-      const rawKeywords = Array.isArray(analysis.top_5_keywords)
-        ? analysis.top_5_keywords
-        : [];
-      const normalizedKeywords = rawKeywords
-        .filter(
-          (
-            item,
-          ): item is {
-            keyword?: unknown;
-            count?: unknown;
-          } =>
-            typeof item === "object" &&
-            item !== null &&
-            "keyword" in item &&
-            typeof item.keyword === "string",
-        )
-        .map((item) => ({
-          keyword: String(item.keyword).trim(),
-          count: Number(item.count ?? 0),
-        }))
-        .slice(0, 5);
-
-      const saveResponse = await fetch(`${apiBaseUrl}/api/analytics`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          surveyId,
-          summary: String(analysis.summary ?? "").trim(),
-          topKeywords: normalizedKeywords,
-          sourceCount: totalResponses,
-          totalResponses,
-        }),
-      });
-
-      if (!saveResponse.ok) {
-        throw new Error(
-          "AI analysis generated, but saving to database failed.",
-        );
-      }
-
-      setSummary(String(analysis.summary ?? "").trim());
-      setKeywords(normalizedKeywords);
-    } catch (err: unknown) {
-      console.error("Analysis failed:", err);
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "An unexpected error occurred during analysis.";
-      setAiError(errorMessage);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  const questionAnswerMap = useMemo(() => {
-    const answerMap = new Map<string, unknown[]>();
-
-    for (const question of surveyQuestions) {
-      const questionId = getQuestionId(question);
-      if (questionId) {
-        answerMap.set(questionId, []);
-      }
-    }
-
-    for (const response of surveyResponses) {
-      for (const [questionId, value] of Object.entries(
-        response.responses ?? {},
-      )) {
-        if (!answerMap.has(questionId)) continue;
-        if (normalizeAnswer(value)) {
-          answerMap.get(questionId)?.push(value);
-        }
-      }
-    }
-
-    return answerMap;
-  }, [surveyQuestions, surveyResponses]);
-
-  const ratingQuestions = useMemo(
-    () => surveyQuestions.filter((question) => question.type === "rating"),
-    [surveyQuestions],
-  );
-
-  const multipleChoiceQuestions = useMemo(
-    () =>
-      surveyQuestions.filter((question) => question.type === "multiple_choice"),
-    [surveyQuestions],
-  );
-
-  const checkboxQuestions = useMemo(
-    () =>
-      surveyQuestions.filter(
-        (question) =>
-          question.type === "checkbox" || question.type === "checkboxes",
-      ),
-    [surveyQuestions],
-  );
-
-  const completionRate = useMemo(() => {
-    if (surveyResponses.length === 0 || surveyQuestions.length === 0) return 0;
-
-    const validQuestionIds = new Set(
-      surveyQuestions
-        .map((question) => getQuestionId(question))
-        .filter(Boolean),
-    );
-
-    let answeredCount = 0;
-    for (const response of surveyResponses) {
-      for (const [questionId, value] of Object.entries(
-        response.responses ?? {},
-      )) {
-        if (!validQuestionIds.has(questionId)) continue;
-        if (normalizeAnswer(value)) {
-          answeredCount += 1;
-        }
-      }
-    }
-
-    const totalPossible = surveyResponses.length * surveyQuestions.length;
-    return totalPossible > 0
-      ? Math.round((answeredCount / totalPossible) * 100)
-      : 0;
-  }, [surveyQuestions, surveyResponses]);
-
-  const averageRating = useMemo(() => {
-    const ratingValues = ratingQuestions.flatMap((question) => {
-      const questionId = getQuestionId(question);
-      const answers = questionId
-        ? (questionAnswerMap.get(questionId) ?? [])
-        : [];
-      return answers
-        .map((answer) => Number(normalizeAnswer(answer)))
-        .filter((value) => Number.isFinite(value));
-    });
-
-    if (ratingValues.length === 0) return null;
-
-    const sum = ratingValues.reduce((acc, value) => acc + value, 0);
-    return (sum / ratingValues.length).toFixed(1);
-  }, [questionAnswerMap, ratingQuestions]);
-
-  const ratingData = useMemo(
-    () => ({
-      labels: ratingQuestions.map(
-        (question) => question.label ?? "Untitled Question",
-      ),
-      datasets: [
-        {
-          label: "Average Rating",
-          data: ratingQuestions.map((question) => {
-            const questionId = getQuestionId(question);
-            const answers = questionId
-              ? (questionAnswerMap.get(questionId) ?? [])
-              : [];
-            const values = answers
-              .map((answer) => Number(normalizeAnswer(answer)))
-              .filter((value) => Number.isFinite(value));
-
-            if (values.length === 0) return 0;
-
-            const total = values.reduce((acc, value) => acc + value, 0);
-            return Number((total / values.length).toFixed(2));
-          }),
-          backgroundColor: "#2B8CED",
-          borderRadius: 8,
-          barThickness: 16,
-        },
-      ],
-    }),
-    [questionAnswerMap, ratingQuestions],
-  );
-
-  const ratingOptions = {
-    indexAxis: "y" as const,
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: { enabled: true },
-    },
-    scales: {
-      x: {
-        beginAtZero: true,
-        max: Math.max(
-          ...ratingQuestions.map((question) => Number(question.max ?? 5)),
-          5,
-        ),
-        grid: { display: false },
-      },
-      y: { grid: { display: false } },
-    },
-  };
-
-  const buildOptionChartData = (
-    question: SurveyQuestion,
-    isCheckbox: boolean,
-  ) => {
-    const options = Array.isArray(question.options) ? question.options : [];
-    const questionId = getQuestionId(question);
-    const answers = questionId ? (questionAnswerMap.get(questionId) ?? []) : [];
-
-    const counts = options.map((option) => {
-      if (isCheckbox) {
-        return answers.filter((answer) =>
-          toCheckboxValues(answer).includes(option),
-        ).length;
-      }
-      return answers.filter((answer) => normalizeAnswer(answer) === option)
-        .length;
-    });
-
-    return {
-      labels: options,
-      datasets: [
-        {
-          label: "Responses",
-          data: counts,
-          backgroundColor: [
-            "#2B8CED",
-            "#55E05F",
-            "#FFA500",
-            "#E8EDF2",
-            "#C0B5EF",
-            "#EFCCB5",
-          ],
-          borderRadius: 6,
-        },
-      ],
-    };
-  };
-
-  const optionChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-    },
-    scales: {
-      x: { beginAtZero: true, grid: { display: false } },
-      y: { grid: { display: false } },
-    },
-  };
-
+  // Render: survey picker (no surveyId in URL)
   if (!surveyId) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#F7FAFC] font-inter text-[#0D141C]">
-        <nav className="flex py-3 px-10 border-b border-[#E5E8EB] bg-white w-full sticky top-0 z-20">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#E8EDF2]">
-              <BarChart size={20} className="text-[#0D141C]" />
-            </div>
-            <h1 className="text-lg font-bold">Survey Analytics</h1>
-          </div>
-        </nav>
-
-        <main className="flex-1 max-w-[1200px] mx-auto w-full px-6 py-10">
-          <div className="mb-8">
-            <h2 className="text-3xl font-black tracking-tight text-[#0D141C]">
-              Finished Surveys
-            </h2>
-            <p className="text-[#4A739C] mt-2">
-              Select a finished survey to view analytics and AI insights.
-            </p>
-          </div>
-
-          {surveysLoading ? (
-            <div className="text-sm text-[#4A739C]">
-              Loading finished surveys...
-            </div>
-          ) : finishedSurveys.length === 0 ? (
-            <div className="rounded-xl border border-[#CFDBE8] bg-white p-8 text-[#4A739C]">
-              No finished surveys found.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {finishedSurveys.map((survey) => (
-                <SurveyCard
-                  key={survey._id}
-                  title={survey.surveyTitle || "Untitled Survey"}
-                  date={
-                    survey.createdAt
-                      ? new Date(survey.createdAt).toLocaleDateString("en-GB")
-                      : undefined
-                  }
-                  category="Finished"
-                  variant="finished"
-                  to={`/analytics?surveyId=${survey._id}`}
-                />
-              ))}
-            </div>
-          )}
-        </main>
-      </div>
+      <SurveySelectorView
+        surveysLoading={surveysLoading}
+        finishedSurveys={finishedSurveys}
+      />
     );
   }
 
+  // Render: full analytics dashboard
   return (
     <div className="flex flex-col min-h-screen bg-[#F7FAFC] font-inter text-[#0D141C]">
-      {/* Top Navbar */}
-      <nav className="flex py-3 px-10 border-b border-[#E5E8EB] bg-white w-full sticky top-0 z-20">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#E8EDF2]">
-            <BarChart size={20} className="text-[#0D141C]" />
-          </div>
-          <h1 className="text-lg font-bold">Survey Analytics</h1>
-        </div>
-      </nav>
+      {/* Component  - sticky page navbar */}
+      <AnalyticsTopBar />
 
       <main className="flex-1 flex flex-col items-center">
         <div className="max-w-[960px] w-full px-4 md:px-0 py-5">
-          <div className="w-full flex justify-start mb-6">
-            <BackButton to="/analytics" />
-          </div>
-          {/* Action Bar */}
-          <div className="flex flex-col gap-4 mb-6">
-            <div className="flex py-3 items-center gap-3 flex-wrap w-full">
-              <div className="flex py-2 px-6 justify-center items-center rounded-lg bg-[#2B8CED]">
-                <p className="text-[#F7FAFC] text-sm font-bold">
-                  {surveyTitle}
-                </p>
-              </div>
-            </div>
+          {/* Component  - back nav + survey title badge + filter/export toolbar */}
+          <AnalyticsDashboardHeader surveyTitle={surveyTitle} />
 
-            <div className="flex justify-between items-center w-full">
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <Filter size={24} className="text-[#0D141C]" />
-              </button>
-              <ExportPdfButton
-                targetId="analytics-export-area"
-                fileName={`${surveyTitle}-analytics`}
-              />
-            </div>
-          </div>
+          {/* Component - stat cards + chart sections */}
+          <AnalyticsChartsSection
+            totalResponses={totalResponses}
+            completionRate={completionRate}
+            averageRating={averageRating}
+            ratingQuestions={ratingQuestions}
+            ratingData={ratingData}
+            ratingOptions={ratingOptions}
+            multipleChoiceQuestions={multipleChoiceQuestions}
+            checkboxQuestions={checkboxQuestions}
+            getQuestionId={(q) => String(q._id ?? q.id ?? "").trim()}
+            buildOptionChartData={buildOptionChartData}
+            optionChartOptions={optionChartOptions}
+          />
 
-          {/* Printable export area */}
-          <div id="analytics-export-area">
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <StatCard
-                label="Total Responses"
-                value={String(totalResponses)}
-              />
-              <StatCard label="Completion Rate" value={`${completionRate}%`} />
-              <StatCard
-                label="Avg Rating"
-                value={averageRating ? averageRating : "-"}
-              />
-            </div>
-
-            {/* Ratings Section */}
-            {ratingQuestions.length > 0 && (
-              <section className="bg-white rounded-xl border border-[#CFDBE8] p-6 mb-8 shadow-sm">
-                <h2 className="text-[22px] font-bold leading-7 mb-6">
-                  Rating Questions
-                </h2>
-                <div className="h-48">
-                  <Bar data={ratingData} options={ratingOptions} />
-                </div>
-              </section>
-            )}
-
-            {multipleChoiceQuestions.length > 0 && (
-              <section className="mb-8">
-                <h2 className="text-[22px] font-bold leading-7 mb-4">
-                  Multiple Choice Questions
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {multipleChoiceQuestions.map((question) => (
-                    <div
-                      key={getQuestionId(question)}
-                      className="p-6 rounded-lg border border-[#CFDBE8] bg-white shadow-sm w-full"
-                    >
-                      <h3 className="text-base font-medium mb-6">
-                        {question.label ?? "Untitled Question"}
-                      </h3>
-                      <div className="h-64">
-                        <Bar
-                          data={buildOptionChartData(question, false)}
-                          options={optionChartOptions}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {checkboxQuestions.length > 0 && (
-              <section className="mb-8">
-                <h2 className="text-[22px] font-bold leading-7 mb-4">
-                  Checkbox Questions
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {checkboxQuestions.map((question) => (
-                    <div
-                      key={getQuestionId(question)}
-                      className="p-6 rounded-lg border border-[#CFDBE8] bg-white shadow-sm w-full"
-                    >
-                      <h3 className="text-base font-medium mb-6">
-                        {question.label ?? "Untitled Question"}
-                      </h3>
-                      <div className="h-64">
-                        <Pie
-                          data={buildOptionChartData(question, true)}
-                          options={{
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                              legend: {
-                                display: true,
-                                position: "bottom" as const,
-                              },
-                            },
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* AI Insights Section */}
-            <section className="p-6 rounded-lg border border-[#CFDBE8] bg-white shadow-md relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform duration-700" />
-
-              <div className="flex items-center justify-between gap-2 mb-6 relative">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={20} className="text-yellow-500" />
-                  <h2 className="text-lg font-bold">AI Insights</h2>
-                </div>
-                <button
-                  onClick={runAnalysis}
-                  disabled={isAnalyzing}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#2B8CED] hover:bg-[#1A76D2] disabled:opacity-60 text-white rounded-lg font-bold text-sm transition-all shadow-sm"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      <span>Analyzing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={16} />
-                      <span>Run AI Analysis</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {aiError && (
-                <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm">
-                  {aiError}
-                </div>
-              )}
-
-              {/* Aurora loading overlay */}
-              {isAnalyzing && (
-                <div
-                  className="relative rounded-xl overflow-hidden border border-blue-100 bg-white p-8 text-center mb-6"
-                  style={{
-                    background: "white",
-                  }}
-                >
-                  {/* Animated aurora gradient border */}
-                  <div
-                    className="absolute inset-0 rounded-xl"
-                    style={{
-                      background:
-                        "linear-gradient(270deg, #a5f3fc, #818cf8, #6ee7b7, #fde68a, #f9a8d4, #a5f3fc)",
-                      backgroundSize: "400% 400%",
-                      animation: "auroraShift 4s ease infinite",
-                      padding: "2px",
-                      WebkitMask:
-                        "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                      WebkitMaskComposite: "xor",
-                      maskComposite: "exclude",
-                    }}
-                  />
-                  {/* Inner glow */}
-                  <div
-                    className="absolute inset-0 rounded-xl opacity-20"
-                    style={{
-                      background:
-                        "linear-gradient(270deg, #a5f3fc, #818cf8, #6ee7b7, #fde68a, #f9a8d4)",
-                      backgroundSize: "400% 400%",
-                      animation: "auroraShift 4s ease infinite",
-                      filter: "blur(16px)",
-                    }}
-                  />
-                  <div className="relative z-10">
-                    <div className="inline-flex items-center justify-center p-3 bg-blue-50 rounded-full mb-4">
-                      <svg
-                        className="w-8 h-8 text-blue-500 animate-pulse"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                        />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-800">
-                      Reading responses
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-2">
-                      Analyzing all survey responses.
-                    </p>
-                  </div>
-                  <style>{`
-                  @keyframes auroraShift {
-                    0% { background-position: 0% 50%; }
-                    50% { background-position: 100% 50%; }
-                    100% { background-position: 0% 50%; }
-                  }
-                `}</style>
-                </div>
-              )}
-
-              {!isAnalyzing && (
-                <>
-                  <div className="mb-6 relative">
-                    <h3 className="text-[#4D7399] text-base font-medium mb-3">
-                      Key Findings
-                    </h3>
-                    {summary ? (
-                      <ul className="space-y-2 text-black text-base leading-relaxed">
-                        {summary
-                          .split(". ")
-                          .filter(Boolean)
-                          .map((sentence, i) => (
-                            <li key={i} className="flex gap-2">
-                              <span className="font-bold text-green-500">
-                                •
-                              </span>
-                              {sentence.endsWith(".")
-                                ? sentence
-                                : sentence + "."}
-                            </li>
-                          ))}
-                      </ul>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <Sparkles size={32} className="text-slate-200 mb-3" />
-                        <p className="text-slate-400 text-sm font-medium">
-                          No analysis yet
-                        </p>
-                        <p className="text-slate-300 text-xs mt-1">
-                          Click{" "}
-                          <span className="font-semibold">Run AI Analysis</span>{" "}
-                          to generate insights from your responses.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap gap-3 relative mt-8">
-                    {keywords.length > 0 ? (
-                      keywords.map((item, i) => {
-                        const colors = [
-                          "#C5EFB5",
-                          "#B5E9EF",
-                          "#C0B5EF",
-                          "#EFCCB5",
-                          "#EFE4B5",
-                        ];
-                        return (
-                          <InsightTag
-                            key={i}
-                            label={item.keyword}
-                            count={item.count}
-                            color={colors[i % colors.length]}
-                          />
-                        );
-                      })
-                    ) : summary ? (
-                      <p className="text-slate-300 text-xs">
-                        No keywords extracted.
-                      </p>
-                    ) : null}
-                  </div>
-                </>
-              )}
-            </section>
-          </div>
-          {/* end analytics-export-area */}
+          {/* Component - AI insights card */}
+          <AiInsightsSection
+            runAnalysis={runAnalysis}
+            isAnalyzing={isAnalyzing}
+            aiError={aiError}
+            summary={summary}
+            keywords={keywords}
+          />
         </div>
       </main>
     </div>
