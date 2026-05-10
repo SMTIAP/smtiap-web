@@ -36,11 +36,6 @@ const tenantSchema = new Schema(
       required: true,
     },
     settings: { type: settingsSchema, default: () => ({}) },
-    createdBy: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-    },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } },
 );
