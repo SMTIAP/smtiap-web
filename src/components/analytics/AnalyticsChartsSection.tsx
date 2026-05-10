@@ -1,18 +1,3 @@
-/**
- * AnalyticsChartsSection
- *
- * Renders all chart-based analytics visuals inside the printable export area.
- * Used in Analytics.tsx after survey data and chart datasets are computed.
- *
- * Sections rendered (conditionally, if questions of that type exist):
- *   - Summary stat cards (total responses, completion rate, average rating)
- *   - Rating Questions  → horizontal Bar chart
- *   - Multiple Choice   → vertical Bar chart per question
- *   - Checkbox          → Pie chart per question
- *
- * All data and chart options are computed in Analytics.tsx and passed as props.
- * The outer `<div id="analytics-export-area">` is targeted by ExportPdfButton.
- */
 import { Bar, Pie } from "react-chartjs-2";
 
 interface SurveyQuestion {
