@@ -7,7 +7,7 @@ const router = Router();
 router.get("/", getAllUsers);
 router.put("/:userId/role", updateUserRole)
 router.get("/tenants", getAllTenants);
-router.put("/:userId/:tenantId/role", addUserToOrganization);
+router.put("/:userId/:tenantId", addUserToOrganization);
 router.put("/:userId/:tenantId/role", updateOrgRole);
 router.get("/user-tenant", getUserTenantData);
 router.delete("/:userId/:tenantId", removeOrgUser);
