@@ -159,7 +159,7 @@ function generateResponse(surveyId: string) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 async function seed() {
   await mongoose.connect(env.mongoUri);
-  console.log("MongoDB connected ✅");
+  console.log("MongoDB connected.");
 
   // Admin user
   const existingAdmin = await User.findOne({ email: "admin@smtiap.com" });
@@ -168,7 +168,7 @@ async function seed() {
   } else {
     const hash = await bcrypt.hash("Admin@12345", 10);
     await User.create({ email: "admin@smtiap.com", username: "Admin", password: hash, role: "admin" });
-    console.log("Admin user created ✅  admin@smtiap.com / Admin@12345");
+    console.log("Admin user created.  admin@smtiap.com / Admin@12345");
   }
 
   // Survey
@@ -180,7 +180,7 @@ async function seed() {
   } else {
     const survey = await Survey.create(surveyDef);
     surveyId = String(survey._id);
-    console.log(`Survey created ✅  id: ${surveyId}`);
+    console.log(`Survey created.  id: ${surveyId}`);
   }
 
   // Responses
@@ -192,11 +192,11 @@ async function seed() {
     await SurveyResponse.insertMany(
       Array.from({ length: needed }, () => generateResponse(surveyId))
     );
-    console.log(`${needed} responses inserted ✅  (total: ${existingCount + needed})`);
+    console.log(`${needed} responses inserted.  (total: ${existingCount + needed})`);
   }
 
   await mongoose.disconnect();
-  console.log("\nSeeding complete 🎉");
+  console.log("\nSeeding complete.");
   console.log("  Login → admin@smtiap.com / Admin@12345");
 }
 

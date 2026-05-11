@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import dotenv from "dotenv";
 
-// ✅ Load env FIRST (important for OAuth)
+//Load env FIRST (important for OAuth)
 dotenv.config({
   path: path.resolve(process.cwd(), "../.env"),
 });
@@ -59,7 +59,7 @@ app.use(
     origin: (origin, cb) => {
       if (
         !origin ||
-        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) || origin === 'http://127.0.0.1:5173'
       )
         cb(null, true);
       else cb(new Error("Not allowed by CORS"));
@@ -82,7 +82,7 @@ app.use(analyticsRoutes);
 app.use(errorHandler);
 
 app.get("/", (req, res) => {
-  res.send("🚀 PayHere backend is running");
+  res.send("PayHere backend is running");
 });
 
 app.get("/api/health", (_req, res) => {
