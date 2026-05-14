@@ -6,14 +6,16 @@ export default function ReviewAndPublish() {
   const location = useLocation();
   
   const surveyTitle = location.state?.surveyTitle || "Untitled Survey";
+  const description = location.state?.description || "";
   const pages = location.state?.pages || [];
   const primaryColor = location.state?.primaryColor || "#6366F1";
-  const surveyId = location.state?.surveyId; // Get ID if editing a draft
+  const surveyId = location.state?.surveyId;
 
   const handleFinalize = async (status: "Running" | "Draft") => {
     try {
       const payload = {
         surveyTitle,
+        description,
         primaryColor,
         themeColor: primaryColor,
         pages,
@@ -21,11 +23,10 @@ export default function ReviewAndPublish() {
         tenantId: "default",
       };
 
-      // If surveyId exists, we update (PUT), otherwise create (POST)
-      const url = surveyId 
-        ? `http://localhost:5000/api/surveys/${surveyId}` 
+      const url = surveyId
+        ? `http://localhost:5000/api/surveys/${surveyId}`
         : "http://localhost:5000/api/surveys";
-      
+
       const method = surveyId ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -43,7 +44,6 @@ export default function ReviewAndPublish() {
       const data = await res.json();
       const savedSurvey = data.survey;
 
-      // Logic: If published (Running), go to Share page. If Draft, go to Dashboard.
       if (status === "Running") {
         navigate("/share-survey", {
           state: {
@@ -77,7 +77,6 @@ export default function ReviewAndPublish() {
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] font-sans">
       <div className="flex max-w-[800px] py-12 px-6 flex-col gap-6 w-full text-left">
         
-        {/* Navigation Header */}
         <div className="flex justify-between items-center w-full mb-2">
           <button
             onClick={() => navigate(-1)}
@@ -89,7 +88,6 @@ export default function ReviewAndPublish() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* Header Branding Accent */}
           <div style={{ backgroundColor: primaryColor }} className="h-2 w-full" />
           
           <div className="p-10">
@@ -98,7 +96,7 @@ export default function ReviewAndPublish() {
                 <h1 className="text-gray-900 text-3xl font-extrabold mb-2">Review & Publish</h1>
                 <p className="text-gray-500 text-sm">Final check of the survey structure and content.</p>
               </div>
-              <div 
+              <div
                 className="p-3 rounded-xl"
                 style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
               >
@@ -106,12 +104,17 @@ export default function ReviewAndPublish() {
               </div>
             </div>
 
-            {/* Survey Meta Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                 <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Title</p>
                 <p className="text-gray-900 font-bold">{surveyTitle}</p>
               </div>
+              {description && (
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Description</p>
+                  <p className="text-gray-700 text-sm">{description}</p>
+                </div>
+              )}
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                 <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Structure</p>
                 <p className="text-gray-900 font-bold">
@@ -135,7 +138,6 @@ export default function ReviewAndPublish() {
               </div>
             </div>
 
-            {/* Content Preview List */}
             {pages.length > 0 ? (
               <div className="space-y-8 mb-12">
                 <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
@@ -207,16 +209,14 @@ export default function ReviewAndPublish() {
               </div>
             )}
 
-            {/* Action Footer */}
             <div className="flex flex-col sm:flex-row justify-end gap-3 pt-8 border-t border-gray-100">
-              <button 
+              <button
                 onClick={() => handleFinalize("Draft")}
                 className="px-8 py-3 bg-white text-gray-600 border border-gray-200 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all"
               >
                 Save as draft
               </button>
-              
-              <button 
+              <button
                 onClick={() => handleFinalize("Running")}
                 style={{ backgroundColor: primaryColor }}
                 className="px-10 py-3 text-white rounded-xl font-bold text-sm hover:opacity-90 shadow-lg transition-all"

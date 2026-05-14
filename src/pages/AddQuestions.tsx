@@ -876,7 +876,7 @@ export default function AddQuestions() {
               {isPreviewMode ? "Exit Preview" : "Preview"}
             </button>
             <button
-              onClick={() => navigate("/review-publish", { state: { surveyId, surveyTitle, primaryColor, pages } })}
+              onClick={() => navigate("/review-publish", { state: { surveyId, surveyTitle,  description: setupData?.description || "", primaryColor, pages } })}
               style={{ backgroundColor: primaryColor }}
               className="text-white px-6 py-2 rounded-lg text-sm font-semibold hover:opacity-90 shadow-lg transition-all"
             >

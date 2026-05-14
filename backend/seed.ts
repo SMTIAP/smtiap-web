@@ -238,7 +238,7 @@ function generateResponse(surveyId: string, index: number) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 async function seed() {
   await mongoose.connect(env.mongoUri);
-  console.log("MongoDB connected ✅");
+  console.log("MongoDB connected.");
 
   // Admin user
   const existingAdmin = await User.findOne({ email: "admin@smtiap.com" });
@@ -246,13 +246,8 @@ async function seed() {
     console.log("Admin user already exists, skipping.");
   } else {
     const hash = await bcrypt.hash("Admin@12345", 10);
-    await User.create({
-      email: "admin@smtiap.com",
-      username: "Admin",
-      password: hash,
-      role: "admin",
-    });
-    console.log("Admin user created ✅  admin@smtiap.com / Admin@12345");
+    await User.create({ email: "admin@smtiap.com", username: "Admin", password: hash, role: "admin" });
+    console.log("Admin user created.  admin@smtiap.com / Admin@12345");
   }
 
   // Survey
@@ -266,7 +261,7 @@ async function seed() {
   } else {
     const survey = await Survey.create(surveyDef);
     surveyId = String(survey._id);
-    console.log(`Survey created ✅  id: ${surveyId}`);
+    console.log(`Survey created.  id: ${surveyId}`);
   }
 
   // Responses
@@ -280,231 +275,11 @@ async function seed() {
         generateResponse(surveyId, existingCount + i),
       ),
     );
-    console.log(
-      `${needed} responses inserted ✅  (total: ${existingCount + needed})`,
-    );
-  }
-
-  // ─── Update Draft Surveys with Questions ──────────────────────────────────
-  const draftSurveyUpdates: Array<{
-    title: string;
-    description: string;
-    pages: object[];
-  }> = [
-    {
-      title: "Daily Cafe Feedback",
-      description:
-        "Share your daily experience at our cafe. Your feedback helps us improve every day.",
-      pages: [
-        {
-          id: "page1",
-          title: "Your Visit",
-          questions: [
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "multiple_choice",
-              label: "What time of day did you visit?",
-              required: true,
-              options: [
-                "Morning (6am–11am)",
-                "Midday (11am–2pm)",
-                "Afternoon (2pm–5pm)",
-                "Evening (5pm–9pm)",
-              ],
-            },
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "rating",
-              label: "How would you rate today's coffee/beverage?",
-              required: true,
-              max: 5,
-            },
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "rating",
-              label: "How would you rate the food quality today?",
-              required: true,
-              max: 5,
-            },
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "multiple_choice",
-              label: "How long did you wait to be served?",
-              required: true,
-              options: [
-                "Under 2 minutes",
-                "2–5 minutes",
-                "5–10 minutes",
-                "Over 10 minutes",
-              ],
-            },
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "rating",
-              label: "How clean and comfortable was the cafe environment?",
-              required: true,
-              max: 5,
-            },
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "short_text",
-              label: "Any comments or suggestions for today?",
-              required: false,
-              placeholder: "Tell us what you think...",
-            },
-          ],
-        },
-      ],
-    },
-    {
-      title: "Food Satisfaction",
-      description:
-        "Help us understand how satisfied you are with our food offerings.",
-      pages: [
-        {
-          id: "page1",
-          title: "Food Experience",
-          questions: [
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "multiple_choice",
-              label: "Which meal did you have?",
-              required: true,
-              options: ["Breakfast", "Lunch", "Dinner", "Snack / Dessert"],
-            },
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "rating",
-              label: "How satisfied are you with the taste of the food?",
-              required: true,
-              max: 5,
-            },
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "rating",
-              label: "How satisfied are you with the portion size?",
-              required: true,
-              max: 5,
-            },
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "checkboxes",
-              label:
-                "Which aspects of the food impressed you? (Select all that apply)",
-              required: false,
-              options: [
-                "Freshness",
-                "Presentation",
-                "Variety",
-                "Flavour",
-                "Dietary options",
-                "Value for money",
-              ],
-            },
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "multiple_choice",
-              label: "Would you order this meal again?",
-              required: true,
-              options: [
-                "Definitely yes",
-                "Probably yes",
-                "Not sure",
-                "Probably not",
-                "Definitely not",
-              ],
-            },
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "short_text",
-              label: "What dish would you like us to add to the menu?",
-              required: false,
-              placeholder: "Your suggestion...",
-            },
-          ],
-        },
-      ],
-    },
-    {
-      title: "Staff Performance",
-      description: "Evaluate the performance and service quality of our staff.",
-      pages: [
-        {
-          id: "page1",
-          title: "Staff Evaluation",
-          questions: [
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "multiple_choice",
-              label: "Which area of the cafe did you interact with staff?",
-              required: true,
-              options: [
-                "Counter / Ordering",
-                "Table Service",
-                "Kitchen / Food Pickup",
-                "Customer Support",
-              ],
-            },
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "rating",
-              label: "How friendly and welcoming was the staff?",
-              required: true,
-              max: 5,
-            },
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "rating",
-              label: "How knowledgeable was the staff about the menu?",
-              required: true,
-              max: 5,
-            },
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "rating",
-              label: "How efficiently did the staff handle your order?",
-              required: true,
-              max: 5,
-            },
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "multiple_choice",
-              label: "Did any staff member go above and beyond for you?",
-              required: true,
-              options: ["Yes, definitely", "Somewhat", "Not really", "No"],
-            },
-            {
-              id: new mongoose.Types.ObjectId().toHexString(),
-              type: "short_text",
-              label: "Any specific feedback about a staff member?",
-              required: false,
-              placeholder: "Name or description and what they did well...",
-            },
-          ],
-        },
-      ],
-    },
-  ];
-
-  for (const def of draftSurveyUpdates) {
-    const survey = await Survey.findOne({ surveyTitle: def.title });
-    if (!survey) {
-      console.log(`Survey "${def.title}" not found, skipping.`);
-      continue;
-    }
-    if (survey.pages && survey.pages.length > 0) {
-      console.log(`Survey "${def.title}" already has questions, skipping.`);
-      continue;
-    }
-    await Survey.updateOne(
-      { _id: survey._id },
-      { $set: { description: def.description, pages: def.pages } },
-    );
-    console.log(`Survey "${def.title}" updated with questions`);
+    console.log(`${needed} responses inserted.  (total: ${existingCount + needed})`);
   }
 
   await mongoose.disconnect();
-  console.log("\nSeeding complete");
+  console.log("\nSeeding complete.");
   console.log("  Login → admin@smtiap.com / Admin@12345");
 }
 

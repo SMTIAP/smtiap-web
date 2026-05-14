@@ -30,12 +30,12 @@ const tenantSchema = new Schema(
       enum: ["active", "inactive", "suspended"],
       default: "active",
     },
-    settings: { type: settingsSchema, default: () => ({}) },
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      default: null,
+      required: true,
     },
+    settings: { type: settingsSchema, default: () => ({}) },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } },
 );
