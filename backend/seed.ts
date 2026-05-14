@@ -1,15 +1,6 @@
-/**
- * Seed script — creates:
- *   • 1 admin user
- *   • 1 realistic "Customer Satisfaction" survey (Finished)
- *   • 35 survey responses with varied realistic data
- *
- * Run from backend/:
- *   npx tsx seed.ts
- */
-
 import "dotenv/config";
 import mongoose from "mongoose";
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { env } from "./config/env.js";
 import User from "./models/User.js";
@@ -41,7 +32,8 @@ const q7Id = new mongoose.Types.ObjectId().toHexString();
 // ─── Survey Definition ────────────────────────────────────────────────────────
 const surveyDef = {
   surveyTitle: "Customer Satisfaction Survey",
-  description: "Help us improve our products and services by sharing your experience.",
+  description:
+    "Help us improve our products and services by sharing your experience.",
   themeColor: "#6366F1",
   primaryColor: "#6366F1",
   status: "Finished",
@@ -53,31 +45,56 @@ const surveyDef = {
       title: "Your Experience",
       questions: [
         {
-          _id: q1Id, id: q1Id,
+          _id: q1Id,
+          id: q1Id,
           type: "multiple_choice",
           label: "How did you hear about us?",
           required: true,
-          options: ["Social Media", "Search Engine", "Friend / Referral", "Advertisement", "Other"],
+          options: [
+            "Social Media",
+            "Search Engine",
+            "Friend / Referral",
+            "Advertisement",
+            "Other",
+          ],
         },
         {
-          _id: q2Id, id: q2Id,
+          _id: q2Id,
+          id: q2Id,
           type: "rating",
           label: "How would you rate your overall experience?",
-          required: true, max: 5,
+          required: true,
+          max: 5,
         },
         {
-          _id: q3Id, id: q3Id,
+          _id: q3Id,
+          id: q3Id,
           type: "multiple_choice",
           label: "Which product category did you purchase?",
           required: true,
-          options: ["Electronics", "Clothing", "Home & Garden", "Sports & Outdoors", "Books"],
+          options: [
+            "Electronics",
+            "Clothing",
+            "Home & Garden",
+            "Sports & Outdoors",
+            "Books",
+          ],
         },
         {
-          _id: q4Id, id: q4Id,
+          _id: q4Id,
+          id: q4Id,
           type: "checkboxes",
-          label: "What aspects did you find most valuable? (Select all that apply)",
+          label:
+            "What aspects did you find most valuable? (Select all that apply)",
           required: false,
-          options: ["Product Quality", "Pricing", "Delivery Speed", "Customer Support", "Website Usability", "Return Policy"],
+          options: [
+            "Product Quality",
+            "Pricing",
+            "Delivery Speed",
+            "Customer Support",
+            "Website Usability",
+            "Return Policy",
+          ],
         },
       ],
     },
@@ -86,23 +103,34 @@ const surveyDef = {
       title: "Details",
       questions: [
         {
-          _id: q5Id, id: q5Id,
+          _id: q5Id,
+          id: q5Id,
           type: "rating",
           label: "How likely are you to recommend us to a friend? (NPS)",
-          required: true, max: 10,
+          required: true,
+          max: 10,
         },
         {
-          _id: q6Id, id: q6Id,
+          _id: q6Id,
+          id: q6Id,
           type: "short_text",
           label: "What is the one thing we could improve?",
-          required: false, placeholder: "Your honest feedback...",
+          required: false,
+          placeholder: "Your honest feedback...",
         },
         {
-          _id: q7Id, id: q7Id,
+          _id: q7Id,
+          id: q7Id,
           type: "multiple_choice",
           label: "Would you shop with us again?",
           required: true,
-          options: ["Definitely yes", "Probably yes", "Not sure", "Probably not", "Definitely not"],
+          options: [
+            "Definitely yes",
+            "Probably yes",
+            "Not sure",
+            "Probably not",
+            "Definitely not",
+          ],
         },
       ],
     },
@@ -124,10 +152,24 @@ const improvements = [
   "Better packaging to avoid damage",
   "More payment options",
   "Improved search filters",
-  null, null, null, // ~20% skip the optional question
+  null,
+  null,
+  null, // ~20% skip the optional question
 ];
 
-function generateResponse(surveyId: string) {
+const ipPool = Array.from(
+  { length: 30 },
+  (_, i) => `192.168.${randInt(0, 5)}.${i + 10}`,
+);
+const uaPool = [
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15",
+  "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1",
+  "Mozilla/5.0 (Android 14; Mobile; rv:125.0) Gecko/125.0 Firefox/125.0",
+];
+
+function generateResponse(surveyId: string, index: number) {
   const rating = randInt(1, 5);
   const nps =
     rating >= 4 ? randInt(7, 10) : rating === 3 ? randInt(5, 7) : randInt(1, 5);
@@ -135,16 +177,35 @@ function generateResponse(surveyId: string) {
     nps >= 8
       ? pick(["Definitely yes", "Probably yes"])
       : nps >= 5
-      ? pick(["Probably yes", "Not sure"])
-      : pick(["Not sure", "Probably not", "Definitely not"]);
+        ? pick(["Probably yes", "Not sure"])
+        : pick(["Not sure", "Probably not", "Definitely not"]);
 
   const responses: Record<string, unknown> = {
-    [q1Id]: pick(["Social Media", "Search Engine", "Friend / Referral", "Advertisement", "Other"]),
+    [q1Id]: pick([
+      "Social Media",
+      "Search Engine",
+      "Friend / Referral",
+      "Advertisement",
+      "Other",
+    ]),
     [q2Id]: String(rating),
-    [q3Id]: pick(["Electronics", "Clothing", "Home & Garden", "Sports & Outdoors", "Books"]),
+    [q3Id]: pick([
+      "Electronics",
+      "Clothing",
+      "Home & Garden",
+      "Sports & Outdoors",
+      "Books",
+    ]),
     [q4Id]: pickN(
-      ["Product Quality", "Pricing", "Delivery Speed", "Customer Support", "Website Usability", "Return Policy"],
-      randInt(1, 4)
+      [
+        "Product Quality",
+        "Pricing",
+        "Delivery Speed",
+        "Customer Support",
+        "Website Usability",
+        "Return Policy",
+      ],
+      randInt(1, 4),
     ),
     [q5Id]: String(nps),
     [q7Id]: returnIntention,
@@ -153,7 +214,25 @@ function generateResponse(surveyId: string) {
   const improvement = pick(improvements);
   if (improvement) responses[q6Id] = improvement;
 
-  return { surveyId, responses, submittedAt: randDate(30) };
+  // unique respondentToken per response (required by SurveyResponse model)
+  const respondentToken =
+    crypto.randomBytes(16).toString("hex") + "_seed_" + index;
+  const ipAddress = ipPool[index % ipPool.length];
+  const userAgent = pick(uaPool);
+  const deviceHash = crypto
+    .createHash("sha256")
+    .update(userAgent + ipAddress)
+    .digest("hex");
+
+  return {
+    surveyId,
+    respondentToken,
+    ipAddress,
+    userAgent,
+    deviceHash,
+    responses,
+    submittedAt: randDate(30),
+  };
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -167,12 +246,19 @@ async function seed() {
     console.log("Admin user already exists, skipping.");
   } else {
     const hash = await bcrypt.hash("Admin@12345", 10);
-    await User.create({ email: "admin@smtiap.com", username: "Admin", password: hash, role: "admin" });
+    await User.create({
+      email: "admin@smtiap.com",
+      username: "Admin",
+      password: hash,
+      role: "admin",
+    });
     console.log("Admin user created ✅  admin@smtiap.com / Admin@12345");
   }
 
   // Survey
-  const existing = await Survey.findOne({ surveyTitle: "Customer Satisfaction Survey" });
+  const existing = await Survey.findOne({
+    surveyTitle: "Customer Satisfaction Survey",
+  });
   let surveyId: string;
   if (existing) {
     console.log(`Survey already exists (id: ${existing._id}), skipping.`);
@@ -190,14 +276,239 @@ async function seed() {
   } else {
     const needed = 35 - existingCount;
     await SurveyResponse.insertMany(
-      Array.from({ length: needed }, () => generateResponse(surveyId))
+      Array.from({ length: needed }, (_, i) =>
+        generateResponse(surveyId, existingCount + i),
+      ),
     );
-    console.log(`${needed} responses inserted ✅  (total: ${existingCount + needed})`);
+    console.log(
+      `${needed} responses inserted ✅  (total: ${existingCount + needed})`,
+    );
+  }
+
+  // ─── Update Draft Surveys with Questions ──────────────────────────────────
+  const draftSurveyUpdates: Array<{
+    title: string;
+    description: string;
+    pages: object[];
+  }> = [
+    {
+      title: "Daily Cafe Feedback",
+      description:
+        "Share your daily experience at our cafe. Your feedback helps us improve every day.",
+      pages: [
+        {
+          id: "page1",
+          title: "Your Visit",
+          questions: [
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "multiple_choice",
+              label: "What time of day did you visit?",
+              required: true,
+              options: [
+                "Morning (6am–11am)",
+                "Midday (11am–2pm)",
+                "Afternoon (2pm–5pm)",
+                "Evening (5pm–9pm)",
+              ],
+            },
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "rating",
+              label: "How would you rate today's coffee/beverage?",
+              required: true,
+              max: 5,
+            },
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "rating",
+              label: "How would you rate the food quality today?",
+              required: true,
+              max: 5,
+            },
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "multiple_choice",
+              label: "How long did you wait to be served?",
+              required: true,
+              options: [
+                "Under 2 minutes",
+                "2–5 minutes",
+                "5–10 minutes",
+                "Over 10 minutes",
+              ],
+            },
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "rating",
+              label: "How clean and comfortable was the cafe environment?",
+              required: true,
+              max: 5,
+            },
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "short_text",
+              label: "Any comments or suggestions for today?",
+              required: false,
+              placeholder: "Tell us what you think...",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      title: "Food Satisfaction",
+      description:
+        "Help us understand how satisfied you are with our food offerings.",
+      pages: [
+        {
+          id: "page1",
+          title: "Food Experience",
+          questions: [
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "multiple_choice",
+              label: "Which meal did you have?",
+              required: true,
+              options: ["Breakfast", "Lunch", "Dinner", "Snack / Dessert"],
+            },
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "rating",
+              label: "How satisfied are you with the taste of the food?",
+              required: true,
+              max: 5,
+            },
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "rating",
+              label: "How satisfied are you with the portion size?",
+              required: true,
+              max: 5,
+            },
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "checkboxes",
+              label:
+                "Which aspects of the food impressed you? (Select all that apply)",
+              required: false,
+              options: [
+                "Freshness",
+                "Presentation",
+                "Variety",
+                "Flavour",
+                "Dietary options",
+                "Value for money",
+              ],
+            },
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "multiple_choice",
+              label: "Would you order this meal again?",
+              required: true,
+              options: [
+                "Definitely yes",
+                "Probably yes",
+                "Not sure",
+                "Probably not",
+                "Definitely not",
+              ],
+            },
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "short_text",
+              label: "What dish would you like us to add to the menu?",
+              required: false,
+              placeholder: "Your suggestion...",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      title: "Staff Performance",
+      description: "Evaluate the performance and service quality of our staff.",
+      pages: [
+        {
+          id: "page1",
+          title: "Staff Evaluation",
+          questions: [
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "multiple_choice",
+              label: "Which area of the cafe did you interact with staff?",
+              required: true,
+              options: [
+                "Counter / Ordering",
+                "Table Service",
+                "Kitchen / Food Pickup",
+                "Customer Support",
+              ],
+            },
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "rating",
+              label: "How friendly and welcoming was the staff?",
+              required: true,
+              max: 5,
+            },
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "rating",
+              label: "How knowledgeable was the staff about the menu?",
+              required: true,
+              max: 5,
+            },
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "rating",
+              label: "How efficiently did the staff handle your order?",
+              required: true,
+              max: 5,
+            },
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "multiple_choice",
+              label: "Did any staff member go above and beyond for you?",
+              required: true,
+              options: ["Yes, definitely", "Somewhat", "Not really", "No"],
+            },
+            {
+              id: new mongoose.Types.ObjectId().toHexString(),
+              type: "short_text",
+              label: "Any specific feedback about a staff member?",
+              required: false,
+              placeholder: "Name or description and what they did well...",
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  for (const def of draftSurveyUpdates) {
+    const survey = await Survey.findOne({ surveyTitle: def.title });
+    if (!survey) {
+      console.log(`Survey "${def.title}" not found, skipping.`);
+      continue;
+    }
+    if (survey.pages && survey.pages.length > 0) {
+      console.log(`Survey "${def.title}" already has questions, skipping.`);
+      continue;
+    }
+    await Survey.updateOne(
+      { _id: survey._id },
+      { $set: { description: def.description, pages: def.pages } },
+    );
+    console.log(`Survey "${def.title}" updated with questions`);
   }
 
   await mongoose.disconnect();
-  console.log("\nSeeding complete 🎉");
+  console.log("\nSeeding complete");
   console.log("  Login → admin@smtiap.com / Admin@12345");
 }
 
-seed().catch((err) => { console.error("Seed failed:", err); process.exit(1); });
+seed().catch((err) => {
+  console.error("Seed failed:", err);
+  process.exit(1);
+});

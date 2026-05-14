@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request } from "express";
 import crypto from "crypto";
 import {
   createSurvey,
@@ -10,11 +10,11 @@ import {
 } from "../controllers/surveyController.js";
 import SurveyResponse from "../models/SurveyResponse.js";
 import Survey from "../models/Survey.js";
-import { protect, optionalAuth } from "../middleware/auth.js";
+import { optionalAuth } from "../middleware/auth.js";
 
 const router = Router();
 
-const getClientIp = (req: any): string => {
+const getClientIp = (req: Request): string => {
   const forwarded = req.headers["x-forwarded-for"];
   if (typeof forwarded === "string" && forwarded.trim()) {
     return forwarded.split(",")[0].trim();
@@ -22,7 +22,7 @@ const getClientIp = (req: any): string => {
   return String(req.ip || req.socket?.remoteAddress || "").trim();
 };
 
-const getDeviceHash = (req: any): string => {
+const getDeviceHash = (req: Request): string => {
   const userAgent = String(req.headers["user-agent"] || "");
   const acceptLanguage = String(req.headers["accept-language"] || "");
   const secChUa = String(req.headers["sec-ch-ua"] || "");
@@ -57,7 +57,7 @@ router.post("/:id/verify-password", async (req, res) => {
     } else {
       res.status(401).json({ success: false, error: "Incorrect password" });
     }
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Failed to verify password" });
   }
 });
@@ -74,7 +74,7 @@ router.post("/:id/responses", async (req, res) => {
       return res.status(400).json({ error: "Respondent token is required" });
     }
 
-    const duplicateFilters: any[] = [{ respondentToken }];
+    const duplicateFilters: Record<string, string>[] = [{ respondentToken }];
     if (ipAddress) {
       duplicateFilters.push({ ipAddress });
     }
@@ -87,11 +87,11 @@ router.post("/:id/responses", async (req, res) => {
       $or: duplicateFilters,
     });
 
-    if (existing) {
-      return res.status(409).json({
-        error: "You have already submitted a response for this survey.",
-      });
-    }
+    // if (existing) {
+    //   return res.status(409).json({
+    //     error: "You have already submitted a response for this survey.",
+    //   });
+    // }
 
     const doc = await SurveyResponse.create({
       surveyId: req.params.id,
@@ -103,7 +103,7 @@ router.post("/:id/responses", async (req, res) => {
     });
     res.json(doc);
   } catch (err) {
-    if ((err as any)?.code === 11000) {
+    if ((err as NodeJS.ErrnoException & { code?: number })?.code === 11000) {
       return res.status(409).json({
         error: "You have already submitted a response for this survey.",
       });
@@ -117,7 +117,7 @@ router.get("/:id/responses", async (req, res) => {
   try {
     const docs = await SurveyResponse.find({ surveyId: req.params.id });
     res.json(docs);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch responses" });
   }
 });
