@@ -23,12 +23,14 @@ import ShareSurvey from "./pages/ShareSurvey";
 import TakeSurvey from "./pages/TakeSurvey";
 import SurveyResults from "./pages/SurveyResults";
 import OrganizationRegistration from "./pages/OrganizationRegistration.tsx";
+import VoiceAI from "./components/VoiceAI.tsx";
 
 function Layout() {
   return (
     <>
       <NavBar />
       <Outlet />
+      <VoiceAI />
     </>
   );
 }
