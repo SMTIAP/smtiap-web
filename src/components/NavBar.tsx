@@ -21,7 +21,7 @@ export default function NavBar() {
   const navigate = useNavigate();
   const isLanding = location.pathname === "/";
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<{ username: string; email: string } | null>(
+  const [user, setUser] = useState<{ username: string; email: string; role?: string } | null>(
     null,
   );
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -35,7 +35,7 @@ export default function NavBar() {
       .then((res) => {
         if (mounted) {
           setIsAuthenticated(true);
-          setUser({ username: res.data.username, email: res.data.email });
+          setUser({ username: res.data.username, email: res.data.email, role: res.data.role });
         }
       })
       .catch(() => {
@@ -81,6 +81,26 @@ export default function NavBar() {
     ? user.username.slice(0, 2).toUpperCase()
     : "?";
 
+  const roleLabels: Record<string, string> = {
+    super_admin: "Organization Admin",
+    admin: "Tenant Admin",
+    viewer: "Viewer",
+    creator: "Creator",
+    billing_manager: "Billing Manager",
+  };
+
+  const getDashboardRoute = (role?: string) => {
+    switch (role) {
+      case "creator":
+      case "creater":
+        return "/creator-dashboard";
+      case "super_admin":
+      case "admin":
+      default:
+        return "/admin"; // fallback to default admin dashboard
+    }
+  };
+
   return (
     <nav className="sticky top-0 z-[100] bg-[#F4F6FA]/80 backdrop-blur-xl border-b border-white/30 h-[70px]">
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
@@ -101,10 +121,9 @@ export default function NavBar() {
                 key={link.to}
                 to={link.to}
                 className={({ isActive }) =>
-                  `text-[14px] font-[700] transition-colors ${
-                    isActive
-                      ? "text-[#5C38E1]"
-                      : "text-[#475569] hover:text-[#5C38E1]"
+                  `text-[14px] font-[700] transition-colors ${isActive
+                    ? "text-[#5C38E1]"
+                    : "text-[#475569] hover:text-[#5C38E1]"
                   }`
                 }
               >
@@ -173,6 +192,20 @@ export default function NavBar() {
                         </div>
                       </div>
                     </div>
+                    {user.role && (
+                      <div className="px-2 pt-2 pb-1 border-b border-slate-100">
+                        <button
+                          onClick={() => {
+                            setDropdownOpen(false);
+                            navigate(getDashboardRoute(user.role));
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-[600] text-indigo-600 hover:bg-indigo-50 transition-colors border-2 border-transparent hover:border-indigo-100"
+                        >
+                          <LayoutDashboard className="w-4 h-4" />
+                          {roleLabels[user.role] || "User"} Dashboard
+                        </button>
+                      </div>
+                    )}
                     <div className="px-2 pt-1">
                       <button
                         onClick={handleSignOut}

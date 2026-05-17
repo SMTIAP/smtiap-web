@@ -29,7 +29,7 @@ import roleManagementRoutes from "./routes/roleManagementRoutes.js";
 import organizationRegistrationRoutes from "./routes/organizationRegistrationRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
-
+import aiRoutes from "./routes/aiRoutes.js";
 const ensureCollections = async () => {
   await Promise.all([
     Tenant.createCollection(),
@@ -78,6 +78,7 @@ app.use("/api/role-management", roleManagementRoutes);
 app.use("/api/organization-registration", organizationRegistrationRoutes);
 app.use("/api/audit-logs", auditRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/ai", aiRoutes);
 app.use(analyticsRoutes);
 app.use(errorHandler);
 
