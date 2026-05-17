@@ -31,7 +31,7 @@ const SUGGESTED_MODIFICATIONS = [
   "Add a rating question at the end",
   "Add a page about customer demographics",
   "Add conditional branching: if answer X, skip to question Y",
-  "Add a multiple choice question about最喜欢的 features",
+  "Add a multiple choice question about customer preferences",
   "Add 3 more questions about service quality",
 ];
 
