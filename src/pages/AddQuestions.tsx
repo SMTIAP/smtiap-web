@@ -790,6 +790,7 @@ export default function AddQuestions() {
   );
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [showAiModifier, setShowAiModifier] = useState(false);
+  const [logo, setLogo] = useState<string | null>(setupData?.logo || null);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [tenantId, setTenantId] = useState<string | null>(null);
 
@@ -1031,6 +1032,7 @@ export default function AddQuestions() {
             setPrimaryColor(
               data?.primaryColor || data?.themeColor || "#6366F1",
             );
+            setLogo(data?.logo || null);
             setPages(normalizeSurveyPages(data?.pages));
             setActivePageIndex(0);
             setSelectedQuestionId(null);
@@ -1387,7 +1389,7 @@ export default function AddQuestions() {
                   body: JSON.stringify({
                     surveyTitle,
                     description: setupData?.description || "",
-                    logo: setupData?.logo || null,
+                    logo: logo,
                     websiteUrl: setupData?.websiteUrl || "",
                     customizeBranding: setupData?.customizeBranding || false,
                     primaryColor,
@@ -1451,20 +1453,53 @@ export default function AddQuestions() {
               {isPreviewMode ? "Exit Preview" : "Preview"}
             </button>
             <button
-              onClick={() =>
+              onClick={async () => {
+                const url = surveyId
+                  ? `http://localhost:5000/api/surveys/${surveyId}`
+                  : "http://localhost:5000/api/surveys";
+                const method = surveyId ? "PUT" : "POST";
+                let finalId = surveyId;
+                try {
+                  const token = localStorage.getItem("token");
+                  const res = await fetch(url, {
+                    method,
+                    credentials: "include",
+                    headers: {
+                      "Content-Type": "application/json",
+                      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    },
+                    body: JSON.stringify({
+                      surveyTitle,
+                      description: setupData?.description || "",
+                      logo: logo,
+                      websiteUrl: setupData?.websiteUrl || "",
+                      customizeBranding: setupData?.customizeBranding || false,
+                      primaryColor,
+                      themeColor: primaryColor,
+                      pages,
+                      status: "Draft",
+                      tenantId: tenantId ?? undefined,
+                    }),
+                  });
+                  const data = await res.json();
+                  finalId = surveyId || data.survey._id;
+                } catch {
+                  alert("Could not save draft. Is the backend running?");
+                  return;
+                }
                 navigate("/review-publish", {
                   state: {
-                    surveyId,
+                    surveyId: finalId,
                     surveyTitle,
                     description: setupData?.description || "",
-                    logo: setupData?.logo || null,
+                    logo,
                     websiteUrl: setupData?.websiteUrl || "",
                     customizeBranding: setupData?.customizeBranding || false,
                     primaryColor,
                     pages,
                   },
-                })
-              }
+                });
+              }}
               style={{ backgroundColor: primaryColor }}
               className="text-white px-6 py-2 rounded-lg text-sm font-semibold hover:opacity-90 shadow-lg transition-all"
             >
@@ -1543,10 +1578,10 @@ export default function AddQuestions() {
                   className="h-2"
                 />
                 <div className="p-10 flex-1">
-                  {setupData?.logo && (
+                  {logo && (
                     <div className="flex justify-center mb-6">
                       <img
-                        src={setupData.logo}
+                        src={logo}
                         alt="Survey logo"
                         className="max-h-20 object-contain rounded"
                       />
