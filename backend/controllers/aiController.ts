@@ -43,7 +43,15 @@ Rules:
 
 Generate diverse question types - don't use the same type for all questions. Mix short_text, multiple_choice, rating, etc. as appropriate for the survey topic.
 
-IMPORTANT: When creating branching, make sure the targetQuestionLabel exactly matches the label of another question in the survey. Use "__END__" if the survey should end after that option.`;
+IMPORTANT: When creating branching, make sure the targetQuestionLabel exactly matches the label of another question in the survey. Use "__END__" if the survey should end after that option.
+
+IMPORTANT — Input validation: Before generating a survey, FIRST determine if the user's request is a meaningful survey description. A valid description should describe a topic, purpose, or theme for a survey (e.g., "customer feedback", "employee satisfaction", "event registration", "course evaluation"). 
+
+If the input is gibberish, random characters, nonsense text, off-topic questions, non-survey requests, or anything that is NOT a clear survey description, do NOT generate a survey. Instead, return this EXACT JSON:
+{
+  "_error": "invalid_input",
+  "_message": "Please describe what kind of survey you want to create. For example: \"A customer feedback survey about our new mobile app\" or \"An employee engagement survey for our company\"."
+}`;
 
 export const generateSurveyWithAi = async (
   req: Request,

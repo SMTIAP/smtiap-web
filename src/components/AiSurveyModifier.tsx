@@ -79,6 +79,15 @@ export default function AiSurveyModifier({
         { withCredentials: true },
       );
 
+      // Check if AI detected invalid input
+      if (data._error === "invalid_input") {
+        setError(
+          data._message ||
+            "Please provide a clear description of what you'd like to change.",
+        );
+        return;
+      }
+
       if (!data.pages || !Array.isArray(data.pages)) {
         throw new Error("AI returned an incomplete result. Please try again.");
       }

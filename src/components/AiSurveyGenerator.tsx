@@ -46,6 +46,15 @@ export default function AiSurveyGenerator({
         { withCredentials: true },
       );
 
+      // Check if AI detected invalid input (gibberish/nonsense)
+      if (data._error === "invalid_input") {
+        setError(
+          data._message ||
+            "Please describe what kind of survey you want to create.",
+        );
+        return;
+      }
+
       if (!data.surveyTitle || !data.pages || !Array.isArray(data.pages)) {
         throw new Error("AI returned an incomplete survey. Please try again.");
       }
