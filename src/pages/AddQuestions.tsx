@@ -1543,6 +1543,15 @@ export default function AddQuestions() {
                   className="h-2"
                 />
                 <div className="p-10 flex-1">
+                  {setupData?.logo && (
+                    <div className="flex justify-center mb-6">
+                      <img
+                        src={setupData.logo}
+                        alt="Survey logo"
+                        className="max-h-20 object-contain rounded"
+                      />
+                    </div>
+                  )}
                   <h1 className="text-2xl font-bold mb-2">{surveyTitle}</h1>
                   <p className="text-gray-500 mb-8">{activePage.title}</p>
 

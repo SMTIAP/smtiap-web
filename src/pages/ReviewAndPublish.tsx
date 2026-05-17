@@ -1,21 +1,27 @@
-import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, CheckCircle2, FileText, Layout } from 'lucide-react';
+import { useNavigate, useLocation } from "react-router-dom";
+import { ChevronLeft, CheckCircle2, FileText, Layout } from "lucide-react";
 
 export default function ReviewAndPublish() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const surveyTitle = location.state?.surveyTitle || "Untitled Survey";
   const description = location.state?.description || "";
   const pages = location.state?.pages || [];
   const primaryColor = location.state?.primaryColor || "#6366F1";
   const surveyId = location.state?.surveyId;
+  const logo = location.state?.logo || null;
+  const websiteUrl = location.state?.websiteUrl || "";
+  const customizeBranding = location.state?.customizeBranding || false;
 
   const handleFinalize = async (status: "Running" | "Draft") => {
     try {
       const payload = {
         surveyTitle,
         description,
+        logo,
+        websiteUrl,
+        customizeBranding,
         primaryColor,
         themeColor: primaryColor,
         pages,
@@ -49,22 +55,23 @@ export default function ReviewAndPublish() {
           state: {
             surveyId: savedSurvey._id,
             surveyTitle: savedSurvey.surveyTitle,
-          }
+          },
         });
       } else {
         navigate("/created-surveys", {
           state: {
             newSurvey: {
-              id:            savedSurvey._id,
-              date:          new Date().toLocaleDateString("en-GB"),
-              title:         savedSurvey.surveyTitle,
-              status:        savedSurvey.status,
-              pageCount:     savedSurvey.pages.length,
+              id: savedSurvey._id,
+              date: new Date().toLocaleDateString("en-GB"),
+              title: savedSurvey.surveyTitle,
+              status: savedSurvey.status,
+              pageCount: savedSurvey.pages.length,
               questionCount: savedSurvey.pages.reduce(
-                (acc: number, p: any) => acc + p.questions.length, 0
+                (acc: number, p: any) => acc + p.questions.length,
+                0,
               ),
-            }
-          }
+            },
+          },
         });
       }
     } catch (err) {
@@ -76,7 +83,6 @@ export default function ReviewAndPublish() {
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] font-sans">
       <div className="flex max-w-[800px] py-12 px-6 flex-col gap-6 w-full text-left">
-        
         <div className="flex justify-between items-center w-full mb-2">
           <button
             onClick={() => navigate(-1)}
@@ -88,17 +94,27 @@ export default function ReviewAndPublish() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div style={{ backgroundColor: primaryColor }} className="h-2 w-full" />
-          
+          <div
+            style={{ backgroundColor: primaryColor }}
+            className="h-2 w-full"
+          />
+
           <div className="p-10">
             <div className="flex items-start justify-between mb-10">
               <div>
-                <h1 className="text-gray-900 text-3xl font-extrabold mb-2">Review & Publish</h1>
-                <p className="text-gray-500 text-sm">Final check of the survey structure and content.</p>
+                <h1 className="text-gray-900 text-3xl font-extrabold mb-2">
+                  Review & Publish
+                </h1>
+                <p className="text-gray-500 text-sm">
+                  Final check of the survey structure and content.
+                </p>
               </div>
               <div
                 className="p-3 rounded-xl"
-                style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+                style={{
+                  backgroundColor: `${primaryColor}20`,
+                  color: primaryColor,
+                }}
               >
                 <CheckCircle2 size={28} />
               </div>
@@ -106,34 +122,69 @@ export default function ReviewAndPublish() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Title</p>
+                <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">
+                  Title
+                </p>
                 <p className="text-gray-900 font-bold">{surveyTitle}</p>
               </div>
               {description && (
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Description</p>
+                  <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">
+                    Description
+                  </p>
                   <p className="text-gray-700 text-sm">{description}</p>
                 </div>
               )}
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Structure</p>
+                <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">
+                  Structure
+                </p>
                 <p className="text-gray-900 font-bold">
-                  {pages.length} {pages.length === 1 ? 'Page' : 'Pages'} •{' '}
-                  {pages.reduce((acc: number, p: any) => acc + p.questions.length, 0)} Questions
+                  {pages.length} {pages.length === 1 ? "Page" : "Pages"} •{" "}
+                  {pages.reduce(
+                    (acc: number, p: any) => acc + p.questions.length,
+                    0,
+                  )}{" "}
+                  Questions
                 </p>
               </div>
+              {logo && (
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">
+                    Logo
+                  </p>
+                  <img
+                    src={logo}
+                    alt="Survey logo"
+                    className="max-h-16 object-contain rounded"
+                  />
+                </div>
+              )}
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Theme color</p>
+                <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">
+                  Theme color
+                </p>
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded" style={{ backgroundColor: primaryColor }} />
-                  <span className="text-gray-900 font-bold font-mono text-sm">{primaryColor}</span>
+                  <div
+                    className="w-5 h-5 rounded"
+                    style={{ backgroundColor: primaryColor }}
+                  />
+                  <span className="text-gray-900 font-bold font-mono text-sm">
+                    {primaryColor}
+                  </span>
                 </div>
               </div>
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Status after action</p>
+                <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">
+                  Status after action
+                </p>
                 <div className="flex gap-2">
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-orange-50 text-orange-500 border border-orange-100 font-bold">Draft</span>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-100 font-bold">Running</span>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-orange-50 text-orange-500 border border-orange-100 font-bold">
+                    Draft
+                  </span>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-100 font-bold">
+                    Running
+                  </span>
                 </div>
               </div>
             </div>
@@ -144,18 +195,25 @@ export default function ReviewAndPublish() {
                   <Layout size={16} style={{ color: primaryColor }} />
                   Content Summary
                 </h3>
-                
+
                 {pages.map((page: any, pIdx: number) => (
-                  <div key={page.id || pIdx} className="border-l-2 border-gray-100 pl-6 space-y-4">
+                  <div
+                    key={page.id || pIdx}
+                    className="border-l-2 border-gray-100 pl-6 space-y-4"
+                  >
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold py-0.5 px-2 bg-gray-100 text-gray-500 rounded">
                         PAGE {pIdx + 1}
                       </span>
-                      <span className="text-sm font-bold text-gray-800">{page.title}</span>
+                      <span className="text-sm font-bold text-gray-800">
+                        {page.title}
+                      </span>
                     </div>
-                    
+
                     {page.questions.length === 0 ? (
-                      <p className="text-sm text-gray-400 italic">No questions on this page</p>
+                      <p className="text-sm text-gray-400 italic">
+                        No questions on this page
+                      </p>
                     ) : (
                       <div className="grid gap-3">
                         {page.questions.map((q: any, qIdx: number) => (
@@ -163,12 +221,17 @@ export default function ReviewAndPublish() {
                             key={q.id || qIdx}
                             className="flex items-start gap-3 p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:border-gray-200 transition-colors"
                           >
-                            <span className="text-xs font-bold text-gray-400 mt-0.5">{qIdx + 1}.</span>
+                            <span className="text-xs font-bold text-gray-400 mt-0.5">
+                              {qIdx + 1}.
+                            </span>
                             <div className="flex-1">
-                              <p className="text-sm font-semibold text-gray-800 mb-1">{q.label}</p>
+                              <p className="text-sm font-semibold text-gray-800 mb-1">
+                                {q.label}
+                              </p>
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] text-gray-400 flex items-center gap-1 uppercase tracking-tighter">
-                                  <FileText size={10} /> {q.type.replace('_', ' ')}
+                                  <FileText size={10} />{" "}
+                                  {q.type.replace("_", " ")}
                                 </span>
                                 {q.required && (
                                   <span className="text-[10px] text-red-400 font-bold uppercase tracking-tighter">
@@ -178,13 +241,20 @@ export default function ReviewAndPublish() {
                               </div>
                               {q.options && q.options.length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-1">
-                                  {q.options.slice(0, 3).map((opt: string, i: number) => (
-                                    <span key={i} className="text-[10px] px-2 py-0.5 bg-gray-50 border border-gray-100 rounded text-gray-500">
-                                      {opt}
-                                    </span>
-                                  ))}
+                                  {q.options
+                                    .slice(0, 3)
+                                    .map((opt: string, i: number) => (
+                                      <span
+                                        key={i}
+                                        className="text-[10px] px-2 py-0.5 bg-gray-50 border border-gray-100 rounded text-gray-500"
+                                      >
+                                        {opt}
+                                      </span>
+                                    ))}
                                   {q.options.length > 3 && (
-                                    <span className="text-[10px] text-gray-400">+{q.options.length - 3} more</span>
+                                    <span className="text-[10px] text-gray-400">
+                                      +{q.options.length - 3} more
+                                    </span>
                                   )}
                                 </div>
                               )}
@@ -198,7 +268,9 @@ export default function ReviewAndPublish() {
               </div>
             ) : (
               <div className="mb-12 p-8 border-2 border-dashed border-gray-100 rounded-2xl text-center">
-                <p className="text-gray-400 text-sm">No pages or questions added yet.</p>
+                <p className="text-gray-400 text-sm">
+                  No pages or questions added yet.
+                </p>
                 <button
                   onClick={() => navigate(-1)}
                   className="mt-3 text-sm font-medium"
