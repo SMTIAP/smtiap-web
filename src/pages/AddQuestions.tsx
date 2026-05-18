@@ -29,6 +29,7 @@ import {
   Wand2,
 } from "lucide-react";
 import AiSurveyModifier from "../components/AiSurveyModifier";
+import SurveySettingsModal from "../components/SurveySettingsModal";
 
 type QuestionTypeId =
   | "short_text"
@@ -826,7 +827,13 @@ export default function AddQuestions() {
   );
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [showAiModifier, setShowAiModifier] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [logo, setLogo] = useState<string | null>(setupData?.logo || null);
+  const [description, setDescription] = useState(setupData?.description || "");
+  const [websiteUrl, setWebsiteUrl] = useState(setupData?.websiteUrl || "");
+  const [customizeBranding, setCustomizeBranding] = useState(
+    setupData?.customizeBranding || false,
+  );
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [tenantId, setTenantId] = useState<string | null>(null);
 
@@ -1079,6 +1086,9 @@ export default function AddQuestions() {
               data?.primaryColor || data?.themeColor || "#6366F1",
             );
             setLogo(data?.logo || null);
+            setDescription(data?.description || "");
+            setWebsiteUrl(data?.websiteUrl || "");
+            setCustomizeBranding(data?.customizeBranding || false);
             setPages(normalizeSurveyPages(data?.pages));
             setActivePageIndex(0);
             setSelectedQuestionId(null);
@@ -1364,14 +1374,21 @@ export default function AddQuestions() {
           >
             <Layout size={20} style={{ color: primaryColor }} />
           </div>
-          <div>
-            <h1 className="text-sm font-bold text-gray-900 truncate w-32">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-sm font-bold text-gray-900 truncate w-28">
               {surveyTitle}
             </h1>
             <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
               Designer
             </p>
           </div>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all shrink-0"
+            title="Survey Settings"
+          >
+            <Settings2 size={16} />
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
@@ -1466,10 +1483,10 @@ export default function AddQuestions() {
                   },
                   body: JSON.stringify({
                     surveyTitle,
-                    description: setupData?.description || "",
+                    description: description,
                     logo: logo,
-                    websiteUrl: setupData?.websiteUrl || "",
-                    customizeBranding: setupData?.customizeBranding || false,
+                    websiteUrl: websiteUrl,
+                    customizeBranding: customizeBranding,
                     primaryColor,
                     themeColor: primaryColor,
                     pages,
@@ -1548,10 +1565,10 @@ export default function AddQuestions() {
                     },
                     body: JSON.stringify({
                       surveyTitle,
-                      description: setupData?.description || "",
+                      description: description,
                       logo: logo,
-                      websiteUrl: setupData?.websiteUrl || "",
-                      customizeBranding: setupData?.customizeBranding || false,
+                      websiteUrl: websiteUrl,
+                      customizeBranding: customizeBranding,
                       primaryColor,
                       themeColor: primaryColor,
                       pages,
@@ -1569,10 +1586,10 @@ export default function AddQuestions() {
                   state: {
                     surveyId: finalId,
                     surveyTitle,
-                    description: setupData?.description || "",
+                    description: description,
                     logo,
-                    websiteUrl: setupData?.websiteUrl || "",
-                    customizeBranding: setupData?.customizeBranding || false,
+                    websiteUrl: websiteUrl,
+                    customizeBranding: customizeBranding,
                     primaryColor,
                     pages,
                   },
@@ -1667,6 +1684,19 @@ export default function AddQuestions() {
                     </div>
                   )}
                   <h1 className="text-2xl font-bold mb-2">{surveyTitle}</h1>
+                  {description && (
+                    <p className="text-gray-500 text-sm mb-1">{description}</p>
+                  )}
+                  {customizeBranding && websiteUrl && (
+                    <a
+                      href={websiteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block text-xs text-blue-500 hover:text-blue-700 underline mb-6"
+                    >
+                      {websiteUrl}
+                    </a>
+                  )}
                   <p className="text-gray-500 mb-8">{activePage.title}</p>
 
                   <div className="space-y-8">
@@ -1821,11 +1851,31 @@ export default function AddQuestions() {
         </aside>
       )}
 
+      {showSettings && (
+        <SurveySettingsModal
+          surveyTitle={surveyTitle}
+          description={description}
+          logo={logo}
+          websiteUrl={websiteUrl}
+          themeColor={primaryColor || "#6366F1"}
+          customizeBranding={customizeBranding}
+          onSave={(settings) => {
+            setSurveyTitle(settings.surveyTitle);
+            setDescription(settings.description);
+            setLogo(settings.logo);
+            setWebsiteUrl(settings.websiteUrl);
+            setPrimaryColor(settings.themeColor);
+            setCustomizeBranding(settings.customizeBranding);
+          }}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
+
       {showAiModifier && (
         <AiSurveyModifier
           surveyTitle={surveyTitle}
           pages={pages}
-          description={setupData?.description || ""}
+          description={description}
           onApply={handleAiModifyApplied}
           onClose={() => setShowAiModifier(false)}
         />

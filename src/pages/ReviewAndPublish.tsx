@@ -85,7 +85,25 @@ export default function ReviewAndPublish() {
       <div className="flex max-w-[800px] py-12 px-6 flex-col gap-6 w-full text-left">
         <div className="flex justify-between items-center w-full mb-2">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              if (surveyId) {
+                navigate("/add-questions", {
+                  state: {
+                    surveyId,
+                    formData: {
+                      surveyTitle,
+                      description,
+                      logo,
+                      websiteUrl,
+                      customizeBranding,
+                      themeColor: primaryColor,
+                    },
+                  },
+                });
+              } else {
+                navigate(-1);
+              }
+            }}
             className="flex items-center gap-2 text-gray-500 text-sm font-medium hover:text-gray-800 transition-colors"
           >
             <ChevronLeft size={18} />
