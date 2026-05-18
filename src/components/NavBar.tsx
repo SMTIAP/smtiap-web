@@ -4,16 +4,22 @@ import {
   FileChartColumnIncreasing,
   LogOut,
   LayoutDashboard,
+  LayoutGrid,
+  ClipboardList,
+  FileText,
+  BarChart3,
+  CreditCard,
+  Users,
 } from "lucide-react";
 import api from "../api/api";
 
 const links = [
-  { to: "/admin", label: "Dashboard" },
-  { to: "/created-surveys", label: "Surveys" },
-  { to: "/templates", label: "Templates" },
-  { to: "/analytics", label: "Analytics" },
-  { to: "/subscription", label: "Subscription" },
-  { to: "/role-management", label: "Employees" },
+  { to: "/admin", label: "Dashboard", icon: LayoutGrid },
+  { to: "/created-surveys", label: "Surveys", icon: ClipboardList },
+  { to: "/templates", label: "Templates", icon: FileText },
+  { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/subscription", label: "Subscription", icon: CreditCard },
+  { to: "/role-management", label: "Employees", icon: Users },
 ];
 
 export default function NavBar() {
@@ -21,9 +27,11 @@ export default function NavBar() {
   const navigate = useNavigate();
   const isLanding = location.pathname === "/";
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<{ username: string; email: string; role?: string } | null>(
-    null,
-  );
+  const [user, setUser] = useState<{
+    username: string;
+    email: string;
+    role?: string;
+  } | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -35,7 +43,11 @@ export default function NavBar() {
       .then((res) => {
         if (mounted) {
           setIsAuthenticated(true);
-          setUser({ username: res.data.username, email: res.data.email, role: res.data.role });
+          setUser({
+            username: res.data.username,
+            email: res.data.email,
+            role: res.data.role,
+          });
         }
       })
       .catch(() => {
@@ -102,7 +114,7 @@ export default function NavBar() {
   };
 
   return (
-    <nav className="sticky top-0 z-[100] bg-[#F4F6FA]/80 backdrop-blur-xl border-b border-white/30 h-[70px]">
+    <nav className="sticky top-0 z-100 w-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)] h-17.5">
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
         <Link
           to={isAuthenticated ? "/admin" : "/"}
@@ -115,18 +127,20 @@ export default function NavBar() {
         </Link>
 
         {isAuthenticated && !isLanding && (
-          <div className="hidden md:flex items-center gap-5">
+          <div className="hidden md:flex items-center gap-1">
             {links.map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}
                 className={({ isActive }) =>
-                  `text-[14px] font-[700] transition-colors ${isActive
-                    ? "text-[#5C38E1]"
-                    : "text-[#475569] hover:text-[#5C38E1]"
+                  `flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-[700] transition-all ${
+                    isActive
+                      ? "bg-blue-50 text-blue-700 shadow-sm"
+                      : "text-[#64748B] hover:text-[#334155] hover:bg-gray-50"
                   }`
                 }
               >
+                <link.icon size={18} />
                 {link.label}
               </NavLink>
             ))}
