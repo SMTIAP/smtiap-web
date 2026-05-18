@@ -55,7 +55,7 @@ export function useAnalyticsData(
   const [finishedSurveys, setFinishedSurveys] = useState<SurveyListItem[]>([]);
   const [surveysLoading, setSurveysLoading] = useState(true);
 
-  // Effect: load finished surveys (selector view) 
+  // Effect: load finished surveys (selector view)
   // Only runs when there is no surveyId in the URL.
   useEffect(() => {
     const fetchFinishedSurveys = async () => {
@@ -167,7 +167,7 @@ export function useAnalyticsData(
     void fetchSurveyContext();
   }, [apiBaseUrl, surveyId]);
 
-  //  runAnalysis: send responses to Gemini and persist the result 
+  //  runAnalysis: send responses to Gemini and persist the result
   const runAnalysis = async () => {
     if (isAnalyzing) return;
     setIsAnalyzing(true);
@@ -268,11 +268,25 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
       setKeywords(normalizedKeywords);
     } catch (err: unknown) {
       console.error("Analysis failed:", err);
-      setAiError(
-        err instanceof Error
-          ? err.message
-          : "An unexpected error occurred during analysis.",
-      );
+      const errorStr = String(
+        err instanceof Error ? err.message : err,
+      ).toLowerCase();
+      if (
+        errorStr.includes("429") ||
+        errorStr.includes("quota") ||
+        errorStr.includes("rate limit") ||
+        errorStr.includes("too many requests")
+      ) {
+        setAiError(
+          "AI analysis is temporarily unavailable due to high demand. Please wait a moment and try again.",
+        );
+      } else {
+        setAiError(
+          err instanceof Error
+            ? err.message
+            : "An unexpected error occurred during analysis.",
+        );
+      }
     } finally {
       setIsAnalyzing(false);
     }

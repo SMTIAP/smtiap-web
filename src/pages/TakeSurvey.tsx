@@ -557,8 +557,21 @@ export default function TakeSurvey() {
               {surveyData.surveyTitle || "Untitled Survey"}
             </h1>
             {surveyData.description && (
-              <p className="text-slate-500 text-sm">{surveyData.description}</p>
+              <p className="text-slate-500 text-sm mb-1">
+                {surveyData.description}
+              </p>
             )}
+            {(surveyData?.customizeBranding as unknown as boolean) &&
+              (surveyData?.websiteUrl as string) && (
+                <a
+                  href={surveyData?.websiteUrl as string}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-xs text-blue-500 hover:text-blue-700 underline mb-2"
+                >
+                  {surveyData?.websiteUrl as string}
+                </a>
+              )}
             {totalQuestions > 0 && (
               <div className="flex items-center gap-2 mt-4">
                 {flattenedQuestions.map((_, i: number) => (
