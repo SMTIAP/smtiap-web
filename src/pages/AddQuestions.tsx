@@ -77,6 +77,9 @@ interface SetupFormData {
   customizeBranding?: boolean;
   themeColor?: string;
   surveyTitle?: string;
+  description?: string;
+  websiteUrl?: string;
+  logo?: string;
 }
 
 interface RouteState {
@@ -104,6 +107,7 @@ interface QuestionCardProps {
   selectedQuestionId: string | null;
   setSelectedQuestionId: (id: string | null) => void;
   moveQuestion: (index: number, direction: number) => void;
+  reorderQuestion: (fromIndex: number, toIndex: number) => void;
   duplicateQuestion: (id: string) => void;
   deleteQuestion: (id: string) => void;
   totalQuestions: number;
@@ -128,8 +132,13 @@ interface IncomingQuestion {
   min?: number;
   branching?: {
     enabled?: boolean;
-    rules?: Array<{ value?: string; targetQuestionId?: string }>;
+    rules?: Array<{
+      value?: string;
+      targetQuestionId?: string;
+      targetQuestionLabel?: string;
+    }>;
     defaultTargetQuestionId?: string;
+    defaultTargetQuestionLabel?: string;
   };
 }
 
@@ -335,23 +344,50 @@ const QuestionCard = ({
   selectedQuestionId,
   setSelectedQuestionId,
   moveQuestion,
+  reorderQuestion,
   duplicateQuestion,
   deleteQuestion,
   totalQuestions,
 }: QuestionCardProps) => {
   const isActive = selectedQuestionId === question.id && !isPreview;
+  const [isDragOver, setIsDragOver] = useState(false);
 
   return (
     <div
+      draggable={!isPreview}
+      onDragStart={(e) => {
+        e.dataTransfer.setData("dragIndex", String(index));
+        e.dataTransfer.effectAllowed = "move";
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        setIsDragOver(true);
+      }}
+      onDragLeave={() => setIsDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        const fromIndex = Number(e.dataTransfer.getData("dragIndex"));
+        if (!isNaN(fromIndex) && fromIndex !== index) {
+          reorderQuestion(fromIndex, index);
+        }
+      }}
+      onDragEnd={() => setIsDragOver(false)}
       onClick={() => !isPreview && setSelectedQuestionId(question.id)}
       className={`group relative bg-white rounded-xl border-2 transition-all duration-200 ${
-        isActive
-          ? "border-indigo-500 shadow-lg"
-          : "border-gray-100 hover:border-gray-200 shadow-sm"
+        isDragOver
+          ? "border-indigo-400 shadow-xl scale-[1.01] bg-indigo-50"
+          : isActive
+            ? "border-indigo-500 shadow-lg"
+            : "border-gray-100 hover:border-gray-200 shadow-sm"
       } ${isPreview ? "p-6 mb-4" : "p-6 mb-4 cursor-pointer"}`}
     >
       {!isPreview && (
-        <div className="absolute -left-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab">
+        <div
+          className="absolute -left-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <div className="bg-white border shadow-sm p-1 rounded-md text-gray-400">
             <GripVertical size={16} />
           </div>
@@ -865,9 +901,14 @@ export default function AddQuestions() {
 
           const branchingRaw = incomingQ?.branching;
           if (branchingRaw?.enabled) {
+            type RawRule = {
+              value?: string;
+              targetQuestionId?: string;
+              targetQuestionLabel?: string;
+            };
             const rules = (branchingRaw.rules || [])
-              .filter((rule: any) => Boolean(rule?.value))
-              .map((rule: any) => {
+              .filter((rule: RawRule) => Boolean(rule?.value))
+              .map((rule: RawRule) => {
                 const targetLabel = rule.targetQuestionLabel;
                 let targetId = "";
                 if (targetLabel === "__END__") {
@@ -877,9 +918,14 @@ export default function AddQuestions() {
                 } else if (rule.targetQuestionId) {
                   targetId = rule.targetQuestionId;
                 }
-                return { value: rule.value, targetQuestionId: targetId };
+                return {
+                  value: rule.value as string,
+                  targetQuestionId: targetId,
+                };
               })
-              .filter((rule: any) => Boolean(rule.targetQuestionId));
+              .filter((rule: { value: string; targetQuestionId: string }) =>
+                Boolean(rule.targetQuestionId),
+              );
 
             const defaultLabel = branchingRaw.defaultTargetQuestionLabel;
             let defaultTargetId = "";
@@ -1147,6 +1193,15 @@ export default function AddQuestions() {
     setPages(updatedPages);
   };
 
+  const reorderQuestion = (fromIndex: number, toIndex: number) => {
+    const updatedQuestions = [...pages[activePageIndex].questions];
+    const [moved] = updatedQuestions.splice(fromIndex, 1);
+    updatedQuestions.splice(toIndex, 0, moved);
+    const updatedPages = [...pages];
+    updatedPages[activePageIndex].questions = updatedQuestions;
+    setPages(updatedPages);
+  };
+
   const activePage = pages[activePageIndex] ?? pages[0];
   const selectedQuestion =
     activePage?.questions.find((q) => q.id === selectedQuestionId) ||
@@ -1169,41 +1224,47 @@ export default function AddQuestions() {
 
   // Handles AI modification results — resolves branching labels to IDs
   const handleAiModifyApplied = useCallback(
-    (result: { surveyTitle: string; description: string; pages: any[] }) => {
+    (result: {
+      surveyTitle: string;
+      description: string;
+      pages: IncomingPage[];
+    }) => {
       const timestamp = Date.now();
       const rawPages = Array.isArray(result.pages) ? result.pages : [];
 
       // First pass: normalize with IDs
       const normalized: SurveyPage[] = rawPages.map(
-        (page: any, idx: number) => ({
+        (page: IncomingPage, idx: number) => ({
           id: `ai-page-${idx}-${timestamp}`,
           title: page.title || `Page ${idx + 1}`,
-          questions: (page.questions || []).map((q: any, qi: number) => {
-            const type = normalizeQuestionType(q?.type);
-            const supportsOptions =
-              type === "multiple_choice" || type === "checkboxes";
-            return {
-              id: `ai-q-${idx}-${qi}-${timestamp}`,
-              type,
-              label: q.label || "Untitled Question",
-              required: q.required ?? false,
-              placeholder:
-                q.placeholder ||
-                (type === "short_text"
-                  ? "Enter text here..."
-                  : type === "long_text"
-                    ? "Enter detailed response..."
-                    : undefined),
-              options: supportsOptions
-                ? Array.isArray(q?.options) && q.options.length > 0
-                  ? q.options
-                  : ["Option 1", "Option 2"]
-                : undefined,
-              max: type === "rating" ? Number(q?.max || 5) : q?.max,
-              min: type === "number" ? Number(q?.min || 0) : q?.min,
-              branching: undefined,
-            };
-          }),
+          questions: (page.questions || []).map(
+            (q: IncomingQuestion, qi: number) => {
+              const type = normalizeQuestionType(q?.type);
+              const supportsOptions =
+                type === "multiple_choice" || type === "checkboxes";
+              return {
+                id: `ai-q-${idx}-${qi}-${timestamp}`,
+                type,
+                label: q.label || "Untitled Question",
+                required: q.required ?? false,
+                placeholder:
+                  q.placeholder ||
+                  (type === "short_text"
+                    ? "Enter text here..."
+                    : type === "long_text"
+                      ? "Enter detailed response..."
+                      : undefined),
+                options: supportsOptions
+                  ? Array.isArray(q?.options) && q.options.length > 0
+                    ? q.options
+                    : ["Option 1", "Option 2"]
+                  : undefined,
+                max: type === "rating" ? Number(q?.max || 5) : q?.max,
+                min: type === "number" ? Number(q?.min || 0) : q?.min,
+                branching: undefined,
+              };
+            },
+          ),
         }),
       );
 
@@ -1212,30 +1273,47 @@ export default function AddQuestions() {
       normalized.forEach((page) =>
         page.questions.forEach((qq) => labelToIdMap.set(qq.label, qq.id)),
       );
-      const flatIncoming = rawPages.flatMap((p: any) => p.questions || []);
+      const flatIncoming = rawPages.flatMap(
+        (p: IncomingPage) => p.questions || [],
+      );
 
       normalized.forEach((page) => {
         page.questions.forEach((qq) => {
           const incomingQ = flatIncoming.find(
-            (iq: any) => iq.label === qq.label,
+            (iq: IncomingQuestion) => iq.label === qq.label,
           );
           const br = incomingQ?.branching;
           if (br?.enabled) {
             const rules = (br.rules || [])
-              .filter((r: any) => r?.value)
-              .map((r: any) => {
-                let tid = "";
-                if (
-                  r.targetQuestionLabel === "__END__" ||
-                  r.targetQuestionId === "__END__"
-                )
-                  tid = "__END__";
-                else if (r.targetQuestionLabel)
-                  tid = labelToIdMap.get(r.targetQuestionLabel) || "";
-                else if (r.targetQuestionId) tid = r.targetQuestionId;
-                return { value: r.value, targetQuestionId: tid };
-              })
-              .filter((r: any) => r.targetQuestionId);
+              .filter(
+                (r: {
+                  value?: string;
+                  targetQuestionId?: string;
+                  targetQuestionLabel?: string;
+                }) => r?.value,
+              )
+              .map(
+                (r: {
+                  value?: string;
+                  targetQuestionId?: string;
+                  targetQuestionLabel?: string;
+                }) => {
+                  let tid = "";
+                  if (
+                    r.targetQuestionLabel === "__END__" ||
+                    r.targetQuestionId === "__END__"
+                  )
+                    tid = "__END__";
+                  else if (r.targetQuestionLabel)
+                    tid = labelToIdMap.get(r.targetQuestionLabel) || "";
+                  else if (r.targetQuestionId) tid = r.targetQuestionId;
+                  return { value: r.value as string, targetQuestionId: tid };
+                },
+              )
+              .filter(
+                (r: { value: string; targetQuestionId: string }) =>
+                  r.targetQuestionId,
+              );
             const dl =
               br.defaultTargetQuestionLabel || br.defaultTargetQuestionId;
             let dtid = "";
@@ -1555,6 +1633,7 @@ export default function AddQuestions() {
                       selectedQuestionId={selectedQuestionId}
                       setSelectedQuestionId={setSelectedQuestionId}
                       moveQuestion={moveQuestion}
+                      reorderQuestion={reorderQuestion}
                       duplicateQuestion={duplicateQuestion}
                       deleteQuestion={deleteQuestion}
                       totalQuestions={activePage.questions.length}
