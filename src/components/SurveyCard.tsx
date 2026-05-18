@@ -23,7 +23,7 @@ const SurveyCard: React.FC<SurveyCardProps> = ({
 
   if (variant === "finished") {
     const finishedCard = (
-      <div className="group relative w-full h-full min-h-[320px] rounded-[28px] bg-white border border-[#E5EAF2] shadow-[0_8px_22px_rgba(15,23,42,0.08)] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(15,23,42,0.14)]">
+      <div className="group relative w-full h-full min-h-80 rounded-[28px] bg-white border border-[#E5EAF2] shadow-[0_8px_22px_rgba(15,23,42,0.08)] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(15,23,42,0.14)]">
         <div className="h-1.5 w-full bg-[#FF5B8A]" />
 
         <div className="p-6 pt-7 h-[calc(100%-6px)] flex flex-col items-center">
@@ -89,14 +89,14 @@ const SurveyCard: React.FC<SurveyCardProps> = ({
         </div>
         {date && (
           <div className="flex flex-col items-start w-full">
-            <p className="text-[#4A739C] font-inter text-sm leading-[21px] w-full">
+            <p className="text-[#4A739C] font-inter text-sm leading-5.25 w-full">
               {date}
             </p>
           </div>
         )}
         {category && (
           <div className="flex flex-col items-start w-full">
-            <p className="text-[#4A739C] font-inter text-sm leading-[21px] w-full line-clamp-1">
+            <p className="text-[#4A739C] font-inter text-sm leading-5.25 w-full line-clamp-1">
               {category}
             </p>
           </div>

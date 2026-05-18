@@ -57,11 +57,10 @@ export default function CreateNewSurvey() {
     }
   };
 
-  // Called when AI generation completes — navigates to AddQuestions with pre-filled data
   const handleAiGenerated = (result: {
     surveyTitle: string;
     description: string;
-    pages: any[];
+    pages: Record<string, unknown>[];
   }) => {
     navigate("/add-questions", {
       state: {
@@ -86,7 +85,7 @@ export default function CreateNewSurvey() {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC]">
-      <div className="flex max-w-[800px] py-10 px-6 flex-col gap-8 w-full">
+      <div className="flex max-w-200 py-10 px-6 flex-col gap-8 w-full">
         {/* Navigation */}
         <div className="flex justify-end w-full">
           <button
@@ -264,7 +263,7 @@ export default function CreateNewSurvey() {
                       value={formData.description}
                       onChange={handleChange}
                       placeholder="What is this survey about?"
-                      className="w-full p-3 border border-[#E2E8F0] rounded-lg bg-[#F8FAFC] text-sm outline-none focus:ring-1 focus:ring-blue-400 min-h-[100px]"
+                      className="w-full p-3 border border-[#E2E8F0] rounded-lg bg-[#F8FAFC] text-sm outline-none focus:ring-1 focus:ring-blue-400 min-h-25"
                     />
                   </div>
                 </div>

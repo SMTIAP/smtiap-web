@@ -82,7 +82,7 @@ export default function ReviewAndPublish() {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] font-sans">
-      <div className="flex max-w-[800px] py-12 px-6 flex-col gap-6 w-full text-left">
+      <div className="flex max-w-200 py-12 px-6 flex-col gap-6 w-full text-left">
         <div className="flex justify-between items-center w-full mb-2">
           <button
             onClick={() => {
