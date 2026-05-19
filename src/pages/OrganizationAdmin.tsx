@@ -186,6 +186,7 @@ export default function OrganizationAdmin() {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC]">
+      <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
       <div className="flex max-w-6xl py-10 px-6 flex-col items-start gap-10 w-full">
         {/* Hero Greeting Card */}
         <div className="relative w-full rounded-2xl bg-white border border-slate-200 shadow-md p-8 overflow-hidden">
