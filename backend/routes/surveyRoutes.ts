@@ -87,11 +87,11 @@ router.post("/:id/responses", async (req, res) => {
       $or: duplicateFilters,
     });
 
-    if (existing) {
-      return res.status(409).json({
-        error: "You have already submitted a response for this survey.",
-      });
-    }
+   //if (existing) {
+   //   return res.status(409).json({
+    //    error: "You have already submitted a response for this survey.",
+   //  });
+  // }
 
     const doc = await SurveyResponse.create({
       surveyId: req.params.id,

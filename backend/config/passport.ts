@@ -21,6 +21,7 @@ export const initGoogleStrategy = () => {
           if (!user) {
             user = await User.create({
               email,
+              username: profile.displayName || email.split("@")[0],
               password: "google-oauth",
             });
           }
