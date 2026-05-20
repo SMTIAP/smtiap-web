@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Plus, ArrowLeft, Activity, Clock, CheckCircle2,
-  Trash2, X, Layout, Share2, Copy, Check, Download, Lock,
+  Trash2, X, Layout, Share2, Copy, Check, Download, Lock, CopyPlus,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -13,6 +13,7 @@ interface SurveyItem {
   createdAt: string;
   isPasswordProtected?: boolean;
   password?: string;
+  pages?: any[];
 }
 
 const DeleteConfirmModal = ({ survey, onConfirm, onCancel, deleting }: {
@@ -166,6 +167,8 @@ export default function CreatedSurveys() {
   const [surveys, setSurveys] = useState<SurveyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingSurveyId, setDeletingSurveyId] = useState<string | null>(null);
+  const [copyingSurveyId, setCopyingSurveyId] = useState<string | null>(null);
+  const [copiedSurveyId, setCopiedSurveyId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [surveyToDelete, setSurveyToDelete] = useState<SurveyItem | null>(null);
   const [surveyToShare, setSurveyToShare] = useState<SurveyItem | null>(null);
@@ -189,6 +192,43 @@ export default function CreatedSurveys() {
 
   const handleShareClick = (e: React.MouseEvent, survey: SurveyItem) => { e.stopPropagation(); setSurveyToShare(survey); };
   const handleDeleteClick = (event: React.MouseEvent, survey: SurveyItem) => { event.stopPropagation(); setSurveyToDelete(survey); setShowDeleteModal(true); };
+
+  // Copy survey — duplicates form structure only, no responses
+  const handleCopyClick = async (e: React.MouseEvent, survey: SurveyItem) => {
+    e.stopPropagation();
+    setCopyingSurveyId(survey._id);
+    try {
+      // Fetch full survey to get pages/questions
+      const res = await fetch(`http://localhost:5000/api/surveys/${survey._id}`);
+      const full = await res.json();
+
+      const response = await fetch("http://localhost:5000/api/surveys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          surveyTitle: `Copy of ${full.surveyTitle || "Untitled Survey"}`,
+          description: full.description || "",
+          pages: full.pages || [],
+          status: "Draft",
+          themeColor: full.themeColor,
+          primaryColor: full.primaryColor,
+          customizeBranding: full.customizeBranding,
+          isAnonymous: full.isAnonymous,
+        }),
+      });
+      const newSurvey = await response.json();
+      const created = newSurvey?.survey || newSurvey;
+      if (created?._id) {
+        setSurveys((prev) => [created, ...prev]);
+        setCopiedSurveyId(survey._id);
+        setTimeout(() => setCopiedSurveyId(null), 2000);
+      }
+    } catch (err) {
+      console.error("Failed to copy survey:", err);
+    } finally {
+      setCopyingSurveyId(null);
+    }
+  };
 
   const handleConfirmDelete = async () => {
     if (!surveyToDelete) return;
@@ -261,27 +301,49 @@ export default function CreatedSurveys() {
           {filteredSurveys.map((survey) => {
             const isRunning = survey.status === "Running";
             const isDraft = survey.status === "Draft";
+            const isCopying = copyingSurveyId === survey._id;
+            const isCopied = copiedSurveyId === survey._id;
+
             return (
               <div key={survey._id} onClick={() => handleCardClick(survey)}
                 className="group relative flex flex-col items-center p-8 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-2 cursor-pointer aspect-[3/4] overflow-hidden">
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${isRunning ? "bg-emerald-400" : isDraft ? "bg-amber-400" : "bg-rose-400"}`} />
+
                 <div className="flex justify-between items-center w-full mb-4">
                   <span className="text-slate-400 text-[10px] font-extrabold bg-slate-50 dark:bg-slate-700 px-3 py-1 rounded-full">
                     {new Date(survey.createdAt).toLocaleDateString("en-GB")}
                   </span>
                   <div className="flex items-center gap-1">
+                    {/* Share — running surveys only */}
                     {isRunning && (
                       <button type="button" onClick={(e) => handleShareClick(e, survey)}
-                        className="w-8 h-8 rounded-full bg-white/95 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all flex items-center justify-center">
+                        className="w-8 h-8 rounded-full bg-white/95 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all flex items-center justify-center"
+                        title="Share survey">
                         <Share2 size={13} />
                       </button>
                     )}
+
+                    {/* Copy button — all surveys */}
+                    <button type="button" onClick={(e) => handleCopyClick(e, survey)} disabled={isCopying}
+                      className="w-8 h-8 rounded-full bg-white/95 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-violet-600 hover:border-violet-200 hover:bg-violet-50 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="Make a copy">
+                      {isCopied
+                        ? <Check size={13} className="text-emerald-500" />
+                        : isCopying
+                        ? <div className="w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+                        : <CopyPlus size={13} />
+                      }
+                    </button>
+
+                    {/* Delete */}
                     <button type="button" onClick={(e) => handleDeleteClick(e, survey)} disabled={deletingSurveyId === survey._id}
-                      className="w-8 h-8 rounded-full bg-white/95 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-rose-500 hover:border-rose-200 hover:bg-rose-50 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed">
+                      className="w-8 h-8 rounded-full bg-white/95 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-rose-500 hover:border-rose-200 hover:bg-rose-50 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="Delete survey">
                       <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
+
                 <div className="flex flex-col items-center justify-center flex-grow text-center w-full">
                   <div className={`w-14 h-14 rounded-3xl flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ${
                     isRunning ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500" :
@@ -294,6 +356,7 @@ export default function CreatedSurveys() {
                     {survey.surveyTitle || "Untitled Survey"}
                   </h3>
                 </div>
+
                 <div className={`mt-6 px-6 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] border-2 transition-all duration-500 ${
                   isRunning ? "text-emerald-600 border-emerald-100 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800 group-hover:bg-emerald-500 group-hover:text-white group-hover:border-emerald-500" :
                   isDraft ? "text-amber-600 border-amber-100 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 group-hover:bg-amber-500 group-hover:text-white group-hover:border-amber-500" :
