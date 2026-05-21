@@ -77,8 +77,11 @@ export default function OrganizationRegistration() {
             );
 
             const data = await response.json();
-            console.log(data);
-            console.log("BACKEND RESPONSE:", data);
+            if (!response.ok) {
+                toast.error(data.message || "Something went wrong");
+                return;
+            }
+
             toast.success("Organization Registered");
             navigate("/role-management");
 

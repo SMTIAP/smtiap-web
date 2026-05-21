@@ -11,9 +11,16 @@ export const createOrganization = async (req: Request, res: Response) => {
         const userId = (req as any).user._id;
 
         if (!userId) {
-        return res.status(401).json({
-            message: "Unauthorized",
-        });
+            return res.status(401).json({
+                message: "Unauthorized",
+            });
+        }
+
+        const existingDomain = await Tenant.findOne({domain});
+        if(existingDomain){
+            return res.status(409).json({
+                message: "Domain already exists",
+            });
         }
 
         const tenant = await Tenant.create({
