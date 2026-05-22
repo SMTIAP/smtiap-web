@@ -142,6 +142,7 @@ export default function RoleManagement() {
 
     return (
         <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
+            <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
             <div className="w-full max-w-[1152px] px-6 py-10 flex flex-col gap-10">
 
                 {/* Header */}
