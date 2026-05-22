@@ -69,7 +69,9 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
 
 export const getUserTenantData = async (req: Request, res: Response) => {
   try {
-    const data = await UserTenantRole.find()
+    const data = await UserTenantRole.find({
+      status: "active",
+    })
       .populate("userId", "username email")
       .populate("tenantId", "name");
 
@@ -106,12 +108,14 @@ export const removeOrgUser = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.params;
 
-    const deleted = await UserTenantRole.findOneAndDelete({
+    const inactive = await UserTenantRole.findOneAndUpdate({
       userId,
-      tenantId,
-    });
+      tenantId},
+      { status: "inactive" },
+      { new: true }
+    );
 
-    if (!deleted) {
+    if (!inactive) {
       return res.status(404).json({
         message: "Record not found",
       });
