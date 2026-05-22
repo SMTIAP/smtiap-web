@@ -43,6 +43,7 @@ export default function Subscription() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-[#0F172A] font-inter text-[#141217] dark:text-white transition-colors duration-300">
+      <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
       <main className="flex-1 flex flex-col items-center py-10 px-4 md:px-20">
         <div className="w-full max-w-[960px] flex justify-start mb-6">
           <BackButton to="/" />
