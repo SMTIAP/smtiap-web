@@ -6,7 +6,7 @@ import sendToken from "../utils/sendToken.js";
 
 export const createOrganization = async (req: Request, res: Response) => {
     try{
-        const { name, country, address, description, domain } = req.body;
+        const { name, country, address, description, domain, orgType } = req.body;
 
         const userId = (req as any).user._id;
 
@@ -23,8 +23,18 @@ export const createOrganization = async (req: Request, res: Response) => {
             });
         }
 
+        const existingOrganizationName = await Tenant.findOne({
+            name: { $regex: `^${name}$`, $options: "i" },
+            createdBy: userId
+        });
+        if(existingOrganizationName){
+            return res.status(409).json({
+                message: "You have already created an organization with this name"
+            })
+        }
+
         const tenant = await Tenant.create({
-            name, country, address, description, domain, createdBy: userId,
+            name, country, address, description, domain, orgType, createdBy: userId,
         });
 
 
