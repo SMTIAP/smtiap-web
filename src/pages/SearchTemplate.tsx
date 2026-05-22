@@ -89,7 +89,7 @@ export default function SearchTemplate() {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#FDFDFD] dark:bg-[#0F172A] transition-colors duration-300">
-      <div className="h-1 w-full bg-gradient-to-r from-teal-400 to-blue-500" />
+      <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
 
       <div className="flex max-w-[1200px] py-12 px-8 flex-col items-start gap-10 w-full">
         <div className="flex justify-between items-center w-full">
