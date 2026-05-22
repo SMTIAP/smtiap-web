@@ -1354,7 +1354,7 @@ export default function AddQuestions() {
 
   if (loadingSurvey) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#F8F9FB]">
+      <div className="flex h-screen items-center justify-center bg-[#F8F9FB] dark:bg-[#0F172A]">
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-sm text-gray-500">Loading draft survey...</p>
@@ -1364,9 +1364,9 @@ export default function AddQuestions() {
   }
 
   return (
-    <div className="flex h-screen bg-[#F8F9FB] text-gray-800 overflow-hidden font-sans">
+    <div className="flex h-screen bg-[#F8F9FB] dark:bg-[#0F172A] text-gray-800 dark:text-slate-200 overflow-hidden font-sans transition-colors duration-300">
       {/* Left sidebar — question type palette and page navigator */}
-      <aside className="w-72 bg-white border-r border-gray-200 flex flex-col z-10 shadow-sm">
+      <aside className="w-72 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col z-10 shadow-sm transition-colors duration-300">
         <div className="p-6 border-b border-gray-100 flex items-center gap-3">
           <div
             className="h-10 w-10 rounded-lg flex items-center justify-center border border-[#F1F5F9]"
@@ -1375,7 +1375,7 @@ export default function AddQuestions() {
             <Layout size={20} style={{ color: primaryColor }} />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-bold text-gray-900 truncate w-28">
+            <h1 className="text-sm font-bold text-gray-900 dark:text-white truncate w-28">
               {surveyTitle}
             </h1>
             <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
@@ -1511,7 +1511,7 @@ export default function AddQuestions() {
                 alert("Could not save draft. Is the backend running?");
               }
             }}
-            className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 shadow-sm transition-all"
+            className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-white py-2 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-slate-600 shadow-sm transition-all"
           >
             <Save size={16} /> {surveyId ? "Update Draft" : "Save Draft"}
           </button>
@@ -1520,12 +1520,12 @@ export default function AddQuestions() {
 
       {/* Main canvas — question builder and preview mode */}
       <main className="flex-1 flex flex-col h-full overflow-hidden">
-        <header className="h-16 bg-white border-b border-gray-200 px-8 flex items-center justify-between z-0">
+        <header className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-8 flex items-center justify-between z-0 transition-colors duration-300">
           <input
             type="text"
             value={surveyTitle}
             onChange={(e) => setSurveyTitle(e.target.value)}
-            className="text-lg font-semibold bg-transparent border-none focus:outline-none focus:ring-0 w-1/2"
+            className="text-lg font-semibold bg-transparent border-none focus:outline-none focus:ring-0 w-1/2 dark:text-white"
           />
           <div className="flex items-center gap-3">
             <button
@@ -1841,7 +1841,7 @@ export default function AddQuestions() {
 
       {/* Right sidebar — question property editor */}
       {!isPreviewMode && (
-        <aside className="w-80 bg-white border-l border-gray-200 flex flex-col z-10 shadow-sm overflow-y-auto">
+        <aside className="w-80 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700 flex flex-col z-10 shadow-sm overflow-y-auto transition-colors duration-300">
           <PropertyEditor
             selectedQuestion={selectedQuestion || null}
             updateQuestion={updateQuestion}
