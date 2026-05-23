@@ -47,7 +47,7 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
     const { userId, tenantId } = req.params;
     const { role } = req.body;
 
-    const exists = await UserTenantRole.findOne({ userId, tenantId });
+    const exists = await UserTenantRole.findOne({ userId, tenantId, status: "active", });
 
     if (exists) {
       return res.status(400).json({
@@ -69,7 +69,9 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
 
 export const getUserTenantData = async (req: Request, res: Response) => {
   try {
-    const data = await UserTenantRole.find()
+    const data = await UserTenantRole.find({
+      status: "active",
+    })
       .populate("userId", "username email")
       .populate("tenantId", "name");
 
@@ -105,17 +107,27 @@ export const updateOrgRole = async (req: Request, res: Response) => {
 export const removeOrgUser = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.params;
-
-    const deleted = await UserTenantRole.findOneAndDelete({
+console.log("remove request:", userId, tenantId);
+    const record = await UserTenantRole.findOne({
       userId,
       tenantId,
+      status: "active",
     });
 
-    if (!deleted) {
+    if (!record) {
       return res.status(404).json({
         message: "Record not found",
       });
     }
+
+    if (record.status === "inactive") {
+      return res.status(400).json({
+        message: "User already inactive",
+      });
+    }
+
+    record.status = "inactive";
+    await record.save();
 
     res.status(200).json({
       message: "User removed from organization",

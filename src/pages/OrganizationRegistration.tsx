@@ -1,9 +1,22 @@
 import { useNavigate } from 'react-router-dom';
 import BackButton from '../components/BackButton';
 import { useState } from 'react';
+import { toast } from "react-toastify";
+// import "../App.css";
 
 export default function OrganizationRegistration() {
     const navigate = useNavigate();
+
+    const [errors, setErrors] = useState({
+        name: "",
+        country: "",
+        address: "",
+        domain: "",
+        description: "",
+        orgType: "",
+    });
+
+
     const [formData, setFormData] = useState({
         name: "",
         country: "",
@@ -28,6 +41,25 @@ export default function OrganizationRegistration() {
 };
         
     const handleSubmit = async () => {
+
+        const newErrors: any = {};
+        const domainRegex = /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/;
+
+        if (!formData.name.trim()) newErrors.name = "Organization name is required";
+        if (!formData.country.trim()) newErrors.country = "Country is required";
+        if (!formData.address.trim()) newErrors.address = "Address is required";
+        if (!formData.domain.trim()) newErrors.domain = "Domain is required";
+        if (!formData.description.trim()) newErrors.description = "Description is required";
+        if (!formData.orgType) newErrors.orgType = "Select organization type";
+        
+        if (formData.domain.trim() && !domainRegex.test(formData.domain)) {
+            newErrors.domain = "Please enter a valid domain (e.g. example.com)";
+        }
+
+        setErrors(newErrors);
+
+        if (Object.keys(newErrors).length > 0) return;
+
         try {
             const token = localStorage.getItem("token");
             const response = await fetch(
@@ -45,9 +77,12 @@ export default function OrganizationRegistration() {
             );
 
             const data = await response.json();
-            console.log(data);
-            console.log("BACKEND RESPONSE:", data);
-            alert("Organization Registered");
+            if (!response.ok) {
+                toast.error(data.message || "Something went wrong");
+                return;
+            }
+
+            toast.success("Organization Registered");
             navigate("/role-management");
 
         } catch (error) {
@@ -91,6 +126,11 @@ export default function OrganizationRegistration() {
                             placeholder="Enter organization name"
                             className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
                         />
+                        {errors.name && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.name}
+                            </p>
+                        )}
                     </div>
 
                     {/* Country */}
@@ -198,6 +238,12 @@ export default function OrganizationRegistration() {
                             <option value="Yemen">Yemen</option>
                             <option value="Zimbabwe">Zimbabwe</option>
                         </select>
+
+                        {errors.country && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.country}
+                            </p>
+                        )}
                     </div>
 
                     {/* Address */}
@@ -213,6 +259,12 @@ export default function OrganizationRegistration() {
                             placeholder="Enter address"
                             className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
                         />
+
+                        {errors.address && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.address}
+                            </p>
+                        )}
                     </div>
 
                     {/* Organization Domain */}
@@ -228,6 +280,11 @@ export default function OrganizationRegistration() {
                             placeholder="Enter organization domain"
                             className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
                         />
+                        {errors.domain && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.domain}
+                            </p>
+                        )}
                     </div>
 
                     {/* Description */}
@@ -243,6 +300,11 @@ export default function OrganizationRegistration() {
                             placeholder="Enter description"
                             className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none resize-none"
                         />
+                        {errors.description && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.description}
+                            </p>
+                        )}
                     </div>
 
                     {/* Type */}
@@ -262,6 +324,11 @@ export default function OrganizationRegistration() {
                                 <span className="text-sm text-slate-700">Non Profit</span>
                             </label>
                         </div>
+                        {errors.orgType && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.orgType}
+                            </p>
+                        )}
                     </div>
 
                     {/* Submit */}

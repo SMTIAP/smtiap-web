@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import BackButton from '../components/BackButton';
 import { Search } from 'lucide-react';
 import { jwtDecode } from "jwt-decode";
+import { toast } from "react-toastify";
+import { toastStyles } from "../utils/toastStyles";
 
 interface User {
     _id: string;
@@ -47,7 +49,7 @@ export default function RoleManagement() {
             try {
                 const response = await fetch("http://localhost:5000/api/role-management");
                 const data = await response.json();
-                console.log("TENANTS FROM BACKEND 1:", data);
+
                 setUsers(data);
             } catch (error) { console.error("Error fetching users:", error); }
         };
@@ -59,86 +61,179 @@ export default function RoleManagement() {
             try {
                 const response = await fetch("http://localhost:5000/api/role-management/tenants");
                 const data = await response.json();
-                console.log("TENANTS FROM BACKEND 2:", data);
+
                 setTenants(data);
             } catch(error) { console.error("Error fetching tenants:", error); }
         };
         fetchTenants();
     }, []);
 
-    useEffect(() => {
+    
         const fetchOrganizationData = async () => {
             try {
                 const response = await fetch("http://localhost:5000/api/role-management/user-tenant");
                 const data = await response.json();
                 setOrgUsers(data);
-                console.log("JOINED DATA:", data);
-            } catch (error) { console.error(error); }
+            } catch (error) {
+                console.error(error);
+            }
         };
+  useEffect(() => {
         fetchOrganizationData();
     }, []);
+
 
     const token = localStorage.getItem("token");
     let currentUserId = "";
     if (token) {
         const decoded: any = jwtDecode(token);
-        console.log(decoded);
+
         currentUserId = decoded.id;
-        console.log("USER ID:", currentUserId);
+
     }
+
 
     const filteredUsers = searchTerm.trim()
         ? users.filter((user) => user.email.toLowerCase().includes(searchTerm.toLowerCase()))
         : [];
     const filteredOrgUsers = orgUsers.filter((item) => item.tenantId.name.toLowerCase().includes(searchOrganization.toLowerCase()));
-    const filteredOrganizations = tenants.filter((tenant) => tenant.createdBy === currentUserId);
 
-    const handleAddUser = async (user: User, tenant: Tenant) => {
-        const confirmAdd = window.confirm("Are you sure you want to add this user to the organization?");
-        if (!confirmAdd) return;
-        try {
-            const newRole = selectedRole[user._id];
-            const response = await fetch(`http://localhost:5000/api/role-management/${user._id}/${tenant._id}`, {
+    
+
+const filteredOrganizations = tenants.filter(
+    (tenant) => tenant.createdBy === currentUserId
+);
+    
+
+const handleAddUser = async (user: User, tenant: Tenant) => {
+
+    const confirmAdd = window.confirm(
+        "Are you sure you want to add this user to the organization?"
+    );
+
+    if (!confirmAdd) return;
+    try {
+        const newRole = selectedRole[user._id];
+
+        const response = await fetch(
+            `http://localhost:5000/api/role-management/${user._id}/${tenant._id}`,
+            {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ role: newRole })
-            });
-            const data = await response.json();
-            if (!response.ok) { alert(data.message || "User already assigned to this organization"); return; }
-            alert("User added successfully");
-        } catch (err) { console.error(err); }
-    };
 
-    const handleUpdateOrgRole = async (item: UserTenantRole) => {
-        const confirmUpdate = window.confirm("Are you sure you want to update the user role of this organization?");
-        if (!confirmUpdate) return;
-        try {
-            const newRole = selectedRole[item._id];
+            }
+        );
+
+        // if (!response.ok) {
+        //     throw new Error("Failed to assign user to tenant");
+        // }
+
+        const data = await response.json();
+        if (!response.ok) {
+            toast.error(data.message || "User already assigned to this organization", {
+                style: toastStyles.error,
+            });
+            return;
+        }
+        toast.success("User added successfully", {
+            style: toastStyles.success,
+        });
+await fetchOrganizationData();
+
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+
+const handleUpdateOrgRole = async (item: UserTenantRole) => {
+    const confirmUpdate = window.confirm(
+        "Are you sure you want to update the user role of this organization?"
+    );
+
+    if (!confirmUpdate) return;
+
+    try {
+        const newRole = selectedRole[item._id];
             const response = await fetch(`http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}/role`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ role: newRole })
-            });
-            const data = await response.json().catch(() => null);
-            console.log("STATUS:", response.status);
-            console.log("RESPONSE:", data);
-            if (!response.ok) { throw new Error("Failed to update role"); }
-            setOrgUsers((prev) => prev.map((u) => u._id === item._id ? { ...u, role: data.role ?? newRole } : u));
-            setSelectedRole((prev) => { const copy = { ...prev }; delete copy[item._id]; return copy; });
-            alert("User role updated successfully");
-        } catch (err) { console.error(err); }
-    };
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ role: newRole })
 
-    const handleRemoveOrgUser = async (item: UserTenantRole) => {
-        const confirmDelete = window.confirm("Are you sure you want to remove this user from the organization?");
-        if (!confirmDelete) return;
-        try {
-            const response = await fetch(`http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}`, { method: "DELETE" });
-            if (!response.ok) { throw new Error("Failed to remove user"); }
-            setOrgUsers((prev) => prev.filter((u) => u._id !== item._id));
-            alert("User removed from organization successfully");
-        } catch (err) { console.error(err); }
-    };
+            }
+        );
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+            throw new Error("Failed to update role");
+        }
+
+        // const updated = await response.json();
+
+        setOrgUsers((prev) =>
+            prev.map((u) =>
+                u._id === item._id
+                    ? { ...u, role: data.role ?? newRole }
+                    : u
+            )
+        );
+
+        // clear selection
+        setSelectedRole((prev) => {
+            const copy = { ...prev };
+            delete copy[item._id];
+            return copy;
+        });
+
+        toast.success("User role updated successfully", {
+            style: toastStyles.success,
+        });
+        // alert("User role updated successfully");
+
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+const handleRemoveOrgUser = async (item: UserTenantRole) => {
+    const confirmDelete = window.confirm(
+        "Are you sure you want to remove this user from the organization?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+        const response = await fetch(
+            `http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}/remove`,
+            {
+                method: "PATCH"
+            }
+        );
+
+        if (!response.ok) {
+                const data = await response.json().catch(() => null);
+
+    throw new Error(data?.message || "Failed to remove user");
+        }
+
+        // remove from UI immediately
+        setOrgUsers((prev) =>
+            prev.filter((u) => u._id !== item._id)
+        );
+
+        toast.success("User removed from organization successfully", {
+            style: toastStyles.success,
+        });
+
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+
+
+
 
     return (
         <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
