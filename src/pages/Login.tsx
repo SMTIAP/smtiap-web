@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PasswordInput from "../components/PasswordInput";
 import axios from "axios";
 import { GoogleIcon, GithubIcon, LinkedInIcon } from "./AuthPage";
 import { useNavigate } from "react-router-dom";
@@ -105,9 +106,8 @@ export default function Login() {
           required
         />
 
-        <input
+        <PasswordInput
           className="w-full py-[11px] px-[16px] border-none rounded-[10px] bg-[#f0f1f7] font-nunito text-[14px] font-semibold text-[#333] outline-none mb-[12px] transition-all duration-200 placeholder:text-[#aaa] placeholder:font-medium focus:bg-[#ebebf8] focus:ring-[2.5px] focus:ring-[#7b6ee0]/35"
-          type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
