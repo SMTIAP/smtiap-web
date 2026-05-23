@@ -55,19 +55,14 @@ export const updateUserRole = async (req: Request, res: Response) => {
         .json({ message: "Forbidden: user not in your tenant" });
     }
 
-    // Update role in both UserTenantRole and User
-    await UserTenantRole.findOneAndUpdate(
+    // Update role only in UserTenantRole — do NOT touch User.role (that is a global role)
+    const updated = await UserTenantRole.findOneAndUpdate(
       { userId, tenantId: membership.tenantId },
-      { role },
-    );
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
       { role },
       { new: true },
     );
 
-    res.status(200).json(updatedUser);
+    res.status(200).json(updated);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

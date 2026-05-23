@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { BarChart3, ChevronLeft, StopCircle, X } from "lucide-react";
 import AllResponsesTable from "../components/AllResponsesTable";
+import { useTenant } from "../contexts/TenantContext";
 
 interface Question {
   _id: string;
@@ -74,10 +75,22 @@ export default function SurveyResults() {
   const [activeResponseIndex, setActiveResponseIndex] = useState(0);
   const [stopping, setStopping] = useState(false);
   const [showStopModal, setShowStopModal] = useState(false);
+  const { activeTenant, isSystemContext } = useTenant();
+  const effectiveRole =
+    !isSystemContext && activeTenant ? activeTenant.role : null;
+  const canModify = effectiveRole
+    ? ["super_admin", "admin", "creator"].includes(effectiveRole)
+    : true;
 
   const token = localStorage.getItem("token");
   const authHeaders = (): Record<string, string> => ({
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(() => {
+      const id = localStorage.getItem("activeTenantId");
+      return id && id !== "__system__"
+        ? { "x-tenant-id": id }
+        : ({} as Record<string, string>);
+    })(),
   });
 
   // Fetches survey structure and all submitted responses in parallel
@@ -175,8 +188,8 @@ export default function SurveyResults() {
                 <ChevronLeft size={14} /> Back to surveys
               </button>
 
-              {/* Stop button only visible when survey is running */}
-              {isRunning && (
+              {/* Stop button only visible when survey is running and user can modify */}
+              {isRunning && canModify && (
                 <button
                   onClick={() => setShowStopModal(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-bold hover:bg-red-100 transition-all"

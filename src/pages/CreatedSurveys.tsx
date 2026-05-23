@@ -17,7 +17,7 @@ import {
   CopyPlus,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-
+import { useTenant } from "../contexts/TenantContext";
 interface SurveyItem {
   _id: string;
   surveyTitle?: string;
@@ -94,6 +94,12 @@ const ShareModal = ({
   const authHeaders = {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(() => {
+      const id = localStorage.getItem("activeTenantId");
+      return id && id !== "__system__"
+        ? { "x-tenant-id": id }
+        : ({} as Record<string, string>);
+    })(),
   };
   const surveyLink = `${window.location.origin}/take-survey/${survey._id}`;
   const [copied, setCopied] = useState(false);
@@ -292,6 +298,12 @@ const ShareModal = ({
 
 export default function CreatedSurveys() {
   const navigate = useNavigate();
+  const { activeTenant, isSystemContext } = useTenant();
+  const effectiveRole =
+    !isSystemContext && activeTenant ? activeTenant.role : null; // system context — check user.role from API
+  const canCreate = effectiveRole
+    ? ["super_admin", "admin", "creator"].includes(effectiveRole)
+    : true; // system context: assume can create
   const [activeTab, setActiveTab] = useState("All");
   const [surveys, setSurveys] = useState<SurveyItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -322,9 +334,12 @@ export default function CreatedSurveys() {
   }, []);
 
   const handleCardClick = (survey: SurveyItem) => {
-    if (survey.status === "Draft")
-      navigate("/add-questions", { state: { surveyId: survey._id } });
-    else if (survey.status === "Running" || survey.status === "Finished")
+    if (survey.status === "Draft") {
+      // Viewers cannot edit — redirect to results instead
+      if (canCreate)
+        navigate("/add-questions", { state: { surveyId: survey._id } });
+      else navigate(`/survey-results/${survey._id}`);
+    } else if (survey.status === "Running" || survey.status === "Finished")
       navigate(`/survey-results/${survey._id}`);
   };
 
@@ -342,6 +357,12 @@ export default function CreatedSurveys() {
   const authHeaders = (): Record<string, string> => ({
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(() => {
+      const id = localStorage.getItem("activeTenantId");
+      return id && id !== "__system__"
+        ? { "x-tenant-id": id }
+        : ({} as Record<string, string>);
+    })(),
   });
 
   // Copy survey — duplicates form structure only, no responses
@@ -462,15 +483,17 @@ export default function CreatedSurveys() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/templates")}
-              className="group cursor-pointer py-2 px-3 flex justify-center items-center rounded-md bg-indigo-600 text-white transition-opacity hover:opacity-90"
-            >
-              <Plus
-                size={16}
-                className="group-hover:rotate-90 transition-transform duration-300"
-              />
-            </button>
+            {canCreate && (
+              <button
+                onClick={() => navigate("/templates")}
+                className="group cursor-pointer py-2 px-3 flex justify-center items-center rounded-md bg-indigo-600 text-white transition-opacity hover:opacity-90"
+              >
+                <Plus
+                  size={16}
+                  className="group-hover:rotate-90 transition-transform duration-300"
+                />
+              </button>
+            )}
             <button
               onClick={() => navigate("/admin")}
               className="cursor-pointer text-nowrap py-2 px-6 flex justify-center items-center gap-2 rounded-md bg-[#1E293B] dark:bg-slate-700 text-white font-inter text-sm font-medium transition-opacity hover:opacity-90"
@@ -532,33 +555,37 @@ export default function CreatedSurveys() {
                       </button>
                     )}
 
-                    {/* Copy button — all surveys */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleCopyClick(e, survey)}
-                      disabled={isCopying}
-                      className="w-8 h-8 rounded-full bg-white/95 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-violet-600 hover:border-violet-200 hover:bg-violet-50 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
-                      title="Make a copy"
-                    >
-                      {isCopied ? (
-                        <Check size={13} className="text-emerald-500" />
-                      ) : isCopying ? (
-                        <div className="w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <CopyPlus size={13} />
-                      )}
-                    </button>
+                    {/* Copy button — all surveys (hidden for viewers) */}
+                    {canCreate && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleCopyClick(e, survey)}
+                        disabled={isCopying}
+                        className="w-8 h-8 rounded-full bg-white/95 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-violet-600 hover:border-violet-200 hover:bg-violet-50 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="Make a copy"
+                      >
+                        {isCopied ? (
+                          <Check size={13} className="text-emerald-500" />
+                        ) : isCopying ? (
+                          <div className="w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <CopyPlus size={13} />
+                        )}
+                      </button>
+                    )}
 
-                    {/* Delete */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleDeleteClick(e, survey)}
-                      disabled={deletingSurveyId === survey._id}
-                      className="w-8 h-8 rounded-full bg-white/95 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-rose-500 hover:border-rose-200 hover:bg-rose-50 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
-                      title="Delete survey"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {/* Delete — hidden for viewers */}
+                    {canCreate && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteClick(e, survey)}
+                        disabled={deletingSurveyId === survey._id}
+                        className="w-8 h-8 rounded-full bg-white/95 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-rose-500 hover:border-rose-200 hover:bg-rose-50 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="Delete survey"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
 

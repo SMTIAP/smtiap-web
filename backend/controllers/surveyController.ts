@@ -149,6 +149,20 @@ export const createSurvey = async (req: Request, res: Response) => {
     const user = reqUser(req);
     const activeTenantId = reqActiveTenantId(req);
 
+    // Check role-based access: viewers and billing managers cannot create surveys
+    const memberships: any[] = (req as any).memberships ?? [];
+    const activeMembership = activeTenantId
+      ? memberships.find((m: any) => String(m.tenantId) === activeTenantId)
+      : null;
+    const role = activeMembership?.role ?? user?.role ?? "admin";
+    const createAllowed = ["super_admin", "admin", "creator"];
+    if (!createAllowed.includes(role)) {
+      res.status(403).json({
+        message: "Forbidden: your role does not allow creating surveys",
+      });
+      return;
+    }
+
     const survey = new Survey({
       surveyTitle,
       description,
@@ -221,11 +235,37 @@ export const getSurveyById = async (req: Request, res: Response) => {
   }
 };
 
-// PUT /api/surveys/:id — Updates a survey (with tenant/ownership check)
+/**
+ * Check if the authenticated user's role allows editing/publishing surveys.
+ * Allowed: super_admin, admin, creator.  Blocked: viewer, billing_manager.
+ * Returns true if allowed, or sends a 403 response and returns false.
+ */
+const checkEditPermission = (req: Request, res: Response): boolean => {
+  const user = reqUser(req);
+  const memberships: any[] = (req as any).memberships ?? [];
+  const activeTenantId = reqActiveTenantId(req);
+  const activeMembership = activeTenantId
+    ? memberships.find((m: any) => String(m.tenantId) === activeTenantId)
+    : null;
+  const role = activeMembership?.role ?? user?.role ?? "admin";
+  const editAllowed = ["super_admin", "admin", "creator"];
+  if (!editAllowed.includes(role)) {
+    res
+      .status(403)
+      .json({
+        message: "Forbidden: your role does not allow modifying surveys",
+      });
+    return false;
+  }
+  return true;
+};
+
+// PUT /api/surveys/:id — Updates a survey (with tenant/ownership + role check)
 export const updateSurvey = async (req: Request, res: Response) => {
   try {
     const survey = await verifySurveyAccess(req, res, req.params.id);
     if (!survey) return;
+    if (!checkEditPermission(req, res)) return;
 
     const updated = await Survey.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -249,6 +289,7 @@ export const updateStatus = async (req: Request, res: Response) => {
 
     const survey = await verifySurveyAccess(req, res, req.params.id);
     if (!survey) return;
+    if (!checkEditPermission(req, res)) return;
 
     const updated = await Survey.findByIdAndUpdate(
       req.params.id,
@@ -267,6 +308,7 @@ export const deleteSurvey = async (req: Request, res: Response) => {
   try {
     const survey = await verifySurveyAccess(req, res, req.params.id);
     if (!survey) return;
+    if (!checkEditPermission(req, res)) return;
 
     await Survey.findByIdAndDelete(req.params.id);
     logAudit(req, "delete", req.params.id);

@@ -1077,10 +1077,16 @@ export default function AddQuestions() {
         try {
           setLoadingSurvey(true);
           const token = localStorage.getItem("token");
+          const tenantId_hdr = localStorage.getItem("activeTenantId");
           const res = await fetch(
             `http://localhost:5000/api/surveys/${surveyId}`,
             {
-              headers: token ? { Authorization: `Bearer ${token}` } : {},
+              headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                ...(tenantId_hdr && tenantId_hdr !== "__system__"
+                  ? { "x-tenant-id": tenantId_hdr }
+                  : {}),
+              },
               credentials: "include",
             },
           );
@@ -1479,12 +1485,16 @@ export default function AddQuestions() {
 
               try {
                 const token = localStorage.getItem("token");
+                const tenantId_hdr = localStorage.getItem("activeTenantId");
                 const res = await fetch(url, {
                   method,
                   credentials: "include",
                   headers: {
                     "Content-Type": "application/json",
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    ...(tenantId_hdr && tenantId_hdr !== "__system__"
+                      ? { "x-tenant-id": tenantId_hdr }
+                      : {}),
                   },
                   body: JSON.stringify({
                     surveyTitle,
@@ -1561,12 +1571,16 @@ export default function AddQuestions() {
                 let finalId = surveyId;
                 try {
                   const token = localStorage.getItem("token");
+                  const tenantId_hdr = localStorage.getItem("activeTenantId");
                   const res = await fetch(url, {
                     method,
                     credentials: "include",
                     headers: {
                       "Content-Type": "application/json",
                       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                      ...(tenantId_hdr && tenantId_hdr !== "__system__"
+                        ? { "x-tenant-id": tenantId_hdr }
+                        : {}),
                     },
                     body: JSON.stringify({
                       surveyTitle,

@@ -99,6 +99,12 @@ export default function SearchTemplate() {
   const authHeaders = (): Record<string, string> => ({
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(() => {
+      const id = localStorage.getItem("activeTenantId");
+      return id && id !== "__system__"
+        ? { "x-tenant-id": id }
+        : ({} as Record<string, string>);
+    })(),
   });
 
   useEffect(() => {

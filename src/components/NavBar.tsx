@@ -12,18 +12,49 @@ import {
   Users,
   Sun,
   Moon,
+  Check,
+  Building2,
+  User,
+  type LucideIcon,
 } from "lucide-react";
 import api from "../api/api";
 import { useDarkMode } from "../App";
+import { useTenant } from "../contexts/TenantContext";
 
-const links = [
-  { to: "/admin", label: "Dashboard", icon: LayoutGrid },
-  { to: "/created-surveys", label: "Surveys", icon: ClipboardList },
-  { to: "/templates", label: "Templates", icon: FileText },
-  { to: "/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/subscription", label: "Subscription", icon: CreditCard },
-  { to: "/role-management", label: "Employees", icon: Users },
-];
+const roleLinks: Record<
+  string,
+  { to: string; label: string; icon: LucideIcon }[]
+> = {
+  super_admin: [
+    { to: "/admin", label: "Dashboard", icon: LayoutGrid },
+    { to: "/created-surveys", label: "Surveys", icon: ClipboardList },
+    { to: "/templates", label: "Templates", icon: FileText },
+    { to: "/analytics", label: "Analytics", icon: BarChart3 },
+    { to: "/subscription", label: "Subscription", icon: CreditCard },
+    { to: "/role-management", label: "Employees", icon: Users },
+  ],
+  admin: [
+    { to: "/admin", label: "Dashboard", icon: LayoutGrid },
+    { to: "/created-surveys", label: "Surveys", icon: ClipboardList },
+    { to: "/templates", label: "Templates", icon: FileText },
+    { to: "/analytics", label: "Analytics", icon: BarChart3 },
+    { to: "/subscription", label: "Subscription", icon: CreditCard },
+    { to: "/role-management", label: "Employees", icon: Users },
+  ],
+  creator: [
+    { to: "/admin", label: "Dashboard", icon: LayoutGrid },
+    { to: "/created-surveys", label: "Surveys", icon: ClipboardList },
+    { to: "/templates", label: "Templates", icon: FileText },
+    { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  ],
+  billing_manager: [
+    { to: "/subscription", label: "Billing", icon: CreditCard },
+  ],
+  viewer: [
+    { to: "/admin", label: "Dashboard", icon: LayoutGrid },
+    { to: "/created-surveys", label: "Surveys", icon: ClipboardList },
+  ],
+};
 
 export default function NavBar() {
   const location = useLocation();
@@ -39,6 +70,13 @@ export default function NavBar() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { darkMode, toggleDarkMode } = useDarkMode();
+  const {
+    tenants,
+    activeTenant,
+    setActiveTenant,
+    clearActiveTenant,
+    isSystemContext,
+  } = useTenant();
 
   useEffect(() => {
     let mounted = true;
@@ -60,12 +98,17 @@ export default function NavBar() {
           setUser(null);
         }
       });
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [location.pathname]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     }
@@ -86,21 +129,32 @@ export default function NavBar() {
     navigate("/auth");
   };
 
-  const initials = user?.username ? user.username.slice(0, 2).toUpperCase() : "?";
+  const initials = user?.username
+    ? user.username.slice(0, 2).toUpperCase()
+    : "?";
 
   const roleLabels: Record<string, string> = {
     super_admin: "Organization Admin",
-    admin: "Tenant Admin",
+    admin: "Admin",
     viewer: "Viewer",
     creator: "Creator",
     billing_manager: "Billing Manager",
   };
 
+  // Resolve effective role:
+  // - System context (no tenant) → user.role from the User model
+  // - Tenant context → activeTenant.role from UserTenantRole
+  const effectiveRole = isSystemContext
+    ? (user?.role ?? "admin")
+    : (activeTenant?.role ?? user?.role ?? "admin");
+
   const getDashboardRoute = (role?: string) => {
     switch (role) {
       case "creator":
       case "creater":
-        return "/creator-dashboard";
+        return "/admin";
+      case "billing_manager":
+        return "/subscription";
       case "super_admin":
       case "admin":
       default:
@@ -108,13 +162,16 @@ export default function NavBar() {
     }
   };
 
-  // Hide dark mode toggle on landing page
+  const links = roleLinks[effectiveRole] ?? roleLinks.admin;
+
+  // Show theme toggle on authenticated pages only
   const showDarkToggle = !isLanding;
 
   return (
-    <nav className={`sticky top-0 z-100 w-full h-17.5 transition-colors duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.08)] ${isLanding ? "bg-white" : "bg-white dark:bg-[#0F172A] dark:shadow-[0_1px_3px_rgba(0,0,0,0.4)]"}`}>
+    <nav
+      className={`sticky top-0 z-100 w-full h-17.5 transition-colors duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.08)] ${isLanding ? "bg-white" : "bg-white dark:bg-[#0F172A] dark:shadow-[0_1px_3px_rgba(0,0,0,0.4)]"}`}
+    >
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
-
         {/* Logo */}
         <Link
           to={isAuthenticated ? "/admin" : "/"}
@@ -149,7 +206,6 @@ export default function NavBar() {
         )}
 
         <div className="flex items-center gap-3">
-
           {/* Dark Mode Toggle — hidden on landing page */}
           {showDarkToggle && (
             <button
@@ -157,10 +213,11 @@ export default function NavBar() {
               className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
               title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
             >
-              {darkMode
-                ? <Sun size={16} className="text-yellow-400" />
-                : <Moon size={16} className="text-slate-500" />
-              }
+              {darkMode ? (
+                <Sun size={16} className="text-yellow-400" />
+              ) : (
+                <Moon size={16} className="text-slate-500" />
+              )}
             </button>
           )}
 
@@ -223,6 +280,34 @@ export default function NavBar() {
                           </p>
                         </div>
                       </div>
+
+                      {/* Active Context Badge */}
+                      <div className="mt-2 flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
+                        {isSystemContext ? (
+                          <>
+                            <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                            <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 truncate">
+                              My Account
+                            </span>
+                            <span className="ml-auto text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase">
+                              {roleLabels[user?.role ?? ""] ||
+                                user?.role ||
+                                "Admin"}
+                            </span>
+                          </>
+                        ) : activeTenant ? (
+                          <>
+                            <Building2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                            <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 truncate">
+                              {activeTenant.tenantId.name}
+                            </span>
+                            <span className="ml-auto text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase">
+                              {roleLabels[activeTenant.role] ||
+                                activeTenant.role}
+                            </span>
+                          </>
+                        ) : null}
+                      </div>
                     </div>
 
                     {/* Dark mode toggle inside dropdown */}
@@ -232,29 +317,100 @@ export default function NavBar() {
                         className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                       >
                         <span className="flex items-center gap-2">
-                          {darkMode
-                            ? <Sun className="w-4 h-4 text-yellow-400" />
-                            : <Moon className="w-4 h-4 text-slate-400" />
-                          }
+                          {darkMode ? (
+                            <Sun className="w-4 h-4 text-yellow-400" />
+                          ) : (
+                            <Moon className="w-4 h-4 text-slate-400" />
+                          )}
                           {darkMode ? "Light Mode" : "Dark Mode"}
                         </span>
-                        <span className={`w-8 h-4 rounded-full relative transition-all duration-200 ${darkMode ? "bg-indigo-600" : "bg-slate-200"}`}>
-                          <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-200 shadow-sm ${darkMode ? "left-4" : "left-0.5"}`} />
+                        <span
+                          className={`w-8 h-4 rounded-full relative transition-all duration-200 ${darkMode ? "bg-indigo-600" : "bg-slate-200"}`}
+                        >
+                          <span
+                            className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-200 shadow-sm ${darkMode ? "left-4" : "left-0.5"}`}
+                          />
                         </span>
                       </button>
                     </div>
 
-                    {user.role && (
+                    {/* Context Switcher — always shown when user has tenants */}
+                    {tenants.length > 0 && (
                       <div className="px-2 pt-2 pb-1 border-b border-slate-100 dark:border-slate-700">
+                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                          Switch Context
+                        </div>
+
+                        {/* "My Account" — system-level context */}
                         <button
-                          onClick={() => { setDropdownOpen(false); navigate(getDashboardRoute(user.role)); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors border-2 border-transparent hover:border-indigo-100 dark:hover:border-indigo-800"
+                          onClick={() => {
+                            clearActiveTenant();
+                            setDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold transition-colors mb-0.5 ${
+                            isSystemContext
+                              ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700"
+                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border border-transparent"
+                          }`}
                         >
-                          <LayoutDashboard className="w-4 h-4" />
-                          {roleLabels[user.role] || "User"} Dashboard
+                          <User className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate flex-1 text-left">
+                            My Account
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase shrink-0">
+                            {roleLabels[user?.role ?? ""] ||
+                              user?.role ||
+                              "Admin"}
+                          </span>
+                          {isSystemContext && (
+                            <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                          )}
                         </button>
+
+                        {/* Tenant entries */}
+                        {tenants.map((t) => (
+                          <button
+                            key={t.tenantId._id}
+                            onClick={() => {
+                              setActiveTenant(t);
+                              setDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold transition-colors mb-0.5 ${
+                              !isSystemContext &&
+                              activeTenant?.tenantId._id === t.tenantId._id
+                                ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700"
+                                : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border border-transparent"
+                            }`}
+                          >
+                            <Building2 className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate flex-1 text-left">
+                              {t.tenantId.name}
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase shrink-0">
+                              {roleLabels[t.role] || t.role}
+                            </span>
+                            {!isSystemContext &&
+                              activeTenant?.tenantId._id === t.tenantId._id && (
+                                <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                              )}
+                          </button>
+                        ))}
                       </div>
                     )}
+
+                    {/* Dashboard link */}
+                    <div className="px-2 pt-2 pb-1 border-b border-slate-100 dark:border-slate-700">
+                      <button
+                        onClick={() => {
+                          setDropdownOpen(false);
+                          navigate(getDashboardRoute(effectiveRole));
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors border-2 border-transparent hover:border-indigo-100 dark:hover:border-indigo-800"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        {roleLabels[effectiveRole] || "User"} Dashboard
+                      </button>
+                    </div>
 
                     <div className="px-2 pt-1">
                       <button

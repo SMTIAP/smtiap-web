@@ -75,7 +75,27 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const getMe = async (req: Request, res: Response): Promise<void> => {
-  res.json((req as any).user);
+  const user = (req as any).user;
+  if (!user) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  // Fetch tenant memberships
+  const memberships = await UserTenantRole.find({ userId: user._id })
+    .populate("tenantId", "name domain plan status")
+    .lean()
+    .catch(() => []);
+
+  const tenants = memberships.map((m: any) => ({
+    tenantId: m.tenantId,
+    role: m.role,
+  }));
+
+  res.json({
+    ...user.toObject(),
+    tenants,
+  });
 };
 
 export const getMyTenants = async (

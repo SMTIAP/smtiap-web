@@ -49,6 +49,11 @@ export default function RoleManagement() {
   const authHeaders = (): Record<string, string> => ({
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    // Only send x-tenant-id when a real tenant is active (not system context)
+    ...(() => {
+      const id = localStorage.getItem("activeTenantId");
+      return id && id !== "__system__" ? { "x-tenant-id": id } : {};
+    })(),
   });
 
   useEffect(() => {
@@ -139,7 +144,7 @@ export default function RoleManagement() {
     );
     if (!confirmAdd) return;
     try {
-      const newRole = selectedRole[user._id] || user.role;
+      const newRole = selectedRole[user._id] || "viewer";
       const response = await fetch(
         `http://localhost:5000/api/role-management/${user._id}/${tenant._id}`,
         {

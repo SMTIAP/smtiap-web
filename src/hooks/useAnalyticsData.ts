@@ -58,7 +58,11 @@ export function useAnalyticsData(
   // Helper: auth headers for fetch calls
   const authHeaders = (): Record<string, string> => {
     const token = localStorage.getItem("token");
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const id = localStorage.getItem("activeTenantId");
+    if (id && id !== "__system__") headers["x-tenant-id"] = id;
+    return headers;
   };
 
   // Effect: load finished surveys (selector view)
