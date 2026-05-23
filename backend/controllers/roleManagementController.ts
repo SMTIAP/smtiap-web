@@ -3,9 +3,42 @@ import User from "../models/User.js";
 import Tenant from "../models/Tenant.js";
 import UserTenantRole from "../models/UserTenantRole.js";
 
+/** Get the authenticated user's tenant IDs from the request (set by loadTenant middleware). */
+const reqTenantIds = (req: Request): string[] =>
+  ((req as any).tenantIds as string[]) ?? [];
+
+/** Check if user has access to a specific tenant. */
+const hasTenantAccess = (req: Request, tenantId: string): boolean =>
+  reqTenantIds(req).includes(tenantId);
+
+// ── Controllers ──────────────────────────────────────────────────────
+
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
-    const users = await User.find();
+    const tenantIds = reqTenantIds(req);
+    if (tenantIds.length === 0) {
+      res.status(200).json([]);
+      return;
+    }
+
+    // Find all users that belong to the same tenant(s) as the requester
+    const memberships = await UserTenantRole.find({
+      tenantId: { $in: tenantIds },
+    })
+      .populate("userId", "username email role")
+      .lean();
+
+    // Deduplicate users
+    const seen = new Set<string>();
+    const users = memberships
+      .filter((m) => {
+        const id = String((m.userId as any)?._id);
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      })
+      .map((m) => m.userId as any);
+
     res.status(200).json(users);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -14,7 +47,12 @@ export const getAllUsers = async (req: Request, res: Response) => {
 
 export const getAllTenants = async (req: Request, res: Response) => {
   try {
-    const tenants = await Tenant.find();
+    const tenantIds = reqTenantIds(req);
+    if (tenantIds.length === 0) {
+      res.status(200).json([]);
+      return;
+    }
+    const tenants = await Tenant.find({ _id: { $in: tenantIds } });
     res.status(200).json(tenants);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -26,17 +64,32 @@ export const updateUserRole = async (req: Request, res: Response) => {
     const { userId } = req.params;
     const { role } = req.body;
 
-    const updateUser = await User.findByIdAndUpdate(
+    // Only update roles for users within the same tenant
+    const tenantIds = reqTenantIds(req);
+    const membership = await UserTenantRole.findOne({
+      userId,
+      tenantId: { $in: tenantIds },
+    });
+
+    if (!membership) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: user not in your tenant" });
+    }
+
+    // Update role in both UserTenantRole and User
+    await UserTenantRole.findOneAndUpdate(
+      { userId, tenantId: membership.tenantId },
+      { role },
+    );
+
+    const updatedUser = await User.findByIdAndUpdate(
       userId,
       { role },
       { new: true },
     );
 
-    if (!updateUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.status(200).json(updateUser);
+    res.status(200).json(updatedUser);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -46,6 +99,13 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.params;
     const { role } = req.body;
+
+    // Verify the requester belongs to this tenant
+    if (!hasTenantAccess(req, tenantId)) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: you do not belong to this tenant" });
+    }
 
     const exists = await UserTenantRole.findOne({ userId, tenantId });
 
@@ -69,7 +129,13 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
 
 export const getUserTenantData = async (req: Request, res: Response) => {
   try {
-    const data = await UserTenantRole.find()
+    const tenantIds = reqTenantIds(req);
+    if (tenantIds.length === 0) {
+      res.status(200).json([]);
+      return;
+    }
+
+    const data = await UserTenantRole.find({ tenantId: { $in: tenantIds } })
       .populate("userId", "username email")
       .populate("tenantId", "name");
 
@@ -83,6 +149,12 @@ export const updateOrgRole = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.params;
     const { role } = req.body;
+
+    if (!hasTenantAccess(req, tenantId)) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: you do not belong to this tenant" });
+    }
 
     const updated = await UserTenantRole.findOneAndUpdate(
       { userId, tenantId },
@@ -105,6 +177,12 @@ export const updateOrgRole = async (req: Request, res: Response) => {
 export const removeOrgUser = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.params;
+
+    if (!hasTenantAccess(req, tenantId)) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: you do not belong to this tenant" });
+    }
 
     const deleted = await UserTenantRole.findOneAndDelete({
       userId,

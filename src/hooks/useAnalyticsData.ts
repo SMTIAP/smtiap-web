@@ -55,6 +55,12 @@ export function useAnalyticsData(
   const [finishedSurveys, setFinishedSurveys] = useState<SurveyListItem[]>([]);
   const [surveysLoading, setSurveysLoading] = useState(true);
 
+  // Helper: auth headers for fetch calls
+  const authHeaders = (): Record<string, string> => {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   // Effect: load finished surveys (selector view)
   // Only runs when there is no surveyId in the URL.
   useEffect(() => {
@@ -65,7 +71,10 @@ export function useAnalyticsData(
       }
       setSurveysLoading(true);
       try {
-        const response = await fetch(`${apiBaseUrl}/api/surveys`);
+        const response = await fetch(`${apiBaseUrl}/api/surveys`, {
+          headers: authHeaders(),
+          credentials: "include",
+        });
         const data = await response.json();
         const surveyList = Array.isArray(data)
           ? (data as SurveyListItem[])

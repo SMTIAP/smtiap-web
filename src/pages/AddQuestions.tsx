@@ -1076,8 +1076,13 @@ export default function AddQuestions() {
       const loadSurvey = async () => {
         try {
           setLoadingSurvey(true);
+          const token = localStorage.getItem("token");
           const res = await fetch(
             `http://localhost:5000/api/surveys/${surveyId}`,
+            {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+              credentials: "include",
+            },
           );
           if (res.ok) {
             const data = await res.json();

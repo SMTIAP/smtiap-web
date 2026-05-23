@@ -4,6 +4,7 @@ import {
   login,
   logout,
   getMe,
+  getMyTenants,
   forgotPassword,
   resetPassword,
 } from "../controllers/userController.js";
@@ -19,6 +20,7 @@ router.post("/register", register);
 router.post("/login", login);
 router.post("/logout", protect, logout);
 router.get("/me", protect, getMe);
+router.get("/me/tenants", protect, getMyTenants);
 router.post("/forgot-password", forgotPassword);
 router.put("/reset-password/:token", resetPassword);
 

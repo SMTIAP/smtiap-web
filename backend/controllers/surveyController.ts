@@ -1,10 +1,119 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import Survey from "../models/Survey.js";
 import AuditLog from "../models/AuditLog.js";
 
+// ── Helpers ──────────────────────────────────────────────────────────
+
+/** Get typed properties from the extended request. */
+const reqUser = (req: Request): { _id?: string } | undefined =>
+  (req as any).user as { _id?: string } | undefined;
+
+const reqUserId = (req: Request): string | undefined => {
+  const id = (req as any).user?._id;
+  return id ? String(id) : undefined;
+};
+
+const reqTenantIds = (req: Request): string[] =>
+  ((req as any).tenantIds as string[]) ?? [];
+
+const reqActiveTenantId = (req: Request): string | null =>
+  (req as any).activeTenantId as string | null;
+
+/**
+ * Build a data-isolation filter for listing surveys.
+ *
+ * Priority order (first match wins):
+ *   1. User HAS tenant memberships → scope by tenantId only
+ *   2. User is authenticated but has NO tenant → scope by createdBy (their own surveys)
+ *   3. Not authenticated → no surveys visible via this endpoint (public users use public endpoints)
+ */
+const buildSurveyFilter = (req: Request): Record<string, unknown> | null => {
+  const tids = reqTenantIds(req);
+  const userId = reqUserId(req);
+
+  if (tids.length > 0) {
+    // User belongs to one or more tenants → tenant-scoped
+    return { tenantId: { $in: tids } };
+  }
+
+  if (userId) {
+    // User is authenticated but has NO tenant → own surveys only
+    return { createdBy: new mongoose.Types.ObjectId(userId) };
+  }
+
+  // Not authenticated → return null (caller handles empty result)
+  return null;
+};
+
+/**
+ * Verify the authenticated user has access to a survey for management operations.
+ * Returns the survey doc, or sends an error response and returns null.
+ *
+ * Rules:
+ *   - Survey has tenantId AND user has tenants → must be a member of that tenant
+ *   - Survey has tenantId but user has NO tenants → FORBIDDEN
+ *   - Survey has no tenantId → must be the creator (createdBy)
+ *   - Survey has no tenantId AND no createdBy → orphan, FORBIDDEN
+ */
+const verifySurveyAccess = async (
+  req: Request,
+  res: Response,
+  surveyId: string,
+) => {
+  const survey = await Survey.findById(surveyId);
+  if (!survey) {
+    res.status(404).json({ message: "Survey not found" });
+    return null;
+  }
+
+  const tids = reqTenantIds(req);
+  const userId = reqUserId(req);
+
+  if (survey.tenantId) {
+    // Survey belongs to a tenant
+    if (tids.length === 0) {
+      // User has no tenant → cannot access tenant-owned surveys
+      res.status(403).json({
+        message: "Forbidden: you do not have access to this survey",
+      });
+      return null;
+    }
+    if (!tids.includes(String(survey.tenantId))) {
+      // User belongs to a different tenant
+      res.status(403).json({
+        message: "Forbidden: you do not have access to this survey",
+      });
+      return null;
+    }
+    // User belongs to the survey's tenant → allowed
+    return survey;
+  }
+
+  // Survey has no tenantId (personal/legacy survey)
+  if (!survey.createdBy) {
+    // Orphan survey with no owner → cannot be managed
+    res
+      .status(403)
+      .json({ message: "Forbidden: this survey cannot be accessed" });
+    return null;
+  }
+
+  if (userId && String(survey.createdBy) === userId) {
+    // User is the creator → allowed
+    return survey;
+  }
+
+  // Not the creator
+  res
+    .status(403)
+    .json({ message: "Forbidden: you do not have access to this survey" });
+  return null;
+};
+
 // Records an audit trail entry for survey actions
 const logAudit = (req: Request, action: string, entityId: any) => {
-  const user = (req as any).user;
+  const user = reqUser(req);
   if (!user) return;
   AuditLog.create({
     user_id: user._id,
@@ -14,13 +123,22 @@ const logAudit = (req: Request, action: string, entityId: any) => {
   } as any).catch(() => {});
 };
 
-// POST /api/surveys — Creates a new survey with pages and branding settings
+// ── Controllers ──────────────────────────────────────────────────────
+
+// POST /api/surveys — Creates a new survey scoped to the user's active tenant
 export const createSurvey = async (req: Request, res: Response) => {
   try {
     const {
-      surveyTitle, description, websiteUrl, logo,
-      themeColor, primaryColor, customizeBranding,
-      isAnonymous, pages, status, tenantId,
+      surveyTitle,
+      description,
+      websiteUrl,
+      logo,
+      themeColor,
+      primaryColor,
+      customizeBranding,
+      isAnonymous,
+      pages,
+      status,
     } = req.body;
 
     if (!surveyTitle) {
@@ -28,12 +146,22 @@ export const createSurvey = async (req: Request, res: Response) => {
       return;
     }
 
-    const user = (req as any).user;
+    const user = reqUser(req);
+    const activeTenantId = reqActiveTenantId(req);
+
     const survey = new Survey({
-      surveyTitle, description, websiteUrl, logo,
-      themeColor, primaryColor, customizeBranding,
-      isAnonymous, pages, status,
-      tenantId: tenantId ?? null,
+      surveyTitle,
+      description,
+      websiteUrl,
+      logo,
+      themeColor,
+      primaryColor,
+      customizeBranding,
+      isAnonymous,
+      pages,
+      status,
+      // Auto-assign tenantId from user's active tenant membership
+      tenantId: activeTenantId ?? null,
       createdBy: user?._id ?? null,
     });
 
@@ -45,12 +173,17 @@ export const createSurvey = async (req: Request, res: Response) => {
   }
 };
 
-// GET /api/surveys — Returns all surveys, optionally filtered by tenantId or status
+// GET /api/surveys — Returns surveys scoped to the user
 export const getSurveys = async (req: Request, res: Response) => {
   try {
-    const { tenantId, status } = req.query;
-    const filter: Record<string, unknown> = {};
-    if (tenantId) filter.tenantId = tenantId;
+    const filter = buildSurveyFilter(req);
+    // Unauthenticated requests get empty results via this management endpoint
+    if (!filter) {
+      res.json([]);
+      return;
+    }
+
+    const { status } = req.query;
     if (status) filter.status = status;
 
     const surveys = await Survey.find(filter).sort({ createdAt: -1 });
@@ -60,39 +193,52 @@ export const getSurveys = async (req: Request, res: Response) => {
   }
 };
 
-// GET /api/surveys/:id — Returns a single survey by ID
+// GET /api/surveys/:id — Returns a single survey
+// NOTE: This endpoint is intentionally left public (no `protect` middleware)
+//       so respondents can load surveys via TakeSurvey page.
+//       When the user IS authenticated (via loadTenant), we verify access.
+//       When NOT authenticated, any survey is readable (public survey-taking).
 export const getSurveyById = async (req: Request, res: Response) => {
   try {
-    const survey = await Survey.findById(req.params.id);
-    if (!survey) {
-      res.status(404).json({ message: "Survey not found" });
-      return;
+    const user = reqUser(req);
+
+    if (user) {
+      // Authenticated user → enforce isolation
+      const survey = await verifySurveyAccess(req, res, req.params.id);
+      if (!survey) return;
+      res.json(survey);
+    } else {
+      // Unauthenticated (public respondent) → anyone can read any survey
+      const survey = await Survey.findById(req.params.id);
+      if (!survey) {
+        res.status(404).json({ message: "Survey not found" });
+        return;
+      }
+      res.json(survey);
     }
-    res.json(survey);
   } catch (err) {
     res.status(500).json({ message: String(err) });
   }
 };
 
-// PUT /api/surveys/:id — Updates all survey fields including pages, branding and password settings
+// PUT /api/surveys/:id — Updates a survey (with tenant/ownership check)
 export const updateSurvey = async (req: Request, res: Response) => {
   try {
-    const survey = await Survey.findByIdAndUpdate(req.params.id, req.body, {
+    const survey = await verifySurveyAccess(req, res, req.params.id);
+    if (!survey) return;
+
+    const updated = await Survey.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
     });
-    if (!survey) {
-      res.status(404).json({ message: "Survey not found" });
-      return;
-    }
     logAudit(req, "update", survey._id);
-    res.json({ message: "Survey updated", survey });
+    res.json({ message: "Survey updated", survey: updated });
   } catch (err) {
     res.status(500).json({ message: String(err) });
   }
 };
 
-// PATCH /api/surveys/:id/status — Updates survey status between Draft, Running and Finished
+// PATCH /api/surveys/:id/status — Updates survey status (with tenant check)
 export const updateStatus = async (req: Request, res: Response) => {
   try {
     const { status } = req.body;
@@ -100,26 +246,30 @@ export const updateStatus = async (req: Request, res: Response) => {
       res.status(400).json({ message: "Invalid status" });
       return;
     }
-    const survey = await Survey.findByIdAndUpdate(
-      req.params.id, { status }, { new: true }
+
+    const survey = await verifySurveyAccess(req, res, req.params.id);
+    if (!survey) return;
+
+    const updated = await Survey.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true },
     );
-    if (!survey) {
-      res.status(404).json({ message: "Survey not found" });
-      return;
-    }
-    logAudit(req, `status_change_${status.toLowerCase()}`, survey._id);
-    res.json({ message: "Status updated", survey });
+    logAudit(req, `status_change_${status.toLowerCase()}`, updated!._id);
+    res.json({ message: "Status updated", survey: updated });
   } catch (err) {
     res.status(500).json({ message: String(err) });
   }
 };
 
-// DELETE /api/surveys/:id — Permanently removes a survey and logs the action
+// DELETE /api/surveys/:id — Permanently removes a survey (with tenant check)
 export const deleteSurvey = async (req: Request, res: Response) => {
   try {
-    const surveyId = req.params.id;
-    await Survey.findByIdAndDelete(surveyId);
-    logAudit(req, "delete", surveyId);
+    const survey = await verifySurveyAccess(req, res, req.params.id);
+    if (!survey) return;
+
+    await Survey.findByIdAndDelete(req.params.id);
+    logAudit(req, "delete", req.params.id);
     res.json({ message: "Survey deleted" });
   } catch (err) {
     res.status(500).json({ message: String(err) });
