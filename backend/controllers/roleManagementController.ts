@@ -15,30 +15,8 @@ const hasTenantAccess = (req: Request, tenantId: string): boolean =>
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
-    const tenantIds = reqTenantIds(req);
-    if (tenantIds.length === 0) {
-      res.status(200).json([]);
-      return;
-    }
-
-    // Find all users that belong to the same tenant(s) as the requester
-    const memberships = await UserTenantRole.find({
-      tenantId: { $in: tenantIds },
-    })
-      .populate("userId", "username email role")
-      .lean();
-
-    // Deduplicate users
-    const seen = new Set<string>();
-    const users = memberships
-      .filter((m) => {
-        const id = String((m.userId as any)?._id);
-        if (!id || seen.has(id)) return false;
-        seen.add(id);
-        return true;
-      })
-      .map((m) => m.userId as any);
-
+    // Return ALL users in the system so admins can search and invite them
+    const users = await User.find().select("username email role").lean();
     res.status(200).json(users);
   } catch (error: any) {
     res.status(500).json({ message: error.message });

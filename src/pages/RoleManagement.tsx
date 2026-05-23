@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import BackButton from "../components/BackButton";
 import { Search } from "lucide-react";
@@ -26,6 +26,7 @@ interface UserTenantRole {
 
 export default function RoleManagement() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [users, setUsers] = useState<User[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -68,7 +69,7 @@ export default function RoleManagement() {
       }
     };
     fetchUsers();
-  }, []);
+  }, [location.key]);
 
   useEffect(() => {
     const fetchTenants = async () => {
@@ -88,7 +89,7 @@ export default function RoleManagement() {
       }
     };
     fetchTenants();
-  }, []);
+  }, [location.key]);
 
   useEffect(() => {
     const fetchOrganizationData = async () => {
@@ -108,7 +109,7 @@ export default function RoleManagement() {
       }
     };
     fetchOrganizationData();
-  }, []);
+  }, [location.key]);
   let currentUserId = "";
   if (token) {
     const decoded: any = jwtDecode(token);
@@ -125,9 +126,12 @@ export default function RoleManagement() {
   const filteredOrgUsers = orgUsers.filter((item) =>
     item.tenantId.name.toLowerCase().includes(searchOrganization.toLowerCase()),
   );
-  const filteredOrganizations = tenants.filter(
-    (tenant) => tenant.createdBy === currentUserId,
-  );
+  // Debug: log tenants data
+  console.log("DEBUG tenants state:", tenants);
+  console.log("DEBUG tenants length:", tenants.length);
+
+  // Use all tenants the user belongs to (loadTenant middleware already filters by membership)
+  const filteredOrganizations = tenants;
 
   const handleAddUser = async (user: User, tenant: Tenant) => {
     const confirmAdd = window.confirm(
@@ -135,7 +139,7 @@ export default function RoleManagement() {
     );
     if (!confirmAdd) return;
     try {
-      const newRole = selectedRole[user._id];
+      const newRole = selectedRole[user._id] || user.role;
       const response = await fetch(
         `http://localhost:5000/api/role-management/${user._id}/${tenant._id}`,
         {
@@ -151,6 +155,12 @@ export default function RoleManagement() {
         return;
       }
       alert("User added successfully");
+      // Refresh organization members list
+      const updatedOrg = await fetch(
+        "http://localhost:5000/api/role-management/user-tenant",
+        { headers: authHeaders(), credentials: "include" },
+      );
+      setOrgUsers(await updatedOrg.json());
     } catch (err) {
       console.error(err);
     }
