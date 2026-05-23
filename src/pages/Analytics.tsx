@@ -95,7 +95,7 @@ export default function Analytics() {
   // Render: full analytics dashboard
   return (
     <div className="flex flex-col min-h-screen bg-[#F7FAFC] dark:bg-[#0F172A] font-inter text-[#0D141C] dark:text-white transition-colors duration-300">
-      {/* Component  - sticky page navbar */}
+    
       <AnalyticsTopBar />
 
       <main className="flex-1 flex flex-col items-center">

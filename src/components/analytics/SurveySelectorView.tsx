@@ -16,14 +16,17 @@ interface SurveySelectorViewProps {
 export default function SurveySelectorView({ surveysLoading, finishedSurveys }: SurveySelectorViewProps) {
   return (
     <div className="flex flex-col min-h-screen bg-[#F7FAFC] dark:bg-[#0F172A] font-inter text-[#0D141C] dark:text-white transition-colors duration-300">
-      <nav className="flex py-3 px-10 border-b border-[#E5E8EB] dark:border-slate-700 bg-white dark:bg-slate-800 w-full sticky top-0 z-20 transition-colors duration-300">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#E8EDF2] dark:bg-slate-700">
-            <BarChart size={20} className="text-[#0D141C] dark:text-white" />
+      <div className="sticky top-0 z-20 w-full">
+        <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+        <nav className="flex py-3 px-10 border-b border-[#E5E8EB] dark:border-slate-700 bg-white dark:bg-slate-800 w-full transition-colors duration-300">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#E8EDF2] dark:bg-slate-700">
+              <BarChart size={20} className="text-[#0D141C] dark:text-white" />
+            </div>
+            <h1 className="text-lg font-bold dark:text-white">Survey Analytics</h1>
           </div>
-          <h1 className="text-lg font-bold dark:text-white">Survey Analytics</h1>
-        </div>
-      </nav>
+        </nav>
+      </div>
 
       <main className="flex-1 max-w-300 mx-auto w-full px-6 py-10">
         <div className="mb-8">
