@@ -40,7 +40,12 @@ const userTenantRoleSchema = new Schema(
 // Prevent duplicate membership
 userTenantRoleSchema.index(
   { userId: 1, tenantId: 1 },
-  { unique: true }
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: "active",
+    },
+  }
 );
 
 export default model("UserTenantRole", userTenantRoleSchema);

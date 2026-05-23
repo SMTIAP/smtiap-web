@@ -10,7 +10,7 @@ router.get("/tenants", getAllTenants);
 router.put("/:userId/:tenantId", addUserToOrganization);
 router.put("/:userId/:tenantId/role", updateOrgRole);
 router.get("/user-tenant", getUserTenantData);
-router.delete("/:userId/:tenantId", removeOrgUser);
+router.patch("/:userId/:tenantId/remove", removeOrgUser);
 // router.get("/tenants/:userId/tenantId/role");
 
 export default router;
