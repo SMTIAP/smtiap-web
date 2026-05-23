@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import BackButton from '../components/BackButton';
 import { Search, Target } from 'lucide-react';
 import { jwtDecode } from "jwt-decode";
+import { toast } from "react-toastify";
+import { toastStyles } from "../utils/toastStyles";
 
 
 interface User {
@@ -57,7 +59,7 @@ export default function RoleManagement(){
                 const response = await fetch("http://localhost:5000/api/role-management");
 
                 const data = await response.json();
-                console.log("TENANTS FROM BACKEND 1:", data); // 👈 add this
+                // console.log("TENANTS FROM BACKEND 1:", data); // 👈 add this
 
                 setUsers(data);
             } catch (error) {
@@ -73,7 +75,7 @@ export default function RoleManagement(){
             try {
                 const response = await fetch("http://localhost:5000/api/role-management/tenants");
                 const data = await response.json();
-                console.log("TENANTS FROM BACKEND 2:", data); // 👈 add this
+                // console.log("TENANTS FROM BACKEND 2:", data); // 👈 add this
                 setTenants(data);
             } catch(error){
                 console.error("Error fetching tenants:", error);
@@ -82,19 +84,19 @@ export default function RoleManagement(){
         fetchTenants();
     }, []);
 
-    useEffect(() => {
+    
         const fetchOrganizationData = async () => {
             try {
                 const response = await fetch("http://localhost:5000/api/role-management/user-tenant");
                 const data = await response.json();
                 setOrgUsers(data);
 
-                console.log("JOINED DATA:", data);
+                // console.log("JOINED DATA:", data);
             } catch (error) {
                 console.error(error);
             }
         };
-
+useEffect(() => {
         fetchOrganizationData();
 }, []);
 
@@ -110,9 +112,9 @@ let currentUserId = "";
 
 if (token) {
     const decoded: any = jwtDecode(token);
-    console.log(decoded);
+    // console.log(decoded);
     currentUserId = decoded.id;
-    console.log("USER ID:", currentUserId);
+    // console.log("USER ID:", currentUserId);
 }
 
     // const filteredUsers = users.filter((user) => user.email.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -122,19 +124,14 @@ if (token) {
     )
   : [];
     const filteredOrgUsers = orgUsers.filter((item) => item.tenantId.name.toLowerCase().includes(searchOrganization.toLowerCase()));
-    // const org = 
-//  const filteredOrganizations = tenants.filter((tenant) => tenant.name.toLowerCase().includes(searchOrganization.toLowerCase()))
+    
 
 const filteredOrganizations = tenants.filter(
     (tenant) => tenant.createdBy === currentUserId
-);// const filteredOrganizations = tenants.filter(
-//     (tenant) =>
-//         tenant.createdBy === currentUserId 
-//         // tenant.name.toLowerCase().includes(searchOrganization.toLowerCase())
-// );
+);
     
 
-    const handleAddUser = async (user: User, tenant: Tenant) => {
+const handleAddUser = async (user: User, tenant: Tenant) => {
 
     const confirmAdd = window.confirm(
         "Are you sure you want to add this user to the organization?"
@@ -161,11 +158,15 @@ const filteredOrganizations = tenants.filter(
 
         const data = await response.json();
         if (!response.ok) {
-            // ❌ THIS handles "already assigned"
-            alert(data.message || "User already assigned to this organization");
+            toast.error(data.message || "User already assigned to this organization", {
+                style: toastStyles.error,
+            });
             return;
         }
-        alert("User added successfully");
+        toast.success("User added successfully", {
+            style: toastStyles.success,
+        });
+await fetchOrganizationData();
 
     } catch (err) {
         console.error(err);
@@ -194,8 +195,6 @@ const handleUpdateOrgRole = async (item: UserTenantRole) => {
         );
         const data = await response.json().catch(() => null);
 
-console.log("STATUS:", response.status);
-console.log("RESPONSE:", data);
         if (!response.ok) {
             throw new Error("Failed to update role");
         }
@@ -217,7 +216,10 @@ console.log("RESPONSE:", data);
             return copy;
         });
 
-        alert("User role updated successfully");
+        toast.success("User role updated successfully", {
+            style: toastStyles.success,
+        });
+        // alert("User role updated successfully");
 
     } catch (err) {
         console.error(err);
@@ -233,14 +235,16 @@ const handleRemoveOrgUser = async (item: UserTenantRole) => {
 
     try {
         const response = await fetch(
-            `http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}`,
+            `http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}/remove`,
             {
-                method: "DELETE"
+                method: "PATCH"
             }
         );
 
         if (!response.ok) {
-            throw new Error("Failed to remove user");
+                const data = await response.json().catch(() => null);
+
+    throw new Error(data?.message || "Failed to remove user");
         }
 
         // remove from UI immediately
@@ -248,7 +252,10 @@ const handleRemoveOrgUser = async (item: UserTenantRole) => {
             prev.filter((u) => u._id !== item._id)
         );
 
-        alert("User removed from organization successfully");
+        toast.success("User removed from organization successfully", {
+            style: toastStyles.success,
+        });
+
     } catch (err) {
         console.error(err);
     }
