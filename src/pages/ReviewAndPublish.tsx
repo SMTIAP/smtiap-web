@@ -26,19 +26,23 @@ export default function ReviewAndPublish() {
         themeColor: primaryColor,
         pages,
         status,
-        tenantId: "default",
       };
       const token = localStorage.getItem("token");
+      const activeTenantId = localStorage.getItem("activeTenantId");
       const url = surveyId
         ? `http://localhost:5000/api/surveys/${surveyId}`
         : "http://localhost:5000/api/surveys";
       const method = surveyId ? "PUT" : "POST";
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(activeTenantId && activeTenantId !== "__system__"
+          ? { "x-tenant-id": activeTenantId }
+          : {}),
+      };
       const res = await fetch(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers,
         credentials: "include",
         body: JSON.stringify(payload),
       });

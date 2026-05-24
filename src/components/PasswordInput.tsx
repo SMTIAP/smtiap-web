@@ -8,7 +8,13 @@ interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement>
   placeholder?: string;
 }
 
-export default function PasswordInput({ value, onChange, className = "", placeholder = "Password", ...props }: PasswordInputProps) {
+export default function PasswordInput({
+  value,
+  onChange,
+  className = "",
+  placeholder = "Password",
+  ...props
+}: PasswordInputProps) {
   const [show, setShow] = useState(false);
   return (
     <div className="relative w-full">

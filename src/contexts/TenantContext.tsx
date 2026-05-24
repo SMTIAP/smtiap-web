@@ -75,12 +75,12 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         // otherwise fall back to the first tenant or system context.
         const match = userTenants.find((t) => t.tenantId._id === saved);
         if (match) {
+          // Update active tenant data (e.g. role may have changed) without
+          // switching context — user stays on the same tenant they chose.
           setActiveTenantState(match);
-        } else if (userTenants.length > 0) {
-          // Saved tenant no longer available — pick first and update localStorage
-          localStorage.setItem("activeTenantId", userTenants[0].tenantId._id);
-          setActiveTenantState(userTenants[0]);
         } else {
+          // Saved tenant no longer accessible — fall back to system context
+          // rather than auto-picking another tenant without user consent.
           localStorage.setItem("activeTenantId", "__system__");
           setActiveTenantState(null);
         }

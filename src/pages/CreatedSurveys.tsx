@@ -33,11 +33,13 @@ const DeleteConfirmModal = ({
   onConfirm,
   onCancel,
   deleting,
+  errorMsg,
 }: {
   survey: SurveyItem;
   onConfirm: () => void;
   onCancel: () => void;
   deleting: boolean;
+  errorMsg?: string | null;
 }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
     <div
@@ -62,7 +64,12 @@ const DeleteConfirmModal = ({
       <p className="text-slate-700 dark:text-slate-300 text-sm font-semibold truncate mb-1">
         "{survey.surveyTitle || "Untitled Survey"}"
       </p>
-      <p className="text-slate-400 text-xs mb-6">This can't be undone.</p>
+      <p className="text-slate-400 text-xs mb-4">This can't be undone.</p>
+      {errorMsg && (
+        <p className="text-rose-500 text-xs font-semibold mb-4 bg-rose-50 dark:bg-rose-900/20 rounded-lg px-3 py-2">
+          {errorMsg}
+        </p>
+      )}
       <div className="flex gap-2">
         <button
           onClick={onCancel}
@@ -312,18 +319,25 @@ export default function CreatedSurveys() {
   const [copiedSurveyId, setCopiedSurveyId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [surveyToDelete, setSurveyToDelete] = useState<SurveyItem | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [surveyToShare, setSurveyToShare] = useState<SurveyItem | null>(null);
 
   useEffect(() => {
     const fetchSurveys = async () => {
+      setLoading(true);
       try {
         const token = localStorage.getItem("token");
+        const activeTenantId = localStorage.getItem("activeTenantId");
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        if (activeTenantId && activeTenantId !== "__system__")
+          headers["x-tenant-id"] = activeTenantId;
         const response = await fetch("http://localhost:5000/api/surveys", {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          headers,
           credentials: "include",
         });
         const data = await response.json();
-        setSurveys(data);
+        setSurveys(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Failed to fetch surveys:", err);
       } finally {
@@ -331,7 +345,7 @@ export default function CreatedSurveys() {
       }
     };
     fetchSurveys();
-  }, []);
+  }, [activeTenant]);
 
   const handleCardClick = (survey: SurveyItem) => {
     if (survey.status === "Draft") {
@@ -350,6 +364,7 @@ export default function CreatedSurveys() {
   const handleDeleteClick = (event: React.MouseEvent, survey: SurveyItem) => {
     event.stopPropagation();
     setSurveyToDelete(survey);
+    setDeleteError(null);
     setShowDeleteModal(true);
   };
 
@@ -411,17 +426,35 @@ export default function CreatedSurveys() {
 
   const handleConfirmDelete = async () => {
     if (!surveyToDelete) return;
+    setDeleteError(null);
     try {
       setDeletingSurveyId(surveyToDelete._id);
+      const currentToken = localStorage.getItem("token");
+      const activeTenantId = localStorage.getItem("activeTenantId");
       const response = await fetch(
         `http://localhost:5000/api/surveys/${surveyToDelete._id}`,
         {
           method: "DELETE",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          headers: {
+            ...(currentToken
+              ? { Authorization: `Bearer ${currentToken}` }
+              : {}),
+            ...(activeTenantId && activeTenantId !== "__system__"
+              ? { "x-tenant-id": activeTenantId }
+              : {}),
+          },
           credentials: "include",
         },
       );
-      if (!response.ok) throw new Error("Failed to delete");
+      if (!response.ok) {
+        let msg = "Failed to delete. Please try again.";
+        try {
+          const errData = await response.json();
+          msg = errData.message || msg;
+        } catch {}
+        setDeleteError(msg);
+        return;
+      }
       setSurveys((prev) =>
         prev.filter((item) => item._id !== surveyToDelete._id),
       );
@@ -429,6 +462,7 @@ export default function CreatedSurveys() {
       setSurveyToDelete(null);
     } catch (err) {
       console.error("Failed to delete survey:", err);
+      setDeleteError("Network error. Is the server running?");
     } finally {
       setDeletingSurveyId(null);
     }
@@ -459,8 +493,10 @@ export default function CreatedSurveys() {
           onCancel={() => {
             setShowDeleteModal(false);
             setSurveyToDelete(null);
+            setDeleteError(null);
           }}
           deleting={deletingSurveyId === surveyToDelete._id}
+          errorMsg={deleteError}
         />
       )}
       {surveyToShare && (

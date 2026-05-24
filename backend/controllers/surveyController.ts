@@ -51,8 +51,9 @@ const buildSurveyFilter = (req: Request): Record<string, unknown> | null => {
  * Returns the survey doc, or sends an error response and returns null.
  *
  * Rules:
- *   - Survey has tenantId AND user has tenants → must be a member of that tenant
- *   - Survey has tenantId but user has NO tenants → FORBIDDEN
+ *   - Creator of the survey always has access (regardless of tenant context)
+ *   - Survey has a valid tenantId AND user is a member of that tenant → allowed
+ *   - Survey has an unrecognised/legacy tenantId (e.g. "default") → fall back to createdBy
  *   - Survey has no tenantId → must be the creator (createdBy)
  *   - Survey has no tenantId AND no createdBy → orphan, FORBIDDEN
  */
@@ -70,24 +71,22 @@ const verifySurveyAccess = async (
   const tids = reqTenantIds(req);
   const userId = reqUserId(req);
 
-  if (survey.tenantId) {
-    // Survey belongs to a tenant
-    if (tids.length === 0) {
-      // User has no tenant → cannot access tenant-owned surveys
-      res.status(403).json({
-        message: "Forbidden: you do not have access to this survey",
-      });
-      return null;
-    }
-    if (!tids.includes(String(survey.tenantId))) {
-      // User belongs to a different tenant
-      res.status(403).json({
-        message: "Forbidden: you do not have access to this survey",
-      });
-      return null;
-    }
-    // User belongs to the survey's tenant → allowed
+  // Creator always has access to their own survey
+  if (userId && survey.createdBy && String(survey.createdBy) === userId) {
     return survey;
+  }
+
+  if (survey.tenantId) {
+    // Only treat as tenant-scoped if the tenantId is actually in the user's tenant list
+    // (guards against legacy/corrupted values like "default")
+    if (tids.includes(String(survey.tenantId))) {
+      return survey;
+    }
+    // tenantId not recognized — deny unless already passed the creator check above
+    res.status(403).json({
+      message: "Forbidden: you do not have access to this survey",
+    });
+    return null;
   }
 
   // Survey has no tenantId (personal/legacy survey)
@@ -239,22 +238,43 @@ export const getSurveyById = async (req: Request, res: Response) => {
  * Check if the authenticated user's role allows editing/publishing surveys.
  * Allowed: super_admin, admin, creator.  Blocked: viewer, billing_manager.
  * Returns true if allowed, or sends a 403 response and returns false.
+ *
+ * Role resolution order:
+ *   1. Active tenant membership (from x-tenant-id header)
+ *   2. Any membership matching the survey's tenant (fallback when header absent)
+ *   3. System-level user.role
  */
-const checkEditPermission = (req: Request, res: Response): boolean => {
+const checkEditPermission = (
+  req: Request,
+  res: Response,
+  surveyTenantId?: string,
+): boolean => {
   const user = reqUser(req);
   const memberships: any[] = (req as any).memberships ?? [];
   const activeTenantId = reqActiveTenantId(req);
-  const activeMembership = activeTenantId
-    ? memberships.find((m: any) => String(m.tenantId) === activeTenantId)
-    : null;
-  const role = activeMembership?.role ?? user?.role ?? "admin";
+
+  let role: string;
+  if (activeTenantId) {
+    // Prefer the membership for the explicitly active tenant
+    const m = memberships.find(
+      (m: any) => String(m.tenantId) === activeTenantId,
+    );
+    role = m?.role ?? (user as any)?.role ?? "admin";
+  } else if (surveyTenantId) {
+    // No active tenant header — fall back to the membership of the survey's tenant
+    const m = memberships.find(
+      (m: any) => String(m.tenantId) === surveyTenantId,
+    );
+    role = m?.role ?? (user as any)?.role ?? "admin";
+  } else {
+    role = (user as any)?.role ?? "admin";
+  }
+
   const editAllowed = ["super_admin", "admin", "creator"];
   if (!editAllowed.includes(role)) {
-    res
-      .status(403)
-      .json({
-        message: "Forbidden: your role does not allow modifying surveys",
-      });
+    res.status(403).json({
+      message: "Forbidden: your role does not allow modifying surveys",
+    });
     return false;
   }
   return true;
@@ -265,9 +285,19 @@ export const updateSurvey = async (req: Request, res: Response) => {
   try {
     const survey = await verifySurveyAccess(req, res, req.params.id);
     if (!survey) return;
-    if (!checkEditPermission(req, res)) return;
+    if (
+      !checkEditPermission(
+        req,
+        res,
+        survey.tenantId ? String(survey.tenantId) : undefined,
+      )
+    )
+      return;
 
-    const updated = await Survey.findByIdAndUpdate(req.params.id, req.body, {
+    // Never allow overwriting tenantId or createdBy via the request body
+    const { tenantId: _tid, createdBy: _cb, ...safeBody } = req.body;
+
+    const updated = await Survey.findByIdAndUpdate(req.params.id, safeBody, {
       new: true,
       runValidators: true,
     });
@@ -289,7 +319,14 @@ export const updateStatus = async (req: Request, res: Response) => {
 
     const survey = await verifySurveyAccess(req, res, req.params.id);
     if (!survey) return;
-    if (!checkEditPermission(req, res)) return;
+    if (
+      !checkEditPermission(
+        req,
+        res,
+        survey.tenantId ? String(survey.tenantId) : undefined,
+      )
+    )
+      return;
 
     const updated = await Survey.findByIdAndUpdate(
       req.params.id,
@@ -308,7 +345,14 @@ export const deleteSurvey = async (req: Request, res: Response) => {
   try {
     const survey = await verifySurveyAccess(req, res, req.params.id);
     if (!survey) return;
-    if (!checkEditPermission(req, res)) return;
+    if (
+      !checkEditPermission(
+        req,
+        res,
+        survey.tenantId ? String(survey.tenantId) : undefined,
+      )
+    )
+      return;
 
     await Survey.findByIdAndDelete(req.params.id);
     logAudit(req, "delete", req.params.id);
