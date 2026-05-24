@@ -1,16 +1,19 @@
 import { Router } from "express";
-import { getAllTenants, getAllUsers, updateUserRole, addUserToOrganization, getUserTenantData, updateOrgRole, removeOrgUser } from "../controllers/roleManagementController.js";
+import { getAllTenants, getAllUsers, 
+// updateUserRole, 
+addUserToOrganization, getUserTenantData, updateOrgRole, removeOrgUser } from "../controllers/roleManagementController.js";
 import User from "../models/User.js";
+import { protect } from "../middleware/auth.js";
 
 const router = Router();
 
 router.get("/", getAllUsers);
-router.put("/:userId/role", updateUserRole)
+// router.put("/:userId/role", updateUserRole)
 router.get("/tenants", getAllTenants);
-router.put("/:userId/:tenantId", addUserToOrganization);
-router.put("/:userId/:tenantId/role", updateOrgRole);
+router.put("/:userId/:tenantId", protect, addUserToOrganization);
+router.put("/:userId/:tenantId/role", protect, updateOrgRole);
 router.get("/user-tenant", getUserTenantData);
-router.patch("/:userId/:tenantId/remove", removeOrgUser);
+router.patch("/:userId/:tenantId/remove", protect, removeOrgUser);
 // router.get("/tenants/:userId/tenantId/role");
 
 export default router;

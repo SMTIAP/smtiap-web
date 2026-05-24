@@ -114,12 +114,14 @@ const handleAddUser = async (user: User, tenant: Tenant) => {
     if (!confirmAdd) return;
     try {
         const newRole = selectedRole[user._id];
-
+        const token = localStorage.getItem("token");
         const response = await fetch(
             `http://localhost:5000/api/role-management/${user._id}/${tenant._id}`,
             {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+                },
                 body: JSON.stringify({ role: newRole })
 
             }
@@ -154,11 +156,18 @@ const handleUpdateOrgRole = async (item: UserTenantRole) => {
 
     if (!confirmUpdate) return;
 
+    
+
     try {
         const newRole = selectedRole[item._id];
+        
+
+        
             const response = await fetch(`http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}/role`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+             },
             body: JSON.stringify({ role: newRole })
 
             }
@@ -166,8 +175,9 @@ const handleUpdateOrgRole = async (item: UserTenantRole) => {
         const data = await response.json().catch(() => null);
 
         if (!response.ok) {
-            throw new Error("Failed to update role");
-        }
+
+  throw new Error(data?.message || "Failed to update role");
+}
 
         // const updated = await response.json();
 
@@ -207,7 +217,11 @@ const handleRemoveOrgUser = async (item: UserTenantRole) => {
         const response = await fetch(
             `http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}/remove`,
             {
-                method: "PATCH"
+                method: "PATCH",
+                headers: { 
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                }
             }
         );
 

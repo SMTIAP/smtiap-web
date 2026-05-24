@@ -3,6 +3,7 @@ import Tenant from "../models/Tenant.js";
 import UserTenantRole from "../models/UserTenantRole.js";
 import User from "../models/User.js";
 import sendToken from "../utils/sendToken.js";
+import AuditLog from "../models/AuditLog.js";
 
 export const createOrganization = async (req: Request, res: Response) => {
     try{
@@ -41,9 +42,18 @@ export const createOrganization = async (req: Request, res: Response) => {
 
     // 2. Create membership
         await UserTenantRole.create({
-        userId,
-        tenantId: tenant._id,
-        role: "admin",
+            userId,
+            tenantId: tenant._id,
+            role: "admin",
+        });
+
+        await AuditLog.create({
+            tenant_id: tenant._id,
+            user_id: userId,
+            action: "create",
+            entity: "Tenant",
+            entity_id: tenant._id,
+            description: `Created Organization ${tenant.name}`,
         });
 
         res.status(201).json({
