@@ -7,9 +7,10 @@ const auditLogSchema = new Schema(
     action: { type: String, required: true, trim: true },
     entity: { type: String, required: true, trim: true },
     entity_id: { type: Schema.Types.ObjectId, required: true },
-    timestamp: { type: Date, default: Date.now },
-  },
-  { timestamps: false },
+    description: { type: String, trim: true}, },
+    // timestamp: { type: Date, default: Date.now },
+  { timestamps: true },
+  // { timestamps: false },
 );
 
 auditLogSchema.index({ tenant_id: 1 });
