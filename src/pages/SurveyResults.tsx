@@ -80,9 +80,10 @@ export default function SurveyResults() {
   const handleStopSurvey = async () => {
     setStopping(true);
     try {
+      const token = localStorage.getItem("token");
       await fetch(`http://localhost:5000/api/surveys/${surveyId}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, },
         body: JSON.stringify({ status: "Finished" }),
       });
       setSurvey((prev: any) => ({ ...prev, status: "Finished" }));

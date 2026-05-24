@@ -3,7 +3,7 @@ import Survey from "../models/Survey.js";
 import AuditLog from "../models/AuditLog.js";
 
 // Records an audit trail entry for survey actions
-const logAudit = (req: Request, action: string, entityId: any) => {
+const logAudit = (req: Request, action: string, entityId: any, description: string) => {
   const user = (req as any).user;
   if (!user) return;
   AuditLog.create({
@@ -11,6 +11,7 @@ const logAudit = (req: Request, action: string, entityId: any) => {
     action,
     entity: "Survey",
     entity_id: entityId,
+    description,
   } as any).catch(() => {});
 };
 
@@ -38,7 +39,7 @@ export const createSurvey = async (req: Request, res: Response) => {
     });
 
     await survey.save();
-    logAudit(req, "create", survey._id);
+    logAudit(req, "create", survey._id, `Survey "${surveyTitle}" Created`);
     res.status(201).json({ message: "Survey created", survey });
   } catch (err) {
     res.status(500).json({ message: String(err) });
@@ -85,7 +86,7 @@ export const updateSurvey = async (req: Request, res: Response) => {
       res.status(404).json({ message: "Survey not found" });
       return;
     }
-    logAudit(req, "update", survey._id);
+    logAudit(req, "update", survey._id, `Survey "${survey.surveyTitle}" Updated`);
     res.json({ message: "Survey updated", survey });
   } catch (err) {
     res.status(500).json({ message: String(err) });
@@ -107,7 +108,7 @@ export const updateStatus = async (req: Request, res: Response) => {
       res.status(404).json({ message: "Survey not found" });
       return;
     }
-    logAudit(req, `status_change_${status.toLowerCase()}`, survey._id);
+    logAudit(req, `status_change_${status.toLowerCase()}`, survey._id, `Survey "${survey.surveyTitle}" status changed to "${status}"`);
     res.json({ message: "Status updated", survey });
   } catch (err) {
     res.status(500).json({ message: String(err) });
@@ -118,8 +119,13 @@ export const updateStatus = async (req: Request, res: Response) => {
 export const deleteSurvey = async (req: Request, res: Response) => {
   try {
     const surveyId = req.params.id;
+    const survey = await Survey.findById(surveyId);
+    if (!survey) {
+      return res.status(404).json({ message: "Survey not found" });
+    }
     await Survey.findByIdAndDelete(surveyId);
-    logAudit(req, "delete", surveyId);
+    // console.log("AUDIT TRIGGERED");
+    logAudit(req, "delete", surveyId, `Survey "${survey.surveyTitle}" Deleted`);
     res.json({ message: "Survey deleted" });
   } catch (err) {
     res.status(500).json({ message: String(err) });

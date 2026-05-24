@@ -43,7 +43,7 @@ router.post("/", optionalAuth, createSurvey);
 router.get("/", getSurveys);
 router.get("/:id", getSurveyById);
 router.put("/:id", optionalAuth, updateSurvey);
-router.patch("/:id/status", optionalAuth, updateStatus);
+router.patch("/:id/status", protect, updateStatus);
 router.delete("/:id", optionalAuth, deleteSurvey);
 
 // ✅ Verify survey password
