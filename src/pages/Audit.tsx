@@ -137,6 +137,7 @@ export default function Audit() {
     if (a === "update") return "bg-yellow-400";
     if (a === "delete") return "bg-red-400";
     if (a === "add") return "bg-green-700";
+    if (a === "ai-analysis-run") return "bg-purple-700";
     if (a.startsWith("status_change")) return "bg-purple-400";
     return "bg-gray-400";
   };
