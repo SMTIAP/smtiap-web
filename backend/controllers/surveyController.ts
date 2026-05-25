@@ -133,7 +133,11 @@ const logAudit = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const user = (req as any).user;
   if (!user) return;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tenantId =
+    (req as any).activeTenantId ?? (req as any).tenantIds?.[0] ?? null;
   AuditLog.create({
+    tenant_id: tenantId,
     user_id: user._id,
     action,
     entity: "Survey",
