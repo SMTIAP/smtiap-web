@@ -141,7 +141,10 @@ export const getUserTenantData = async (req: Request, res: Response) => {
       return;
     }
 
-    const data = await UserTenantRole.find({ tenantId: { $in: tenantIds } })
+    const data = await UserTenantRole.find({
+      tenantId: { $in: tenantIds },
+      status: "active",
+    })
       .populate("userId", "username email")
       .populate("tenantId", "name");
 
