@@ -1,10 +1,15 @@
-import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Outlet,
+  Navigate,
+} from "react-router-dom";
 import { createContext, useContext, useEffect, useState } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ForgotPassword from "./pages/Forgot-password";
 import OrganizationAdmin from "./pages/OrganizationAdmin";
-import CreatorDashboard from "./pages/CreatorDashboard";
 import LandingPage from "./pages/LandingPage";
 import CreatedSurveys from "./pages/CreatedSurveys";
 import SearchTemplate from "./pages/SearchTemplate";
@@ -27,6 +32,7 @@ import TakeSurvey from "./pages/TakeSurvey";
 import SurveyResults from "./pages/SurveyResults";
 import OrganizationRegistration from "./pages/OrganizationRegistration.tsx";
 import VoiceAI from "./components/VoiceAI.tsx";
+import { TenantProvider } from "./contexts/TenantContext";
 
 // Dark mode context
 export const DarkModeContext = createContext({
@@ -69,33 +75,149 @@ export default function App() {
     <DarkModeContext.Provider value={{ darkMode, toggleDarkMode }}>
       <div className="min-h-screen bg-white dark:bg-[#0F172A] transition-colors duration-300">
         <BrowserRouter>
-          <Routes>
-            <Route path="/take-survey/:surveyId" element={<TakeSurvey />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <TenantProvider>
+            <Routes>
+              <Route path="/take-survey/:surveyId" element={<TakeSurvey />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route
+                path="/reset-password/:token"
+                element={<ResetPassword />}
+              />
 
-            <Route element={<Layout />}>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/admin" element={<ProtectedRoute><OrganizationAdmin /></ProtectedRoute>} />
-              <Route path="/creator-dashboard" element={<ProtectedRoute><CreatorDashboard /></ProtectedRoute>} />
-              <Route path="/created-surveys" element={<ProtectedRoute><CreatedSurveys /></ProtectedRoute>} />
-              <Route path="/templates" element={<ProtectedRoute><SearchTemplate /></ProtectedRoute>} />
-              <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
-              <Route path="/subscription/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
-              <Route path="/subscription/cancel" element={<ProtectedRoute><PaymentCancel /></ProtectedRoute>} />
-              <Route path="/create-new-survey" element={<ProtectedRoute><CreateNewSurvey /></ProtectedRoute>} />
-              <Route path="/add-questions" element={<ProtectedRoute><AddQuestions /></ProtectedRoute>} />
-              <Route path="/review-publish" element={<ProtectedRoute><ReviewAndPublish /></ProtectedRoute>} />
-              <Route path="/share-survey" element={<ProtectedRoute><ShareSurvey /></ProtectedRoute>} />
-              <Route path="/survey-results/:surveyId" element={<ProtectedRoute><SurveyResults /></ProtectedRoute>} />
-              <Route path="/response" element={<ProtectedRoute><Response /></ProtectedRoute>} />
-              <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-              <Route path="/role-management" element={<ProtectedRoute><RoleManagement /></ProtectedRoute>} />
-              <Route path="/organization-registration" element={<OrganizationRegistration />} />
-              <Route path="/audit-log" element={<ProtectedRoute><Audit /></ProtectedRoute>} />
-            </Route>
-          </Routes>
+              <Route element={<Layout />}>
+                <Route path="/" element={<LandingPage />} />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute>
+                      <OrganizationAdmin />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/creator-dashboard"
+                  element={<Navigate to="/admin" replace />}
+                />
+                <Route
+                  path="/created-surveys"
+                  element={
+                    <ProtectedRoute>
+                      <CreatedSurveys />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/templates"
+                  element={
+                    <ProtectedRoute>
+                      <SearchTemplate />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/subscription"
+                  element={
+                    <ProtectedRoute>
+                      <Subscription />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/subscription/success"
+                  element={
+                    <ProtectedRoute>
+                      <PaymentSuccess />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/subscription/cancel"
+                  element={
+                    <ProtectedRoute>
+                      <PaymentCancel />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/create-new-survey"
+                  element={
+                    <ProtectedRoute>
+                      <CreateNewSurvey />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/add-questions"
+                  element={
+                    <ProtectedRoute>
+                      <AddQuestions />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/review-publish"
+                  element={
+                    <ProtectedRoute>
+                      <ReviewAndPublish />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/share-survey"
+                  element={
+                    <ProtectedRoute>
+                      <ShareSurvey />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/survey-results/:surveyId"
+                  element={
+                    <ProtectedRoute>
+                      <SurveyResults />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/response"
+                  element={
+                    <ProtectedRoute>
+                      <Response />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/analytics"
+                  element={
+                    <ProtectedRoute>
+                      <Analytics />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/role-management"
+                  element={
+                    <ProtectedRoute>
+                      <RoleManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/organization-registration"
+                  element={<OrganizationRegistration />}
+                />
+                <Route
+                  path="/audit-log"
+                  element={
+                    <ProtectedRoute>
+                      <Audit />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
+            </Routes>
+          </TenantProvider>
         </BrowserRouter>
 
         <ToastContainer
