@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Tenant from "../models/Tenant.js";
 import UserTenantRole from "../models/UserTenantRole.js";
 import AuditLog from "../models/AuditLog.js";
+import { toast } from "sonner";
 
 export const formatRole = (role: string) => {
   return role
@@ -276,5 +277,29 @@ export const removeOrgUser = async (req: Request, res: Response) => {
     res.status(500).json({
       message: error instanceof Error ? error.message : "Server Error",
     });
+  }
+};
+
+export const removeTenant = async (req: Request, res: Response) => {
+  const { tenantId } = req.params;
+
+  try {
+    const tenant = await Tenant.findByIdAndUpdate(
+      tenantId,
+      { status: "inactive" },
+      { new: true }
+    );
+
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found" });
+    }
+
+    return res.status(200).json({
+      message: "Tenant deactivated successfully",
+      tenant,
+    });
+  } catch (error) {
+    console.error("Error removing tenant:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

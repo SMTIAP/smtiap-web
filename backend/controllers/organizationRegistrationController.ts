@@ -17,13 +17,21 @@ export const createOrganization = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const existingDomain = await Tenant.findOne({ domain });
-    if (existingDomain) {
-      return res.status(409).json({ message: "Domain already exists" });
+    // Only prevent duplicate ACTIVE orgs (optional rule)
+    const existingActiveTenant = await Tenant.findOne({
+      domain,
+      status: "active",
+    });
+
+    if (existingActiveTenant) {
+      return res.status(409).json({
+        message: "Active organization with this domain already exists",
+      });
     }
 
     const existingOrganizationName = await Tenant.findOne({
       name: { $regex: `^${name}$`, $options: "i" },
+      status: "active",
       createdBy: userId,
     });
     if (existingOrganizationName) {
@@ -38,8 +46,9 @@ export const createOrganization = async (req: Request, res: Response) => {
       address,
       description,
       domain,
-      orgType: orgType || "profit",
+      orgType,
       createdBy: userId,
+      status: "active",
     });
 
     // Create membership
@@ -63,15 +72,12 @@ export const createOrganization = async (req: Request, res: Response) => {
       message: "Organization created successfully",
       tenant,
     });
-  } catch (error: unknown) {
-    const isDuplicate =
-      error && typeof error === "object" && "code" in error
-        ? (error as Record<string, unknown>).code === 11000
-        : false;
-    return res.status(isDuplicate ? 409 : 500).json({
-      message: isDuplicate
-        ? "An organization with that domain already exists."
-        : "Server Error",
-    });
-  }
+  } catch (error: any) {
+  console.error("Create Organization Error:", error);
+
+  return res.status(500).json({
+    message: error?.message || "Server Error",
+    error, // ⚠️ full error (ONLY for dev)
+  });
+}
 };
