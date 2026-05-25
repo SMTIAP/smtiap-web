@@ -25,10 +25,18 @@ router.get("/", protect, loadTenant, async (req: Request, res: Response) => {
     };
 
     // Also scope by tenant if user has memberships
+    // if (tenantIds.length > 0) {
+    //   filter.tenant_id = { $in: tenantIds };
+    // }
+
     if (tenantIds.length > 0) {
-      filter.tenant_id = { $in: tenantIds };
+      filter.$or = [
+        { tenant_id: { $in: tenantIds } },
+        { tenant_id: null }
+      ];
     }
 
+    
     if (fromDate || toDate) {
       filter.createdAt = {};
       if (fromDate) {
