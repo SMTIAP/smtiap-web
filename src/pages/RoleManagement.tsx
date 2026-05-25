@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import BackButton from "../components/BackButton";
-import { Search } from "lucide-react";
+import { Search, Plus, ClipboardList, Trash2 } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ interface Tenant {
   _id: string;
   name: string;
   createdBy: string;
+  status: string;
 }
 
 interface UserTenantRole {
@@ -39,7 +40,7 @@ export default function RoleManagement() {
   const [orgUsers, setOrgUsers] = useState<UserTenantRole[]>([]);
 
   const roleLabels: Record<string, string> = {
-    super_admin: "Organization Admin",
+    // super_admin: "Organization Admin",
     admin: "Tenant Admin",
     viewer: "Viewer",
     creator: "Creator",
@@ -305,6 +306,63 @@ export default function RoleManagement() {
     }
   };
 
+  const handleDeleteTenant = async (tenant: Tenant) => {
+  if (!isCreatorOfTenantId(tenant._id)) {
+    toast.error("Only the organization creator can delete this organization");
+    return;
+  }
+
+  const confirmed = await confirmAsync(
+    `Delete "${tenant.name}" organization? This will mark it as inactive.`,
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const response = await fetch(
+      `http://localhost:5000/api/role-management/tenant/${tenant._id}`,
+      {
+        method: "PATCH",
+        headers: authHeaders(),
+        credentials: "include",
+        body: JSON.stringify({
+          status: "inactive",
+        }),
+      },
+    );
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(data?.message || "Failed to delete organization");
+    }
+
+    toast.success("Organization marked as inactive");
+
+    // Remove from frontend list immediately
+    setTenants((prev) =>
+      prev.filter((t) => t._id !== tenant._id),
+    );
+
+    // Clear selected organization
+    setSelectedTenantId("");
+
+    // Refresh organization users list
+    const updatedOrgUsers = await fetch(
+      "http://localhost:5000/api/role-management/user-tenant",
+      {
+        headers: authHeaders(),
+        credentials: "include",
+      },
+    );
+
+    setOrgUsers(await updatedOrgUsers.json());
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to delete organization");
+  }
+};
+
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
       <div className="h-1.5 w-full bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500" />
@@ -314,22 +372,23 @@ export default function RoleManagement() {
           <div className="flex items-center gap-4 w-fit">
             <BackButton />
             <h1 className="text-[#1E293B] dark:text-white font-inter text-3xl font-bold leading-9">
-              All Employees and Role Management
+              Employees and Role Management
             </h1>
           </div>
           <div className="flex justify-end gap-2">
             <button
               onClick={() => navigate("/organization-registration")}
-              className="cursor-pointer text-nowrap py-2 px-6 flex justify-center items-center gap-2 rounded-md bg-[#3B82F6] text-white font-inter text-sm font-medium transition-opacity hover:opacity-90"
+              className="flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 shrink-0"
             >
-              Create Organization
+               <Plus size={18} />Create Organization
             </button>
             <button
               onClick={() => navigate("/audit-log")}
-              className="cursor-pointer text-nowrap py-2 px-6 flex justify-center items-center gap-2 rounded-md bg-[#3B82F6] text-white font-inter text-sm font-medium transition-opacity hover:opacity-90"
+              className="flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 shrink-0"
             >
-              Audit Logs
+               <ClipboardList size={18} />Audit Logs
             </button>
+            
           </div>
         </div>
 
@@ -354,12 +413,37 @@ export default function RoleManagement() {
             className="w-full max-w-xs px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
           >
             <option value="">Select Organization</option>
-            {filteredOrganizations.map((tenant) => (
+            {filteredOrganizations.filter((tenant) => tenant.status === "active").map((tenant) => (
               <option key={tenant._id} value={tenant._id}>
                 {tenant.name}
               </option>
             ))}
           </select>
+          <button
+            disabled={
+              !selectedTenantId || !isCreatorOfTenantId(selectedTenantId)
+            }
+            title={
+              !selectedTenantId
+                ? "Select an organization first"
+                : !isCreatorOfTenantId(selectedTenantId)
+                  ? "Only the organization creator can delete it"
+                  : undefined
+            }
+            onClick={() => {
+              const tenant = tenants.find(t => t._id === selectedTenantId);
+              if (tenant) handleDeleteTenant(tenant);
+            }}
+            className={`flex items-center gap-1.5 px-4 h-[40px] rounded-lg text-white font-semibold text-[13px] shadow-md transition-all duration-200 shrink-0
+              ${
+                !selectedTenantId || !isCreatorOfTenantId(selectedTenantId)
+                  ? "bg-gray-400 cursor-not-allowed opacity-70"
+                  : "bg-gradient-to-r from-red-500 to-rose-600 hover:shadow-lg hover:scale-[1.02]"
+              }`}
+          >
+            <Trash2 size={16} />
+            Delete Organization
+          </button>
         </div>
 
         {/* Users Table */}
@@ -411,7 +495,7 @@ export default function RoleManagement() {
                         }}
                         className="w-50 border border-gray-300 dark:border-slate-600 rounded-md px-3 py-1 bg-white dark:bg-slate-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                       >
-                        <option value="super_admin">Organization Admin</option>
+                        {/* <option value="super_admin">Organization Admin</option> */}
                         <option value="admin">Tenant Admin</option>
                         <option value="viewer">Viewer</option>
                         <option value="creator">Creator</option>
