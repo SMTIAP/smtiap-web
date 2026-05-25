@@ -180,6 +180,7 @@ export const updateOrgRole = async (req: Request, res: Response) => {
     const existing = await UserTenantRole.findOne({
       userId,
       tenantId,
+      status: "active",
     });
 
     if (!existing) {

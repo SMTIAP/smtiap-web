@@ -62,17 +62,17 @@ export default function RoleManagement() {
     return new Promise((resolve) => {
       toast.custom(
         (t) => (
-          <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700">
-            <p className="text-sm text-gray-800 dark:text-slate-200 mb-3">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 w-80">
+            <p className="text-base text-gray-800 dark:text-slate-200 mb-5 leading-relaxed">
               {message}
             </p>
-            <div className="flex gap-2 justify-end">
+            <div className="flex gap-3 justify-end">
               <button
                 onClick={() => {
                   toast.dismiss(t);
                   resolve(false);
                 }}
-                className="px-3 py-1 text-sm bg-gray-100 dark:bg-slate-700 rounded hover:bg-gray-200"
+                className="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
               >
                 Cancel
               </button>
@@ -81,7 +81,7 @@ export default function RoleManagement() {
                   toast.dismiss(t);
                   resolve(true);
                 }}
-                className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Confirm
               </button>
@@ -254,11 +254,13 @@ export default function RoleManagement() {
       );
       const data = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error("Failed to update role");
+        throw new Error(data?.message || "Failed to update role");
       }
       setOrgUsers((prev) =>
         prev.map((u) =>
-          u._id === item._id ? { ...u, role: data.role ?? newRole } : u,
+          u._id === item._id
+            ? { ...u, role: data?.newRole ?? data?.updated?.role ?? newRole }
+            : u,
         ),
       );
       setSelectedRole((prev) => {
