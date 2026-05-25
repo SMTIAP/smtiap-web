@@ -9,7 +9,7 @@ interface AuthenticatedRequest extends Request {
 
 export const createOrganization = async (req: Request, res: Response) => {
   try {
-    const { name, country, address, description, domain } = req.body;
+    const { name, country, address, description, domain, orgType } = req.body;
 
     const userId = (req as AuthenticatedRequest).user?._id;
 
@@ -38,6 +38,7 @@ export const createOrganization = async (req: Request, res: Response) => {
       address,
       description,
       domain,
+      orgType: orgType || "profit",
       createdBy: userId,
     });
 
