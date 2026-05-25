@@ -24,6 +24,22 @@ const reqTenantIds = (req: Request): string[] =>
 const hasTenantAccess = (req: Request, tenantId: string): boolean =>
   reqTenantIds(req).includes(tenantId);
 
+/** Check if the authenticated user is the creator/owner of the tenant. */
+const isTenantCreator = async (
+  req: Request,
+  tenantId: string,
+): Promise<boolean> => {
+  const userId = (req as any).user?._id;
+  if (!userId) return false;
+  try {
+    const tenant = await Tenant.findById(tenantId).select("createdBy").lean();
+    if (!tenant) return false;
+    return String(tenant.createdBy) === String(userId);
+  } catch {
+    return false;
+  }
+};
+
 // ── Controllers ──────────────────────────────────────────────────────
 
 export const getAllUsers = async (req: Request, res: Response) => {
@@ -70,6 +86,13 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
     const { role } = req.body;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const actor = (req as any).user;
+
+    // Only the tenant creator can add users
+    if (!(await isTenantCreator(req, tenantId))) {
+      return res.status(403).json({
+        message: "Forbidden: only the organization creator can add users",
+      });
+    }
 
     const exists = await UserTenantRole.findOne({
       userId,
@@ -143,6 +166,13 @@ export const updateOrgRole = async (req: Request, res: Response) => {
         .json({ message: "Forbidden: you do not belong to this tenant" });
     }
 
+    // Only the tenant creator can change roles
+    if (!(await isTenantCreator(req, tenantId))) {
+      return res.status(403).json({
+        message: "Forbidden: only the organization creator can change roles",
+      });
+    }
+
     // 1. Get existing record FIRST (old role)
     const existing = await UserTenantRole.findOne({
       userId,
@@ -199,6 +229,13 @@ export const removeOrgUser = async (req: Request, res: Response) => {
       return res
         .status(403)
         .json({ message: "Forbidden: you do not belong to this tenant" });
+    }
+
+    // Only the tenant creator can remove users
+    if (!(await isTenantCreator(req, tenantId))) {
+      return res.status(403).json({
+        message: "Forbidden: only the organization creator can remove users",
+      });
     }
 
     const record = await UserTenantRole.findOne({

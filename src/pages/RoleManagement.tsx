@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import BackButton from "../components/BackButton";
 import { Search } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
+import { toast } from "sonner";
 
 interface User {
   _id: string;
@@ -115,10 +116,31 @@ export default function RoleManagement() {
     fetchOrganizationData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);
-  if (token) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    jwtDecode<any>(token);
-  }
+  const currentUserId: string | null = (() => {
+    if (!token) return null;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (jwtDecode<any>(token) as any)?.id ?? null;
+    } catch {
+      return null;
+    }
+  })();
+
+  // Helper: check if the current user is the creator of the tenant a membership belongs to
+  const isCreatorOfTenant = (membership: UserTenantRole): boolean => {
+    if (!currentUserId) return false;
+    const tenant = tenants.find((t) => t._id === membership.tenantId._id);
+    if (!tenant) return false;
+    return tenant.createdBy === currentUserId;
+  };
+
+  // Helper: check if the current user is the creator of a given tenant by ID
+  const isCreatorOfTenantId = (tenantId: string): boolean => {
+    if (!currentUserId) return false;
+    const tenant = tenants.find((t) => t._id === tenantId);
+    if (!tenant) return false;
+    return tenant.createdBy === currentUserId;
+  };
 
   const filteredUsers = searchTerm.trim()
     ? users.filter((user) =>
@@ -136,6 +158,10 @@ export default function RoleManagement() {
   const filteredOrganizations = tenants;
 
   const handleAddUser = async (user: User, tenant: Tenant) => {
+    if (!isCreatorOfTenantId(tenant._id)) {
+      toast.error("Only the organization creator can add users");
+      return;
+    }
     const confirmAdd = window.confirm(
       "Are you sure you want to add this user to the organization?",
     );
@@ -169,6 +195,10 @@ export default function RoleManagement() {
   };
 
   const handleUpdateOrgRole = async (item: UserTenantRole) => {
+    if (!isCreatorOfTenant(item)) {
+      toast.error("Only the organization creator can change roles");
+      return;
+    }
     const confirmUpdate = window.confirm(
       "Are you sure you want to update the user role of this organization?",
     );
@@ -205,6 +235,10 @@ export default function RoleManagement() {
   };
 
   const handleRemoveOrgUser = async (item: UserTenantRole) => {
+    if (!isCreatorOfTenant(item)) {
+      toast.error("Only the organization creator can remove users");
+      return;
+    }
     const confirmDelete = window.confirm(
       "Are you sure you want to remove this user from the organization?",
     );
@@ -354,7 +388,7 @@ export default function RoleManagement() {
                         title={
                           !selectedTenantId
                             ? "Select an organization first"
-                            : "Add user to organization"
+                            : undefined
                         }
                         className={`px-3 py-1 text-white text-sm rounded ${!selectedTenantId ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
                       >
