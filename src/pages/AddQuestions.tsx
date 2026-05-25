@@ -6,6 +6,8 @@ import {
   type ReactNode,
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { useTenant } from "../contexts/TenantContext";
 import {
   Plus,
   GripVertical,
@@ -87,6 +89,7 @@ interface RouteState {
   formData?: SetupFormData;
   surveyId?: string;
   aiGeneratedPages?: IncomingPage[];
+  readOnly?: boolean;
 }
 
 interface DatePickerCalendarProps {
@@ -809,6 +812,14 @@ export default function AddQuestions() {
   // aiGeneratedPages is present when coming from AI survey generation
   const aiGeneratedPages = routeState.aiGeneratedPages;
 
+  const { activeTenant, isSystemContext } = useTenant();
+  const tenantRole =
+    !isSystemContext && activeTenant ? activeTenant.role : null;
+  const isViewer = tenantRole === "viewer" || tenantRole === "billing_manager";
+
+  // readOnly — viewer is viewing a draft survey (cannot edit/publish)
+  const readOnly = routeState.readOnly === true || isViewer;
+
   const [primaryColor, setPrimaryColor] = useState(
     setupData?.customizeBranding
       ? setupData.themeColor
@@ -825,7 +836,7 @@ export default function AddQuestions() {
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(
     null,
   );
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(readOnly);
   const [showAiModifier, setShowAiModifier] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [logo, setLogo] = useState<string | null>(setupData?.logo || null);
@@ -1376,199 +1387,125 @@ export default function AddQuestions() {
 
   return (
     <div className="flex h-screen bg-[#F8F9FB] dark:bg-[#0F172A] text-gray-800 dark:text-slate-200 overflow-hidden font-sans transition-colors duration-300">
+      {/* Read-only banner */}
+      {readOnly && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-amber-50 border-b border-amber-200 px-6 py-3 text-center text-sm font-semibold text-amber-800">
+          <Eye size={16} className="inline mr-2 -mt-0.5" />
+          Viewing draft survey (read-only) — you do not have permission to edit
+          or publish
+        </div>
+      )}
+
       {/* Left sidebar — question type palette and page navigator */}
-      <aside className="w-72 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col z-10 shadow-sm transition-colors duration-300">
-        <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-          <div
-            className="h-10 w-10 rounded-lg flex items-center justify-center border border-[#F1F5F9]"
-            style={{ backgroundColor: `${primaryColor}10` }}
-          >
-            <Layout size={20} style={{ color: primaryColor }} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-bold text-gray-900 dark:text-white truncate w-28">
-              {surveyTitle}
-            </h1>
-            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
-              Designer
-            </p>
-          </div>
-          <button
-            onClick={() => setShowSettings(true)}
-            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all shrink-0"
-            title="Survey Settings"
-          >
-            <Settings2 size={16} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          <div>
-            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-3">
-              Essentials
-            </h3>
-            <div className="grid grid-cols-1 gap-2">
-              {QUESTION_TYPES.map((type) => (
-                <button
-                  key={type.id}
-                  onClick={() => addQuestion(type.id)}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-transparent hover:border-gray-100 hover:bg-gray-50 transition-all text-left text-gray-700 font-medium group"
-                >
-                  <span className="p-2 bg-gray-50 group-hover:bg-white rounded-lg transition-colors shadow-sm">
-                    {type.icon}
-                  </span>
-                  {type.label}
-                  <PlusCircle
-                    size={14}
-                    className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
-                  />
-                </button>
-              ))}
+      {!readOnly && (
+        <aside className="w-72 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col z-10 shadow-sm transition-colors duration-300">
+          <div className="p-6 border-b border-gray-100 flex items-center gap-3">
+            <div
+              className="h-10 w-10 rounded-lg flex items-center justify-center border border-[#F1F5F9]"
+              style={{ backgroundColor: `${primaryColor}10` }}
+            >
+              <Layout size={20} style={{ color: primaryColor }} />
             </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-sm font-bold text-gray-900 dark:text-white truncate w-28">
+                {surveyTitle}
+              </h1>
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+                Designer
+              </p>
+            </div>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all shrink-0"
+              title="Survey Settings"
+            >
+              <Settings2 size={16} />
+            </button>
           </div>
 
-          <div>
-            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-3">
-              Pages
-            </h3>
-            <div className="space-y-1">
-              {pages.map((page, idx) => (
-                <div
-                  key={page.id}
-                  onClick={() => setActivePageIndex(idx)}
-                  className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
-                    activePageIndex === idx
-                      ? "bg-gray-100 text-gray-900 font-semibold"
-                      : "hover:bg-gray-50 text-gray-600"
-                  }`}
-                >
+          <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            <div>
+              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-3">
+                Essentials
+              </h3>
+              <div className="grid grid-cols-1 gap-2">
+                {QUESTION_TYPES.map((type) => (
+                  <button
+                    key={type.id}
+                    onClick={() => addQuestion(type.id)}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-transparent hover:border-gray-100 hover:bg-gray-50 transition-all text-left text-gray-700 font-medium group"
+                  >
+                    <span className="p-2 bg-gray-50 group-hover:bg-white rounded-lg transition-colors shadow-sm">
+                      {type.icon}
+                    </span>
+                    {type.label}
+                    <PlusCircle
+                      size={14}
+                      className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-3">
+                Pages
+              </h3>
+              <div className="space-y-1">
+                {pages.map((page, idx) => (
                   <div
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{
-                      backgroundColor:
-                        activePageIndex === idx ? primaryColor : "transparent",
-                    }}
-                  />
-                  <span className="truncate flex-1">{page.title}</span>
-                  {pages.length > 1 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deletePage(idx);
+                    key={page.id}
+                    onClick={() => setActivePageIndex(idx)}
+                    className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                      activePageIndex === idx
+                        ? "bg-gray-100 text-gray-900 font-semibold"
+                        : "hover:bg-gray-50 text-gray-600"
+                    }`}
+                  >
+                    <div
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{
+                        backgroundColor:
+                          activePageIndex === idx
+                            ? primaryColor
+                            : "transparent",
                       }}
-                      className="opacity-0 group-hover:opacity-100 hover:text-red-500"
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                onClick={addPage}
-                style={{ color: primaryColor }}
-                className="w-full flex items-center gap-2 p-2 text-sm hover:bg-gray-50 rounded-lg transition-colors mt-2"
-              >
-                <Plus size={16} /> Add Page
-              </button>
+                    />
+                    <span className="truncate flex-1">{page.title}</span>
+                    {pages.length > 1 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deletePage(idx);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 hover:text-red-500"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={addPage}
+                  style={{ color: primaryColor }}
+                  className="w-full flex items-center gap-2 p-2 text-sm hover:bg-gray-50 rounded-lg transition-colors mt-2"
+                >
+                  <Plus size={16} /> Add Page
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Save draft button — creates new survey or updates existing based on surveyId */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50">
-          <button
-            onClick={async () => {
-              const url = surveyId
-                ? `http://localhost:5000/api/surveys/${surveyId}`
-                : "http://localhost:5000/api/surveys";
-              const method = surveyId ? "PUT" : "POST";
-
-              try {
-                const token = localStorage.getItem("token");
-                const tenantId_hdr = localStorage.getItem("activeTenantId");
-                const res = await fetch(url, {
-                  method,
-                  credentials: "include",
-                  headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                    ...(tenantId_hdr && tenantId_hdr !== "__system__"
-                      ? { "x-tenant-id": tenantId_hdr }
-                      : {}),
-                  },
-                  body: JSON.stringify({
-                    surveyTitle,
-                    description: description,
-                    logo: logo,
-                    websiteUrl: websiteUrl,
-                    customizeBranding: customizeBranding,
-                    primaryColor,
-                    themeColor: primaryColor,
-                    pages,
-                    status: "Draft",
-                    tenantId: tenantId ?? undefined,
-                  }),
-                });
-                const data = await res.json();
-                const finalId = surveyId || data.survey._id;
-
-                navigate("/created-surveys", {
-                  state: {
-                    newSurvey: {
-                      id: finalId,
-                      date: new Date().toLocaleDateString("en-GB"),
-                      title: surveyTitle,
-                      status: "Draft",
-                    },
-                  },
-                });
-              } catch {
-                alert("Could not save draft. Is the backend running?");
-              }
-            }}
-            className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-white py-2 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-slate-600 shadow-sm transition-all"
-          >
-            <Save size={16} /> {surveyId ? "Update Draft" : "Save Draft"}
-          </button>
-        </div>
-      </aside>
-
-      {/* Main canvas — question builder and preview mode */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
-        <header className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-8 flex items-center justify-between z-0 transition-colors duration-300">
-          <input
-            type="text"
-            value={surveyTitle}
-            onChange={(e) => setSurveyTitle(e.target.value)}
-            className="text-lg font-semibold bg-transparent border-none focus:outline-none focus:ring-0 w-1/2 dark:text-white"
-          />
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowAiModifier(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all"
-            >
-              <Wand2 size={16} />
-              AI Modify
-            </button>
-            <button
-              onClick={() => setIsPreviewMode(!isPreviewMode)}
-              style={isPreviewMode ? { backgroundColor: primaryColor } : {}}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                isPreviewMode
-                  ? "text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              <Eye size={16} />
-              {isPreviewMode ? "Exit Preview" : "Preview"}
-            </button>
+          {/* Save draft button — creates new survey or updates existing based on surveyId */}
+          <div className="p-4 border-t border-gray-100 bg-gray-50">
             <button
               onClick={async () => {
                 const url = surveyId
                   ? `http://localhost:5000/api/surveys/${surveyId}`
                   : "http://localhost:5000/api/surveys";
                 const method = surveyId ? "PUT" : "POST";
-                let finalId = surveyId;
+
                 try {
                   const token = localStorage.getItem("token");
                   const tenantId_hdr = localStorage.getItem("activeTenantId");
@@ -1596,29 +1533,129 @@ export default function AddQuestions() {
                     }),
                   });
                   const data = await res.json();
-                  finalId = surveyId || data.survey._id;
+                  const finalId = surveyId || data.survey._id;
+
+                  navigate("/created-surveys", {
+                    state: {
+                      newSurvey: {
+                        id: finalId,
+                        date: new Date().toLocaleDateString("en-GB"),
+                        title: surveyTitle,
+                        status: "Draft",
+                      },
+                    },
+                  });
                 } catch {
                   alert("Could not save draft. Is the backend running?");
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-white py-2 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-slate-600 shadow-sm transition-all"
+            >
+              <Save size={16} /> {surveyId ? "Update Draft" : "Save Draft"}
+            </button>
+          </div>
+        </aside>
+      )}
+
+      {/* Main canvas — question builder and preview mode */}
+      <main
+        className={`flex-1 flex flex-col h-full overflow-hidden ${readOnly ? "pt-12" : ""}`}
+      >
+        <header className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-8 flex items-center justify-between z-0 transition-colors duration-300">
+          <input
+            type="text"
+            value={surveyTitle}
+            onChange={(e) => setSurveyTitle(e.target.value)}
+            readOnly={readOnly}
+            className={`text-lg font-semibold bg-transparent border-none focus:outline-none focus:ring-0 w-1/2 dark:text-white ${readOnly ? "text-gray-500 cursor-default" : ""}`}
+          />
+          <div className="flex items-center gap-3">
+            {!readOnly && (
+              <button
+                onClick={() => setShowAiModifier(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all"
+              >
+                <Wand2 size={16} />
+                AI Modify
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (readOnly) {
+                  navigate("/created-surveys");
                   return;
                 }
-                navigate("/review-publish", {
-                  state: {
-                    surveyId: finalId,
-                    surveyTitle,
-                    description: description,
-                    logo,
-                    websiteUrl: websiteUrl,
-                    customizeBranding: customizeBranding,
-                    primaryColor,
-                    pages,
-                  },
-                });
+                setIsPreviewMode(!isPreviewMode);
               }}
-              style={{ backgroundColor: primaryColor }}
-              className="text-white px-6 py-2 rounded-lg text-sm font-semibold hover:opacity-90 shadow-lg transition-all"
+              style={isPreviewMode ? { backgroundColor: primaryColor } : {}}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                isPreviewMode
+                  ? "text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
             >
-              Review & Publish
+              <Eye size={16} />
+              {isPreviewMode ? "Exit Preview" : "Preview"}
             </button>
+            {!readOnly && (
+              <button
+                onClick={async () => {
+                  const url = surveyId
+                    ? `http://localhost:5000/api/surveys/${surveyId}`
+                    : "http://localhost:5000/api/surveys";
+                  const method = surveyId ? "PUT" : "POST";
+                  let finalId = surveyId;
+                  try {
+                    const token = localStorage.getItem("token");
+                    const tenantId_hdr = localStorage.getItem("activeTenantId");
+                    const res = await fetch(url, {
+                      method,
+                      credentials: "include",
+                      headers: {
+                        "Content-Type": "application/json",
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                        ...(tenantId_hdr && tenantId_hdr !== "__system__"
+                          ? { "x-tenant-id": tenantId_hdr }
+                          : {}),
+                      },
+                      body: JSON.stringify({
+                        surveyTitle,
+                        description: description,
+                        logo: logo,
+                        websiteUrl: websiteUrl,
+                        customizeBranding: customizeBranding,
+                        primaryColor,
+                        themeColor: primaryColor,
+                        pages,
+                        status: "Draft",
+                        tenantId: tenantId ?? undefined,
+                      }),
+                    });
+                    const data = await res.json();
+                    finalId = surveyId || data.survey._id;
+                  } catch {
+                    alert("Could not save draft. Is the backend running?");
+                    return;
+                  }
+                  navigate("/review-publish", {
+                    state: {
+                      surveyId: finalId,
+                      surveyTitle,
+                      description: description,
+                      logo,
+                      websiteUrl: websiteUrl,
+                      customizeBranding: customizeBranding,
+                      primaryColor,
+                      pages,
+                    },
+                  });
+                }}
+                style={{ backgroundColor: primaryColor }}
+                className="text-white px-6 py-2 rounded-lg text-sm font-semibold hover:opacity-90 shadow-lg transition-all"
+              >
+                Review & Publish
+              </button>
+            )}
           </div>
         </header>
 

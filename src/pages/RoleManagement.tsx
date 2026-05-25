@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import BackButton from "../components/BackButton";
 import { Search } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
+import { toast } from "sonner";
 
 interface User {
   _id: string;
@@ -54,6 +55,42 @@ export default function RoleManagement() {
     const id = localStorage.getItem("activeTenantId");
     if (id && id !== "__system__") headers["x-tenant-id"] = id;
     return headers;
+  };
+
+  // Sonner-based confirmation dialog (returns a promise)
+  const confirmAsync = (message: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      toast.custom(
+        (t) => (
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700">
+            <p className="text-sm text-gray-800 dark:text-slate-200 mb-3">
+              {message}
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  toast.dismiss(t);
+                  resolve(false);
+                }}
+                className="px-3 py-1 text-sm bg-gray-100 dark:bg-slate-700 rounded hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  toast.dismiss(t);
+                  resolve(true);
+                }}
+                className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        ),
+        { duration: Infinity, position: "bottom-right" },
+      );
+    });
   };
 
   useEffect(() => {
@@ -115,10 +152,31 @@ export default function RoleManagement() {
     fetchOrganizationData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);
-  if (token) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    jwtDecode<any>(token);
-  }
+  const currentUserId: string | null = (() => {
+    if (!token) return null;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (jwtDecode<any>(token) as any)?.id ?? null;
+    } catch {
+      return null;
+    }
+  })();
+
+  // Helper: check if the current user is the creator of the tenant a membership belongs to
+  const isCreatorOfTenant = (membership: UserTenantRole): boolean => {
+    if (!currentUserId) return false;
+    const tenant = tenants.find((t) => t._id === membership.tenantId._id);
+    if (!tenant) return false;
+    return tenant.createdBy === currentUserId;
+  };
+
+  // Helper: check if the current user is the creator of a given tenant by ID
+  const isCreatorOfTenantId = (tenantId: string): boolean => {
+    if (!currentUserId) return false;
+    const tenant = tenants.find((t) => t._id === tenantId);
+    if (!tenant) return false;
+    return tenant.createdBy === currentUserId;
+  };
 
   const filteredUsers = searchTerm.trim()
     ? users.filter((user) =>
@@ -136,10 +194,14 @@ export default function RoleManagement() {
   const filteredOrganizations = tenants;
 
   const handleAddUser = async (user: User, tenant: Tenant) => {
-    const confirmAdd = window.confirm(
-      "Are you sure you want to add this user to the organization?",
+    if (!isCreatorOfTenantId(tenant._id)) {
+      toast.error("Only the organization creator can add users");
+      return;
+    }
+    const confirmed = await confirmAsync(
+      `Add "${user.username}" to "${tenant.name}"?`,
     );
-    if (!confirmAdd) return;
+    if (!confirmed) return;
     try {
       const newRole = selectedRole[user._id] || "viewer";
       const response = await fetch(
@@ -153,10 +215,12 @@ export default function RoleManagement() {
       );
       const data = await response.json();
       if (!response.ok) {
-        alert(data.message || "User already assigned to this organization");
+        toast.error(
+          data.message || "User already assigned to this organization",
+        );
         return;
       }
-      alert("User added successfully");
+      toast.success("User added successfully");
       // Refresh organization members list
       const updatedOrg = await fetch(
         "http://localhost:5000/api/role-management/user-tenant",
@@ -169,10 +233,14 @@ export default function RoleManagement() {
   };
 
   const handleUpdateOrgRole = async (item: UserTenantRole) => {
-    const confirmUpdate = window.confirm(
-      "Are you sure you want to update the user role of this organization?",
+    if (!isCreatorOfTenant(item)) {
+      toast.error("Only the organization creator can change roles");
+      return;
+    }
+    const confirmed = await confirmAsync(
+      `Update role for "${item.userId.username}"?`,
     );
-    if (!confirmUpdate) return;
+    if (!confirmed) return;
     try {
       const newRole = selectedRole[item._id];
       const response = await fetch(
@@ -198,17 +266,21 @@ export default function RoleManagement() {
         delete copy[item._id];
         return copy;
       });
-      alert("User role updated successfully");
+      toast.success("User role updated successfully");
     } catch (err) {
       console.error(err);
     }
   };
 
   const handleRemoveOrgUser = async (item: UserTenantRole) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to remove this user from the organization?",
+    if (!isCreatorOfTenant(item)) {
+      toast.error("Only the organization creator can remove users");
+      return;
+    }
+    const confirmed = await confirmAsync(
+      `Remove "${item.userId.username}" from "${item.tenantId.name}"? They can be re-added later.`,
     );
-    if (!confirmDelete) return;
+    if (!confirmed) return;
     try {
       const response = await fetch(
         `http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}`,
@@ -222,9 +294,12 @@ export default function RoleManagement() {
         throw new Error("Failed to remove user");
       }
       setOrgUsers((prev) => prev.filter((u) => u._id !== item._id));
-      alert("User removed from organization successfully");
+      toast.success(
+        "User removed from organization. They can be re-added later.",
+      );
     } catch (err) {
       console.error(err);
+      toast.error("Failed to remove user");
     }
   };
 
@@ -354,7 +429,7 @@ export default function RoleManagement() {
                         title={
                           !selectedTenantId
                             ? "Select an organization first"
-                            : "Add user to organization"
+                            : undefined
                         }
                         className={`px-3 py-1 text-white text-sm rounded ${!selectedTenantId ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
                       >

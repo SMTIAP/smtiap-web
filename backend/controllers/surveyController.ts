@@ -32,22 +32,26 @@ const reqActiveTenantId = (req: Request): string | null =>
  * Build a data-isolation filter for listing surveys.
  *
  * Priority order (first match wins):
- *   1. User HAS tenant memberships → scope by tenantId only
- *   2. User is authenticated but has NO tenant → scope by createdBy (their own surveys)
- *   3. Not authenticated → no surveys visible via this endpoint (public users use public endpoints)
+ *   1. User has an ACTIVE tenant (x-tenant-id header matched) → scope by that tenant only
+ *   2. System context (no active tenant / "My Account") → own surveys only (no tenantId)
+ *   3. Not authenticated → no surveys visible
  */
 const buildSurveyFilter = (req: Request): Record<string, unknown> | null => {
-  const tids = reqTenantIds(req);
+  const activeTenantId = reqActiveTenantId(req);
   const userId = reqUserId(req);
 
-  if (tids.length > 0) {
-    // User belongs to one or more tenants → tenant-scoped
-    return { tenantId: { $in: tids } };
+  if (activeTenantId) {
+    // User explicitly switched to a tenant → show only that tenant's surveys
+    return { tenantId: activeTenantId };
   }
 
   if (userId) {
-    // User is authenticated but has NO tenant → own surveys only
-    return { createdBy: new mongoose.Types.ObjectId(userId) };
+    // System context ("My Account") → show only surveys created by this user
+    // that are not assigned to any tenant
+    return {
+      createdBy: new mongoose.Types.ObjectId(userId),
+      $or: [{ tenantId: { $exists: false } }, { tenantId: null }],
+    };
   }
 
   // Not authenticated → return null (caller handles empty result)

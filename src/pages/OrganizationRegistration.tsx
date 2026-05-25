@@ -57,34 +57,53 @@ export default function OrganizationRegistration() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] flex flex-col items-center transition-colors duration-300">
-
       {/* Header */}
       <div className="w-full max-w-4xl px-6 py-8 flex items-center gap-4">
         <BackButton />
-        <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Organization Registration</h1>
+        <h1 className="text-3xl font-bold text-slate-800 dark:text-white">
+          Organization Registration
+        </h1>
       </div>
 
       {/* Form Wrapper */}
       <div className="w-full max-w-4xl px-6 pb-10">
         <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-sm p-10 flex flex-col gap-8 transition-colors duration-300">
-
           {/* Title */}
-          <div className="border-b border-slate-200 dark:border-slate-700 pb-3">
-            <h2 className="text-lg font-semibold text-slate-700 dark:text-white">Organization Details</h2>
+          <div className="border-b dark:border-slate-700 pb-3">
+            <h2 className="text-lg font-semibold text-slate-700 dark:text-slate-300">
+              Organization Details
+            </h2>
           </div>
 
           {/* Organization Name */}
           <div className="flex flex-col gap-2">
-            <label className={labelClass}>Organization Name</label>
-            <input onChange={handleChange} name="name" value={formData.name} type="text"
-              placeholder="Enter organization name" className={inputClass} />
-            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+              Organization Name
+            </label>
+            <input
+              onChange={handleChange}
+              name="name"
+              value={formData.name}
+              type="text"
+              placeholder="Enter organization name"
+              className="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
+            />
+            {errors.name && (
+              <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+            )}
           </div>
 
           {/* Country */}
           <div className="flex flex-col gap-2">
-            <label className={labelClass}>Country</label>
-            <select name="country" value={formData.country} onChange={handleChange} className={inputClass}>
+            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+              Country
+            </label>
+            <select
+              name="country"
+              value={formData.country}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
+            >
               <option value="">Select country</option>
               <option value="Afghanistan">Afghanistan</option>
               <option value="Albania">Albania</option>
@@ -189,42 +208,87 @@ export default function OrganizationRegistration() {
 
           {/* Address */}
           <div className="flex flex-col gap-2">
-            <label className={labelClass}>Address</label>
-            <input name="address" value={formData.address} onChange={handleChange} type="text"
-              placeholder="Enter address" className={inputClass} />
-            {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
+            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+              Address
+            </label>
+            <input
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              type="text"
+              placeholder="Enter address"
+              className="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
+            />
+            {errors.address && (
+              <p className="text-red-500 text-sm mt-1">{errors.address}</p>
+            )}
           </div>
 
           {/* Domain */}
           <div className="flex flex-col gap-2">
-            <label className={labelClass}>Organization Domain</label>
-            <input onChange={handleChange} name="domain" value={formData.domain} type="text"
-              placeholder="Enter organization domain" className={inputClass} />
-            {errors.domain && <p className="text-red-500 text-sm mt-1">{errors.domain}</p>}
+            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+              Organization Domain
+            </label>
+            <input
+              onChange={handleChange}
+              name="domain"
+              value={formData.domain}
+              type="text"
+              placeholder="Enter organization domain"
+              className="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
+            />
+            {errors.domain && (
+              <p className="text-red-500 text-sm mt-1">{errors.domain}</p>
+            )}
           </div>
 
           {/* Description */}
           <div className="flex flex-col gap-2">
-            <label className={labelClass}>Description</label>
-            <textarea name="description" value={formData.description} onChange={handleChange}
-              rows={3} placeholder="Enter description"
-              className={`${inputClass} resize-none`} />
-            {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+              Description
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows={3}
+              placeholder="Enter description"
+              className="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none resize-none"
+            />
+            {errors.description && (
+              <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+            )}
           </div>
 
           {/* Org Type */}
           <div className="flex flex-col gap-3">
-            <label className={labelClass}>Organization Type</label>
+            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+              Organization Type
+            </label>
             <div className="flex gap-6">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="orgType" value="profit"
-                  checked={formData.orgType === "profit"} onChange={handleChange} />
-                <span className="text-sm text-slate-700 dark:text-slate-300">For Profit</span>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="orgType"
+                  value="profit"
+                  checked={formData.orgType === "profit"}
+                  onChange={handleChange}
+                />
+                <span className="text-sm text-slate-700 dark:text-slate-300">
+                  For Profit
+                </span>
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="orgType" value="non-profit"
-                  checked={formData.orgType === "non-profit"} onChange={handleChange} />
-                <span className="text-sm text-slate-700 dark:text-slate-300">Non Profit</span>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="orgType"
+                  value="non-profit"
+                  checked={formData.orgType === "non-profit"}
+                  onChange={handleChange}
+                />
+                <span className="text-sm text-slate-700 dark:text-slate-300">
+                  Non Profit
+                </span>
               </label>
             </div>
             {errors.orgType && <p className="text-red-500 text-sm mt-1">{errors.orgType}</p>}

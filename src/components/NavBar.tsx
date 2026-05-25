@@ -259,8 +259,15 @@ export default function NavBar() {
                   <span className="w-9 h-9 rounded-full bg-linear-to-br from-[#5C38E1] to-[#8E6BFF] flex items-center justify-center text-white text-[13px] font-extrabold shadow-md select-none">
                     {initials}
                   </span>
-                  <span className="hidden md:block text-[14px] font-bold text-[#1e1b4b] dark:text-white max-w-30 truncate">
-                    {user.username}
+                  <span className="hidden md:flex flex-col items-start">
+                    <span className="text-[14px] font-bold text-[#1e1b4b] dark:text-white max-w-30 truncate leading-tight">
+                      {user.username}
+                    </span>
+                    <span className="text-[10px] font-semibold text-indigo-500 dark:text-indigo-400 truncate max-w-30 leading-tight">
+                      {isSystemContext
+                        ? roleLabels[user?.role ?? ""] || user?.role || "Admin"
+                        : `${roleLabels[activeTenant?.role ?? ""] || activeTenant?.role || ""} · ${activeTenant?.tenantId.name || ""}`}
+                    </span>
                   </span>
                 </button>
 

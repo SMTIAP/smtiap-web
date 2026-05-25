@@ -24,6 +24,22 @@ const reqTenantIds = (req: Request): string[] =>
 const hasTenantAccess = (req: Request, tenantId: string): boolean =>
   reqTenantIds(req).includes(tenantId);
 
+/** Check if the authenticated user is the creator/owner of the tenant. */
+const isTenantCreator = async (
+  req: Request,
+  tenantId: string,
+): Promise<boolean> => {
+  const userId = (req as any).user?._id;
+  if (!userId) return false;
+  try {
+    const tenant = await Tenant.findById(tenantId).select("createdBy").lean();
+    if (!tenant) return false;
+    return String(tenant.createdBy) === String(userId);
+  } catch {
+    return false;
+  }
+};
+
 // ── Controllers ──────────────────────────────────────────────────────
 
 export const getAllUsers = async (req: Request, res: Response) => {
@@ -40,12 +56,22 @@ export const getAllUsers = async (req: Request, res: Response) => {
 
 export const getAllTenants = async (req: Request, res: Response) => {
   try {
+    // Return only the active tenant (the one the user has currently switched to).
+    // If in system context (no active tenant), return all tenants the user belongs to
+    // so the dropdown can still be populated.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const activeTenantId = (req as any).activeTenantId as string | null;
     const tenantIds = reqTenantIds(req);
+
     if (tenantIds.length === 0) {
       res.status(200).json([]);
       return;
     }
-    const tenants = await Tenant.find({ _id: { $in: tenantIds } });
+
+    // For the role-management / org admin page, scope to active tenant only
+    // so a user only manages the org they're currently acting in.
+    const idsToFetch = activeTenantId ? [activeTenantId] : tenantIds;
+    const tenants = await Tenant.find({ _id: { $in: idsToFetch } });
     res.status(200).json(tenants);
   } catch (error: unknown) {
     res.status(500).json({
@@ -60,6 +86,13 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
     const { role } = req.body;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const actor = (req as any).user;
+
+    // Only the tenant creator can add users
+    if (!(await isTenantCreator(req, tenantId))) {
+      return res.status(403).json({
+        message: "Forbidden: only the organization creator can add users",
+      });
+    }
 
     const exists = await UserTenantRole.findOne({
       userId,
@@ -108,7 +141,10 @@ export const getUserTenantData = async (req: Request, res: Response) => {
       return;
     }
 
-    const data = await UserTenantRole.find({ tenantId: { $in: tenantIds } })
+    const data = await UserTenantRole.find({
+      tenantId: { $in: tenantIds },
+      status: "active",
+    })
       .populate("userId", "username email")
       .populate("tenantId", "name");
 
@@ -131,6 +167,13 @@ export const updateOrgRole = async (req: Request, res: Response) => {
       return res
         .status(403)
         .json({ message: "Forbidden: you do not belong to this tenant" });
+    }
+
+    // Only the tenant creator can change roles
+    if (!(await isTenantCreator(req, tenantId))) {
+      return res.status(403).json({
+        message: "Forbidden: only the organization creator can change roles",
+      });
     }
 
     // 1. Get existing record FIRST (old role)
@@ -189,6 +232,13 @@ export const removeOrgUser = async (req: Request, res: Response) => {
       return res
         .status(403)
         .json({ message: "Forbidden: you do not belong to this tenant" });
+    }
+
+    // Only the tenant creator can remove users
+    if (!(await isTenantCreator(req, tenantId))) {
+      return res.status(403).json({
+        message: "Forbidden: only the organization creator can remove users",
+      });
     }
 
     const record = await UserTenantRole.findOne({

@@ -8,6 +8,7 @@ import {
 import { createContext, useContext, useEffect, useState } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Toaster } from "sonner";
 import ForgotPassword from "./pages/Forgot-password";
 import OrganizationAdmin from "./pages/OrganizationAdmin";
 import LandingPage from "./pages/LandingPage";
@@ -229,10 +230,8 @@ export default function App() {
           pauseOnHover
           draggable
           theme={darkMode ? "dark" : "light"}
-          
         />
-
-
+        <Toaster richColors position="bottom-right" />
       </div>
     </DarkModeContext.Provider>
   );
