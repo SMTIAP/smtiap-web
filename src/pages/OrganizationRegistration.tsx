@@ -8,24 +8,12 @@ export default function OrganizationRegistration() {
   const navigate = useNavigate();
   const { refreshTenants } = useTenant();
   const [formData, setFormData] = useState({
-    name: "",
-    country: "",
-    address: "",
-    description: "",
-    orgType: "",
-    domain: "",
+    name: "", country: "", address: "", description: "", orgType: "", domain: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
-  ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async () => {
@@ -36,39 +24,25 @@ export default function OrganizationRegistration() {
     if (!formData.country.trim()) newErrors.country = "Country is required";
     if (!formData.address.trim()) newErrors.address = "Address is required";
     if (!formData.domain.trim()) newErrors.domain = "Domain is required";
-    if (!formData.description.trim())
-      newErrors.description = "Description is required";
+    if (!formData.description.trim()) newErrors.description = "Description is required";
     if (!formData.orgType) newErrors.orgType = "Select organization type";
-
     if (formData.domain.trim() && !domainRegex.test(formData.domain)) {
       newErrors.domain = "Please enter a valid domain (e.g. example.com)";
     }
 
     setErrors(newErrors);
-
     if (Object.keys(newErrors).length > 0) return;
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        "http://localhost:5000/api/organization-registration",
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        },
-      );
-
+      const response = await fetch("http://localhost:5000/api/organization-registration", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(formData),
+      });
       const data = await response.json();
-      if (!response.ok) {
-        toast.error(data.message || "Something went wrong");
-        return;
-      }
-
+      if (!response.ok) { toast.error(data.message || "Something went wrong"); return; }
       await refreshTenants();
       toast.success("Organization Registered");
       navigate("/role-management");
@@ -78,55 +52,39 @@ export default function OrganizationRegistration() {
     }
   };
 
+  const inputClass = "w-full rounded-lg border border-slate-200 dark:border-slate-600 px-4 py-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-400 outline-none transition-colors";
+  const labelClass = "text-sm font-medium text-slate-600 dark:text-slate-300";
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] flex flex-col items-center transition-colors duration-300">
+
       {/* Header */}
       <div className="w-full max-w-4xl px-6 py-8 flex items-center gap-4">
         <BackButton />
-        <h1 className="text-3xl font-bold text-slate-800">
-          Organization Registration
-        </h1>
+        <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Organization Registration</h1>
       </div>
 
-      {/* FORM WRAPPER */}
+      {/* Form Wrapper */}
       <div className="w-full max-w-4xl px-6 pb-10">
-        <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-10 flex flex-col gap-8">
+        <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-sm p-10 flex flex-col gap-8 transition-colors duration-300">
+
           {/* Title */}
-          <div className="border-b pb-3">
-            <h2 className="text-lg font-semibold text-slate-700">
-              Organization Details
-            </h2>
+          <div className="border-b border-slate-200 dark:border-slate-700 pb-3">
+            <h2 className="text-lg font-semibold text-slate-700 dark:text-white">Organization Details</h2>
           </div>
 
           {/* Organization Name */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-slate-600">
-              Organization Name
-            </label>
-            <input
-              onChange={handleChange}
-              name="name"
-              value={formData.name}
-              type="text"
-              placeholder="Enter organization name"
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
-            />
-            {errors.name && (
-              <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-            )}
+            <label className={labelClass}>Organization Name</label>
+            <input onChange={handleChange} name="name" value={formData.name} type="text"
+              placeholder="Enter organization name" className={inputClass} />
+            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
           </div>
 
           {/* Country */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-slate-600">
-              Country
-            </label>
-            <select
-              name="country"
-              value={formData.country}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
-            >
+            <label className={labelClass}>Country</label>
+            <select name="country" value={formData.country} onChange={handleChange} className={inputClass}>
               <option value="">Select country</option>
               <option value="Afghanistan">Afghanistan</option>
               <option value="Albania">Albania</option>
@@ -226,102 +184,55 @@ export default function OrganizationRegistration() {
               <option value="Yemen">Yemen</option>
               <option value="Zimbabwe">Zimbabwe</option>
             </select>
-            {errors.country && (
-              <p className="text-red-500 text-sm mt-1">{errors.country}</p>
-            )}
+            {errors.country && <p className="text-red-500 text-sm mt-1">{errors.country}</p>}
           </div>
 
           {/* Address */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-slate-600">
-              Address
-            </label>
-            <input
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              type="text"
-              placeholder="Enter address"
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
-            />
-            {errors.address && (
-              <p className="text-red-500 text-sm mt-1">{errors.address}</p>
-            )}
+            <label className={labelClass}>Address</label>
+            <input name="address" value={formData.address} onChange={handleChange} type="text"
+              placeholder="Enter address" className={inputClass} />
+            {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
           </div>
 
-          {/* Organization Domain */}
+          {/* Domain */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-slate-600">
-              Organization Domain
-            </label>
-            <input
-              onChange={handleChange}
-              name="domain"
-              value={formData.domain}
-              type="text"
-              placeholder="Enter organization domain"
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
-            />
-            {errors.domain && (
-              <p className="text-red-500 text-sm mt-1">{errors.domain}</p>
-            )}
+            <label className={labelClass}>Organization Domain</label>
+            <input onChange={handleChange} name="domain" value={formData.domain} type="text"
+              placeholder="Enter organization domain" className={inputClass} />
+            {errors.domain && <p className="text-red-500 text-sm mt-1">{errors.domain}</p>}
           </div>
 
           {/* Description */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-slate-600">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows={3}
-              placeholder="Enter description"
-              className="w-full rounded-lg border border-slate-200 px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none resize-none"
-            />
-            {errors.description && (
-              <p className="text-red-500 text-sm mt-1">{errors.description}</p>
-            )}
+            <label className={labelClass}>Description</label>
+            <textarea name="description" value={formData.description} onChange={handleChange}
+              rows={3} placeholder="Enter description"
+              className={`${inputClass} resize-none`} />
+            {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
           </div>
 
-          {/* Type */}
+          {/* Org Type */}
           <div className="flex flex-col gap-3">
-            <label className="text-sm font-medium text-slate-600">
-              Organization Type
-            </label>
+            <label className={labelClass}>Organization Type</label>
             <div className="flex gap-6">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="orgType"
-                  value="profit"
-                  checked={formData.orgType === "profit"}
-                  onChange={handleChange}
-                />
-                <span className="text-sm text-slate-700">For Profit</span>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="orgType" value="profit"
+                  checked={formData.orgType === "profit"} onChange={handleChange} />
+                <span className="text-sm text-slate-700 dark:text-slate-300">For Profit</span>
               </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="orgType"
-                  value="non-profit"
-                  checked={formData.orgType === "non-profit"}
-                  onChange={handleChange}
-                />
-                <span className="text-sm text-slate-700">Non Profit</span>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="orgType" value="non-profit"
+                  checked={formData.orgType === "non-profit"} onChange={handleChange} />
+                <span className="text-sm text-slate-700 dark:text-slate-300">Non Profit</span>
               </label>
             </div>
-            {errors.orgType && (
-              <p className="text-red-500 text-sm mt-1">{errors.orgType}</p>
-            )}
+            {errors.orgType && <p className="text-red-500 text-sm mt-1">{errors.orgType}</p>}
           </div>
 
           {/* Submit */}
-          <button
-            onClick={handleSubmit}
-            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-10 rounded-lg transition self-center"
-          >
+          <button onClick={handleSubmit}
+            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-10 rounded-lg transition self-center">
             Register Organization
           </button>
         </div>
