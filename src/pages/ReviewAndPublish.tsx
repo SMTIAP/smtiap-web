@@ -1,9 +1,15 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronLeft, CheckCircle2, FileText, Layout } from "lucide-react";
+import { toast } from "sonner";
+import { useTenant } from "../contexts/TenantContext";
 
 export default function ReviewAndPublish() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { activeTenant, isSystemContext } = useTenant();
+  const tenantRole =
+    !isSystemContext && activeTenant ? activeTenant.role : null;
+  const isViewer = tenantRole === "viewer" || tenantRole === "billing_manager";
 
   const surveyTitle = location.state?.surveyTitle || "Untitled Survey";
   const description = location.state?.description || "";
@@ -13,6 +19,13 @@ export default function ReviewAndPublish() {
   const logo = location.state?.logo || null;
   const websiteUrl = location.state?.websiteUrl || "";
   const customizeBranding = location.state?.customizeBranding || false;
+
+  // Block viewers from publishing
+  if (isViewer) {
+    toast.error("You do not have permission to publish or edit surveys");
+    navigate("/created-surveys");
+    return null;
+  }
 
   const handleFinalize = async (status: "Running" | "Draft") => {
     try {
@@ -54,19 +67,24 @@ export default function ReviewAndPublish() {
       const data = await res.json();
       const savedSurvey = data.survey;
       if (status === "Running") {
-         const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token");
         await fetch(
           `http://localhost:5000/api/surveys/${savedSurvey._id}/status`,
           {
             method: "PATCH",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`
+              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ status: "Running" }),
-          }
+          },
         );
-        navigate("/share-survey", { state: { surveyId: savedSurvey._id, surveyTitle: savedSurvey.surveyTitle } });
+        navigate("/share-survey", {
+          state: {
+            surveyId: savedSurvey._id,
+            surveyTitle: savedSurvey.surveyTitle,
+          },
+        });
       } else {
         navigate("/created-surveys", {
           state: {

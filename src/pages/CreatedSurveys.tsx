@@ -349,10 +349,13 @@ export default function CreatedSurveys() {
 
   const handleCardClick = (survey: SurveyItem) => {
     if (survey.status === "Draft") {
-      // Viewers cannot edit — redirect to results instead
+      // Viewers cannot edit — open in read-only mode
       if (canCreate)
         navigate("/add-questions", { state: { surveyId: survey._id } });
-      else navigate(`/survey-results/${survey._id}`);
+      else
+        navigate("/add-questions", {
+          state: { surveyId: survey._id, readOnly: true },
+        });
     } else if (survey.status === "Running" || survey.status === "Finished")
       navigate(`/survey-results/${survey._id}`);
   };
