@@ -5,9 +5,14 @@ import UserTenantRole from "../models/UserTenantRole.js";
  * Loads tenant membership context from UserTenantRole and attaches to req.
  *
  * Sets:
- *   req.tenantIds     – string[] of all tenant ObjectIds the user belongs to
- *   req.memberships   – full UserTenantRole docs
- *   req.activeTenantId – single active tenant (from header or single membership)
+ *   req.tenantIds       – string[] of all tenant ObjectIds the user belongs to
+ *   req.memberships     – full UserTenantRole docs
+ *   req.activeTenantId  – single active tenant (ONLY from x-tenant-id header, never auto-assigned)
+ *
+ * CRITICAL: activeTenantId is set ONLY when the client explicitly sends an x-tenant-id header
+ * that matches one of the user's memberships.  It is NEVER auto-assigned from a single
+ * membership — that would cause surveys created in "My Account" to leak into the tenant scope
+ * for users who belong to only one tenant.
  *
  * Must be used AFTER `protect` middleware (requires req.user).
  * If the user has no tenant memberships, tenantIds will be empty — controllers
@@ -40,11 +45,11 @@ export const loadTenant = async (
     (req as any).memberships = memberships;
 
     // Honour x-tenant-id header if user belongs to that tenant
+    // IMPORTANT: Do NOT auto-assign from a single membership — the client must
+    // explicitly opt into a tenant context.  "My Account" = no header = null.
     const headerTenantId = req.headers["x-tenant-id"] as string | undefined;
     if (headerTenantId && tenantIds.includes(headerTenantId)) {
       (req as any).activeTenantId = headerTenantId;
-    } else if (tenantIds.length === 1) {
-      (req as any).activeTenantId = tenantIds[0];
     } else {
       (req as any).activeTenantId = null;
     }

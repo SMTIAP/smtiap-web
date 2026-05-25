@@ -24,42 +24,46 @@ router.get(
       const userObjectId = new mongoose.Types.ObjectId(userId);
 
       // --- TENANT CONTEXT (loaded by loadTenant middleware) ---
-      const tenantIds = ((req as any).tenantIds as string[]) ?? [];
-      const tenantObjectIds = tenantIds
-        .filter((id) => mongoose.Types.ObjectId.isValid(id))
-        .map((id) => new mongoose.Types.ObjectId(id));
+      // Use activeTenantId (single active tenant) — not all tenant memberships.
+      // This ensures "My Account" context only shows the user's own personal data.
+      const activeTenantId =
+        ((req as any).activeTenantId as string | null) ?? null;
+      const activeTenantObjectId =
+        activeTenantId && mongoose.Types.ObjectId.isValid(activeTenantId)
+          ? new mongoose.Types.ObjectId(activeTenantId)
+          : null;
 
-      // --- USER ROLE COUNTS (scoped to tenant) ---
-      // Only count users that belong to the same tenant(s) as the current user.
-      // We look at UserTenantRole to find all userIds in this tenant, then count by role.
+      // --- USER ROLE COUNTS (scoped to active tenant only) ---
       const [adminCount, creatorCount, billingCount, viewerCount] =
-        tenantObjectIds.length > 0
+        activeTenantObjectId
           ? await Promise.all([
               UserTenantRole.countDocuments({
-                tenantId: { $in: tenantObjectIds },
+                tenantId: activeTenantObjectId,
                 role: "admin",
               }),
               UserTenantRole.countDocuments({
-                tenantId: { $in: tenantObjectIds },
+                tenantId: activeTenantObjectId,
                 role: "creator",
               }),
               UserTenantRole.countDocuments({
-                tenantId: { $in: tenantObjectIds },
+                tenantId: activeTenantObjectId,
                 role: "billing_manager",
               }),
               UserTenantRole.countDocuments({
-                tenantId: { $in: tenantObjectIds },
+                tenantId: activeTenantObjectId,
                 role: "viewer",
               }),
             ])
           : [0, 0, 0, 0];
 
-      // Count surveys in user's tenant(s)
+      // Count surveys scoped to active tenant, or own personal surveys when in system context
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const surveyFilter: any =
-        tenantIds.length > 0
-          ? { tenantId: { $in: tenantIds } }
-          : { createdBy: userObjectId };
+      const surveyFilter: any = activeTenantId
+        ? { tenantId: activeTenantId }
+        : {
+            createdBy: userObjectId,
+            $or: [{ tenantId: { $exists: false } }, { tenantId: null }],
+          };
 
       const withStatus = (status: string) => ({
         $and: [surveyFilter, { status }],
@@ -74,8 +78,8 @@ router.get(
         ]);
 
       // --- SUBSCRIPTION ---
-      const subscription = tenantObjectIds.length
-        ? await Subscription.findOne({ tenant_id: { $in: tenantObjectIds } })
+      const subscription = activeTenantObjectId
+        ? await Subscription.findOne({ tenant_id: activeTenantObjectId })
             .sort({ end_date: -1 })
             .lean()
         : null;
