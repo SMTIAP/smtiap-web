@@ -30,16 +30,16 @@ router.get("/", protect, loadTenant, async (req: Request, res: Response) => {
     }
 
     if (fromDate || toDate) {
-      filter.timestamp = {};
+      filter.createdAt = {};
       if (fromDate) {
-        (filter.timestamp as Record<string, unknown>).$gte = new Date(
+        (filter.createdAt as Record<string, unknown>).$gte = new Date(
           fromDate as string,
         );
       }
       if (toDate) {
         const toDateObj = new Date(toDate as string);
         toDateObj.setHours(23, 59, 59, 999);
-        (filter.timestamp as Record<string, unknown>).$lte = toDateObj;
+        (filter.createdAt as Record<string, unknown>).$lte = toDateObj;
       }
     }
 
@@ -54,7 +54,7 @@ router.get("/", protect, loadTenant, async (req: Request, res: Response) => {
     const logs = await AuditLog.find(filter)
       .populate("user_id", "username email")
       .populate("tenant_id", "name")
-      .sort({ timestamp: -1 })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum)
       .lean();
