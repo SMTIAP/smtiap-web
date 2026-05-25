@@ -46,15 +46,15 @@ export default function RoleManagement() {
   };
 
   const token = localStorage.getItem("token");
-  const authHeaders = (): Record<string, string> => ({
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    // Only send x-tenant-id when a real tenant is active (not system context)
-    ...(() => {
-      const id = localStorage.getItem("activeTenantId");
-      return id && id !== "__system__" ? { "x-tenant-id": id } : {};
-    })(),
-  });
+  const authHeaders = (): Record<string, string> => {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    const id = localStorage.getItem("activeTenantId");
+    if (id && id !== "__system__") headers["x-tenant-id"] = id;
+    return headers;
+  };
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -67,13 +67,13 @@ export default function RoleManagement() {
           },
         );
         const data = await response.json();
-        console.log("TENANTS FROM BACKEND 1:", data);
         setUsers(data);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
     };
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);
 
   useEffect(() => {
@@ -87,13 +87,13 @@ export default function RoleManagement() {
           },
         );
         const data = await response.json();
-        console.log("TENANTS FROM BACKEND 2:", data);
         setTenants(data);
       } catch (error) {
         console.error("Error fetching tenants:", error);
       }
     };
     fetchTenants();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);
 
   useEffect(() => {
@@ -108,19 +108,16 @@ export default function RoleManagement() {
         );
         const data = await response.json();
         setOrgUsers(data);
-        console.log("JOINED DATA:", data);
       } catch (error) {
         console.error(error);
       }
     };
     fetchOrganizationData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);
-  let currentUserId = "";
   if (token) {
-    const decoded: any = jwtDecode(token);
-    console.log(decoded);
-    currentUserId = decoded.id;
-    console.log("USER ID:", currentUserId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    jwtDecode<any>(token);
   }
 
   const filteredUsers = searchTerm.trim()
@@ -235,8 +232,8 @@ export default function RoleManagement() {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
-      <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
-      <div className="w-full max-w-[1152px] px-6 py-10 flex flex-col gap-10">
+      <div className="h-1.5 w-full bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500" />
+      <div className="w-full max-w-6xl px-6 py-10 flex flex-col gap-10">
         {/* Header */}
         <div className="flex justify-between items-center w-full">
           <div className="flex items-center gap-4 w-fit">

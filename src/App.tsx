@@ -6,6 +6,8 @@ import {
   Navigate,
 } from "react-router-dom";
 import { createContext, useContext, useEffect, useState } from "react";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import ForgotPassword from "./pages/Forgot-password";
 import OrganizationAdmin from "./pages/OrganizationAdmin";
 import LandingPage from "./pages/LandingPage";
@@ -217,6 +219,20 @@ export default function App() {
             </Routes>
           </TenantProvider>
         </BrowserRouter>
+
+        <ToastContainer
+          position="top-center"
+          autoClose={3000}
+          hideProgressBar={true}
+          newestOnTop
+          closeOnClick
+          pauseOnHover
+          draggable
+          theme={darkMode ? "dark" : "light"}
+          
+        />
+
+
       </div>
     </DarkModeContext.Provider>
   );

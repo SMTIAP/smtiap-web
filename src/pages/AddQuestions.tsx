@@ -376,12 +376,12 @@ const QuestionCard = ({
       }}
       onDragEnd={() => setIsDragOver(false)}
       onClick={() => !isPreview && setSelectedQuestionId(question.id)}
-      className={`group relative bg-white rounded-xl border-2 transition-all duration-200 ${
+      className={`group relative bg-white dark:bg-slate-800 rounded-xl border-2 transition-all duration-200 ${
         isDragOver
-          ? "border-indigo-400 shadow-xl scale-[1.01] bg-indigo-50"
+          ? "border-indigo-400 shadow-xl scale-[1.01] bg-indigo-50 dark:bg-indigo-900/20"
           : isActive
             ? "border-indigo-500 shadow-lg"
-            : "border-gray-100 hover:border-gray-200 shadow-sm"
+            : "border-gray-100 dark:border-slate-700 hover:border-gray-200 dark:hover:border-slate-600 shadow-sm"
       } ${isPreview ? "p-6 mb-4" : "p-6 mb-4 cursor-pointer"}`}
     >
       {!isPreview && (
@@ -397,7 +397,7 @@ const QuestionCard = ({
 
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
-          <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
             {question.label}
             {question.required && <span className="text-red-500">*</span>}
           </h3>
@@ -453,7 +453,7 @@ const QuestionCard = ({
             type="text"
             placeholder={question.placeholder}
             disabled
-            className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400"
+            className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg p-3 text-gray-400"
           />
         )}
         {(question.type === "multiple_choice" ||
@@ -464,7 +464,7 @@ const QuestionCard = ({
                 <div
                   className={`w-4 h-4 border border-gray-300 ${question.type === "multiple_choice" ? "rounded-full" : "rounded"}`}
                 />
-                <span className="text-gray-700">{opt}</span>
+                <span className="text-gray-700 dark:text-slate-300">{opt}</span>
               </div>
             ))}
           </div>
