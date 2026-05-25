@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Tenant from "../models/Tenant.js";
 import UserTenantRole from "../models/UserTenantRole.js";
+import AuditLog from "../models/AuditLog.js";
 
 interface AuthenticatedRequest extends Request {
   user?: { _id: string };
@@ -40,19 +41,24 @@ export const createOrganization = async (req: Request, res: Response) => {
       createdBy: userId,
     });
 
-    // Create membership — roll back tenant if this fails
-    try {
-      await UserTenantRole.create({
-        userId,
-        tenantId: tenant._id,
-        role: "admin",
-      });
-    } catch (membershipError) {
-      await Tenant.findByIdAndDelete(String(tenant._id));
-      throw membershipError;
-    }
+    // Create membership
+    await UserTenantRole.create({
+      userId,
+      tenantId: tenant._id,
+      role: "admin",
+    });
 
-    res.status(201).json({
+    // Audit log
+    await AuditLog.create({
+      tenant_id: tenant._id,
+      user_id: userId,
+      action: "create",
+      entity: "Tenant",
+      entity_id: tenant._id,
+      description: `Created Organization ${tenant.name}`,
+    });
+
+    return res.status(201).json({
       message: "Organization created successfully",
       tenant,
     });

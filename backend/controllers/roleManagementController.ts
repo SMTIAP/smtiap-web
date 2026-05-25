@@ -2,9 +2,18 @@ import { Request, Response } from "express";
 import User from "../models/User.js";
 import Tenant from "../models/Tenant.js";
 import UserTenantRole from "../models/UserTenantRole.js";
+import AuditLog from "../models/AuditLog.js";
+
+export const formatRole = (role: string) => {
+  return role
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const reqAny = (req: Request): Record<string, any> =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   req as unknown as Record<string, any>;
 
 /** Get the authenticated user's tenant IDs from the request (set by loadTenant middleware). */
@@ -23,11 +32,9 @@ export const getAllUsers = async (req: Request, res: Response) => {
     const users = await User.find().select("username email role").lean();
     res.status(200).json(users);
   } catch (error: unknown) {
-    res
-      .status(500)
-      .json({
-        message: error instanceof Error ? error.message : "Server Error",
-      });
+    res.status(500).json({
+      message: error instanceof Error ? error.message : "Server Error",
+    });
   }
 };
 
@@ -41,46 +48,9 @@ export const getAllTenants = async (req: Request, res: Response) => {
     const tenants = await Tenant.find({ _id: { $in: tenantIds } });
     res.status(200).json(tenants);
   } catch (error: unknown) {
-    res
-      .status(500)
-      .json({
-        message: error instanceof Error ? error.message : "Server Error",
-      });
-  }
-};
-
-export const updateUserRole = async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    const { role } = req.body;
-
-    // Only update roles for users within the same tenant
-    const tenantIds = reqTenantIds(req);
-    const membership = await UserTenantRole.findOne({
-      userId,
-      tenantId: { $in: tenantIds },
+    res.status(500).json({
+      message: error instanceof Error ? error.message : "Server Error",
     });
-
-    if (!membership) {
-      return res
-        .status(403)
-        .json({ message: "Forbidden: user not in your tenant" });
-    }
-
-    // Update role only in UserTenantRole — do NOT touch User.role (that is a global role)
-    const updated = await UserTenantRole.findOneAndUpdate(
-      { userId, tenantId: membership.tenantId },
-      { role },
-      { new: true },
-    );
-
-    res.status(200).json(updated);
-  } catch (error: unknown) {
-    res
-      .status(500)
-      .json({
-        message: error instanceof Error ? error.message : "Server Error",
-      });
   }
 };
 
@@ -88,6 +58,8 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.params;
     const { role } = req.body;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const actor = (req as any).user;
 
     const exists = await UserTenantRole.findOne({
       userId,
@@ -107,13 +79,24 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
       role,
     });
 
+    //Fetch user details
+    const user = await User.findById(userId);
+    const tenant = await Tenant.findById(tenantId);
+
+    await AuditLog.create({
+      tenant_id: tenantId,
+      user_id: actor._id,
+      action: "add",
+      entity: "User",
+      entity_id: userId,
+      description: `Added User ${user?.username} to ${tenant?.name}`,
+    });
+
     res.status(201).json(record);
   } catch (error: unknown) {
-    res
-      .status(500)
-      .json({
-        message: error instanceof Error ? error.message : "Server Error",
-      });
+    res.status(500).json({
+      message: error instanceof Error ? error.message : "Server Error",
+    });
   }
 };
 
@@ -131,18 +114,18 @@ export const getUserTenantData = async (req: Request, res: Response) => {
 
     res.status(200).json(data);
   } catch (error: unknown) {
-    res
-      .status(500)
-      .json({
-        message: error instanceof Error ? error.message : "Server Error",
-      });
+    res.status(500).json({
+      message: error instanceof Error ? error.message : "Server Error",
+    });
   }
 };
 
 export const updateOrgRole = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.params;
-    const { role } = req.body;
+    const { role: newRole } = req.body;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const actor = (req as any).user;
 
     if (!hasTenantAccess(req, tenantId)) {
       return res
@@ -150,31 +133,57 @@ export const updateOrgRole = async (req: Request, res: Response) => {
         .json({ message: "Forbidden: you do not belong to this tenant" });
     }
 
-    const updated = await UserTenantRole.findOneAndUpdate(
-      { userId, tenantId },
-      { role },
-      { returnDocument: "after" },
-    )
-      .populate("userId")
-      .populate("tenantId");
+    // 1. Get existing record FIRST (old role)
+    const existing = await UserTenantRole.findOne({
+      userId,
+      tenantId,
+    });
 
-    if (!updated) {
+    if (!existing) {
       return res.status(404).json({ message: "Record not found" });
     }
 
-    res.status(200).json(updated);
+    const oldRole = existing.role;
+
+    // 2. Update role
+    existing.role = newRole;
+    const updated = await existing.save();
+
+    // 3. Populate for response
+    await updated.populate("userId", "username email");
+    await updated.populate("tenantId", "name");
+
+    // 4. Fetch user/tenant for audit
+    const user = await User.findById(userId);
+    const tenant = await Tenant.findById(tenantId);
+
+    // 5. Audit log
+    await AuditLog.create({
+      tenant_id: tenantId,
+      user_id: actor._id,
+      action: "update",
+      entity: "User",
+      entity_id: userId,
+      description: `Role changed from ${formatRole(oldRole)} to ${formatRole(newRole)} for ${user?.username} in Organization ${tenant?.name}`,
+    });
+
+    return res.status(200).json({
+      updated,
+      oldRole,
+      newRole,
+    });
   } catch (error: unknown) {
-    res
-      .status(500)
-      .json({
-        message: error instanceof Error ? error.message : "Server Error",
-      });
+    return res.status(500).json({
+      message: error instanceof Error ? error.message : "Server Error",
+    });
   }
 };
 
 export const removeOrgUser = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.params;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const actor = (req as any).user;
 
     if (!hasTenantAccess(req, tenantId)) {
       return res
@@ -182,17 +191,32 @@ export const removeOrgUser = async (req: Request, res: Response) => {
         .json({ message: "Forbidden: you do not belong to this tenant" });
     }
 
-    const record = await UserTenantRole.findOneAndUpdate(
-      { userId, tenantId, status: "active" },
-      { status: "inactive" },
-      { new: true },
-    );
+    const record = await UserTenantRole.findOne({
+      userId,
+      tenantId,
+      status: "active",
+    });
 
     if (!record) {
       return res.status(404).json({
         message: "Record not found",
       });
     }
+
+    record.status = "inactive";
+    await record.save();
+
+    const user = await User.findById(userId);
+    const tenant = await Tenant.findById(tenantId);
+
+    await AuditLog.create({
+      tenant_id: tenantId,
+      user_id: actor._id,
+      action: "delete",
+      entity: "User",
+      entity_id: userId,
+      description: `Deleted ${user?.username} from Organization ${tenant?.name}`,
+    });
 
     res.status(200).json({
       message: "User removed from organization",

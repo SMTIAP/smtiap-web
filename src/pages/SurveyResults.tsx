@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { BarChart3, ChevronLeft, StopCircle, X } from "lucide-react";
 import AllResponsesTable from "../components/AllResponsesTable";
@@ -35,7 +35,7 @@ const StopConfirmModal = ({
         <X size={14} />
       </button>
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0">
+        <div className="w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center shrink-0">
           <StopCircle size={16} className="text-red-500" />
         </div>
         <p className="font-black text-slate-900 text-base">Stop survey?</p>
@@ -66,7 +66,9 @@ const StopConfirmModal = ({
 export default function SurveyResults() {
   const { surveyId } = useParams<{ surveyId: string }>();
   const navigate = useNavigate();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [survey, setSurvey] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [responses, setResponses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"summary" | "individual" | "all">(
@@ -115,6 +117,7 @@ export default function SurveyResults() {
       }
     };
     if (surveyId) fetchAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [surveyId]);
 
   // Changes survey status to Finished, preventing new response submissions
@@ -122,15 +125,20 @@ export default function SurveyResults() {
     setStopping(true);
     try {
       const token = localStorage.getItem("token");
+      const activeTenantId = localStorage.getItem("activeTenantId");
       await fetch(`http://localhost:5000/api/surveys/${surveyId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(activeTenantId && activeTenantId !== "__system__"
+            ? { "x-tenant-id": activeTenantId }
+            : {}),
         },
         credentials: "include",
         body: JSON.stringify({ status: "Finished" }),
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setSurvey((prev: any) => ({ ...prev, status: "Finished" }));
       setShowStopModal(false);
     } catch (err) {
@@ -159,6 +167,7 @@ export default function SurveyResults() {
 
   const primaryColor = survey.primaryColor || survey.themeColor || "#6366F1";
   const allQuestions: Question[] =
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     survey.pages?.flatMap((p: any) => p.questions) || [];
   const totalResponses = responses.length;
   const isRunning = survey.status === "Running";

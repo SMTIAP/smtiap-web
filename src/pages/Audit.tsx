@@ -8,7 +8,9 @@ interface AuditLogEntry {
   action: string;
   entity: string;
   entity_id: string;
-  timestamp: string;
+  createdAt: string;
+  description: string;
+  // timestamp: string;
 }
 
 interface PaginationInfo {
@@ -102,14 +104,16 @@ export default function Audit() {
       "Action",
       "Entity",
       "Entity ID",
+      "Description",
     ];
     const rows = logs.map((log) => [
-      new Date(log.timestamp).toLocaleString(),
+      new Date(log.createdAt).toLocaleString(),
       log.user_id?.username ?? "",
       log.user_id?.email ?? "",
       log.action,
       log.entity,
       log.entity_id,
+      log.description,
     ]);
     const csv = [headers, ...rows]
       .map((row) =>
@@ -132,6 +136,7 @@ export default function Audit() {
     if (a === "create") return "bg-green-400";
     if (a === "update") return "bg-yellow-400";
     if (a === "delete") return "bg-red-400";
+    if (a === "add") return "bg-green-700";
     if (a.startsWith("status_change")) return "bg-purple-400";
     return "bg-gray-400";
   };
@@ -288,7 +293,7 @@ export default function Audit() {
                       className="border-b border-gray-300 hover:bg-gray-50"
                     >
                       <td className="px-6 py-4 text-gray-800">
-                        {formatTimestamp(log.timestamp)}
+                        {formatTimestamp(log.createdAt)}
                       </td>
                       <td className="px-6 py-4 text-gray-800">
                         {log.user_id.username}
@@ -301,8 +306,8 @@ export default function Audit() {
                         </button>
                       </td>
                       <td className="px-6 py-4 text-gray-800">{log.entity}</td>
-                      <td className="px-6 py-4 text-gray-800">
-                        {formatAction(log.action)} {log.entity}
+                      <td className="px-6 py-4 text-gray-800 w-[300px] max-w-[300px] whitespace-normal break-words">
+                        {log.description}
                       </td>
                     </tr>
                   ))}

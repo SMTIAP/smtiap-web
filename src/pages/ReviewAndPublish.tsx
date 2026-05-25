@@ -54,12 +54,19 @@ export default function ReviewAndPublish() {
       const data = await res.json();
       const savedSurvey = data.survey;
       if (status === "Running") {
-        navigate("/share-survey", {
-          state: {
-            surveyId: savedSurvey._id,
-            surveyTitle: savedSurvey.surveyTitle,
-          },
-        });
+         const token = localStorage.getItem("token");
+        await fetch(
+          `http://localhost:5000/api/surveys/${savedSurvey._id}/status`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ status: "Running" }),
+          }
+        );
+        navigate("/share-survey", { state: { surveyId: savedSurvey._id, surveyTitle: savedSurvey.surveyTitle } });
       } else {
         navigate("/created-surveys", {
           state: {

@@ -15,6 +15,7 @@ import { loadTenant } from "../middleware/tenant.js";
 
 const router = Router();
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getClientIp = (req: any): string => {
   const forwarded = req.headers["x-forwarded-for"];
   if (typeof forwarded === "string" && forwarded.trim()) {
@@ -23,6 +24,7 @@ const getClientIp = (req: any): string => {
   return String(req.ip || req.socket?.remoteAddress || "").trim();
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getDeviceHash = (req: any): string => {
   const userAgent = String(req.headers["user-agent"] || "");
   const acceptLanguage = String(req.headers["accept-language"] || "");
@@ -59,7 +61,7 @@ router.post("/:id/verify-password", async (req, res) => {
     } else {
       res.status(401).json({ success: false, error: "Incorrect password" });
     }
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Failed to verify password" });
   }
 });
@@ -81,7 +83,7 @@ router.post("/:id/responses", async (req, res) => {
       .select("tenantId")
       .lean();
 
-    const duplicateFilters: any[] = [{ respondentToken }];
+    const duplicateFilters: Record<string, unknown>[] = [{ respondentToken }];
     if (ipAddress) {
       duplicateFilters.push({ ipAddress });
     }
@@ -89,12 +91,13 @@ router.post("/:id/responses", async (req, res) => {
       duplicateFilters.push({ deviceHash });
     }
 
-    const existing = await SurveyResponse.findOne({
+    // Duplicate check is disabled — keeping the query for future use
+    await SurveyResponse.findOne({
       surveyId: req.params.id,
       $or: duplicateFilters,
     });
 
-    //if (existing) {
+    //if (existingCheck) {
     //   return res.status(409).json({
     //    error: "You have already submitted a response for this survey.",
     //  });
@@ -111,6 +114,7 @@ router.post("/:id/responses", async (req, res) => {
     });
     res.json(doc);
   } catch (err) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((err as any)?.code === 11000) {
       return res.status(409).json({
         error: "You have already submitted a response for this survey.",
@@ -126,7 +130,7 @@ router.get("/:id/responses", async (req, res) => {
     // Only return responses for this survey
     const docs = await SurveyResponse.find({ surveyId: req.params.id });
     res.json(docs);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch responses" });
   }
 });

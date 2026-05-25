@@ -185,8 +185,6 @@ export default function RoleManagement() {
         },
       );
       const data = await response.json().catch(() => null);
-      console.log("STATUS:", response.status);
-      console.log("RESPONSE:", data);
       if (!response.ok) {
         throw new Error("Failed to update role");
       }

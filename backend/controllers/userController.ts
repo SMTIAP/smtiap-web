@@ -47,6 +47,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       action: "login",
       entity: "User",
       entity_id: user._id,
+      description: "Logged In"
     }).catch(() => {});
 
     sendToken(user, res);
@@ -63,6 +64,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
       action: "logout",
       entity: "User",
       entity_id: user._id,
+      description: "Logged Out"
     }).catch(() => {});
   }
 
