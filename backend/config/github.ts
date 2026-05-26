@@ -26,6 +26,7 @@ export const initGitHubStrategy = () => {
           if (!user) {
             user = await User.create({
               email,
+              username: profile.username || email.split("@")[0],
               password: "github-oauth",
             });
           }

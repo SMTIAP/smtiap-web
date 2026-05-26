@@ -55,7 +55,17 @@ export function useAnalyticsData(
   const [finishedSurveys, setFinishedSurveys] = useState<SurveyListItem[]>([]);
   const [surveysLoading, setSurveysLoading] = useState(true);
 
-  // Effect: load finished surveys (selector view) 
+  // Helper: auth headers for fetch calls
+  const authHeaders = (): Record<string, string> => {
+    const token = localStorage.getItem("token");
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const id = localStorage.getItem("activeTenantId");
+    if (id && id !== "__system__") headers["x-tenant-id"] = id;
+    return headers;
+  };
+
+  // Effect: load finished surveys (selector view)
   // Only runs when there is no surveyId in the URL.
   useEffect(() => {
     const fetchFinishedSurveys = async () => {
@@ -65,7 +75,10 @@ export function useAnalyticsData(
       }
       setSurveysLoading(true);
       try {
-        const response = await fetch(`${apiBaseUrl}/api/surveys`);
+        const response = await fetch(`${apiBaseUrl}/api/surveys`, {
+          headers: authHeaders(),
+          credentials: "include",
+        });
         const data = await response.json();
         const surveyList = Array.isArray(data)
           ? (data as SurveyListItem[])
@@ -167,7 +180,7 @@ export function useAnalyticsData(
     void fetchSurveyContext();
   }, [apiBaseUrl, surveyId]);
 
-  //  runAnalysis: send responses to Gemini and persist the result 
+  //  runAnalysis: send responses to Gemini and persist the result
   const runAnalysis = async () => {
     if (isAnalyzing) return;
     setIsAnalyzing(true);
@@ -249,7 +262,9 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
       // Persist the AI result to the backend so it loads automatically next visit
       const saveResponse = await fetch(`${apiBaseUrl}/api/analytics`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json",
+          ...authHeaders(),
+         },
         body: JSON.stringify({
           surveyId,
           summary: String(analysis.summary ?? "").trim(),
@@ -268,11 +283,25 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
       setKeywords(normalizedKeywords);
     } catch (err: unknown) {
       console.error("Analysis failed:", err);
-      setAiError(
-        err instanceof Error
-          ? err.message
-          : "An unexpected error occurred during analysis.",
-      );
+      const errorStr = String(
+        err instanceof Error ? err.message : err,
+      ).toLowerCase();
+      if (
+        errorStr.includes("429") ||
+        errorStr.includes("quota") ||
+        errorStr.includes("rate limit") ||
+        errorStr.includes("too many requests")
+      ) {
+        setAiError(
+          "AI analysis is temporarily unavailable due to high demand. Please wait a moment and try again.",
+        );
+      } else {
+        setAiError(
+          err instanceof Error
+            ? err.message
+            : "An unexpected error occurred during analysis.",
+        );
+      }
     } finally {
       setIsAnalyzing(false);
     }

@@ -22,8 +22,13 @@ const tenantSchema = new Schema(
     country: { type: String, required: true, trim: true },
     address: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
-    plan: { type: String, trim: true, default: null },
+    plan: { 
+      type: String, 
+      enum: ["free", "premium"],
+      default: "free",
+    },
     domain: { type: String, trim: true, required: true },
+    orgType: { type: String, required: true },
     status: {
       type: String,
       // required: true,
@@ -40,7 +45,14 @@ const tenantSchema = new Schema(
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } },
 );
 
-tenantSchema.index({ domain: 1 }, { unique: true });
+// tenantSchema.index({ domain: 1 }, { unique: true });
+tenantSchema.index(
+  { domain: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: "active" },
+  }
+);
 
 export type Tenant = InferSchemaType<typeof tenantSchema>;
 

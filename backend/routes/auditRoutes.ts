@@ -3,11 +3,12 @@ import AuditLog from "../models/AuditLog.js";
 import TenantUser from "../models/TenantUser.js";
 import Tenant from "../models/Tenant.js";
 import { protect } from "../middleware/auth.js";
+import { loadTenant } from "../middleware/tenant.js";
 
 const router = Router();
 
-// Get all audit logs with filters
-router.get("/", protect, async (req: Request, res: Response) => {
+// Get all audit logs with filters (scoped to user's tenant)
+router.get("/", protect, loadTenant, async (req: Request, res: Response) => {
   try {
     const { fromDate, toDate, action, page = 1, limit = 10 } = req.query;
 
@@ -15,23 +16,38 @@ router.get("/", protect, async (req: Request, res: Response) => {
     const limitNum = parseInt(limit as string) || 10;
     const skip = (pageNum - 1) * limitNum;
 
-    // Restrict logs to the currently logged-in user only
-    const currentUser = (req as Request & { user?: { _id: unknown } }).user;
+    const currentUser = (req as any).user;
+    const tenantIds = ((req as any).tenantIds as string[]) ?? [];
+
+    // Restrict logs to the user's own actions within their tenant(s)
     const filter: Record<string, unknown> = {
       user_id: currentUser?._id,
     };
 
+    // Also scope by tenant if user has memberships
+    // if (tenantIds.length > 0) {
+    //   filter.tenant_id = { $in: tenantIds };
+    // }
+
+    if (tenantIds.length > 0) {
+      filter.$or = [
+        { tenant_id: { $in: tenantIds } },
+        { tenant_id: null }
+      ];
+    }
+
+    
     if (fromDate || toDate) {
-      filter.timestamp = {};
+      filter.createdAt = {};
       if (fromDate) {
-        (filter.timestamp as Record<string, unknown>).$gte = new Date(
+        (filter.createdAt as Record<string, unknown>).$gte = new Date(
           fromDate as string,
         );
       }
       if (toDate) {
         const toDateObj = new Date(toDate as string);
         toDateObj.setHours(23, 59, 59, 999);
-        (filter.timestamp as Record<string, unknown>).$lte = toDateObj;
+        (filter.createdAt as Record<string, unknown>).$lte = toDateObj;
       }
     }
 
@@ -46,7 +62,7 @@ router.get("/", protect, async (req: Request, res: Response) => {
     const logs = await AuditLog.find(filter)
       .populate("user_id", "username email")
       .populate("tenant_id", "name")
-      .sort({ timestamp: -1 })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum)
       .lean();
@@ -77,7 +93,9 @@ router.get("/filters/options", protect, async (req: Request, res: Response) => {
     const currentUser = (req as Request & { user?: { _id: unknown } }).user;
     const userId = currentUser?._id;
 
-    const actions = await AuditLog.distinct("action", { user_id: userId });
+    const actions = await AuditLog.distinct("action", {
+      user_id: userId,
+    } as any);
 
     res.json({
       success: true,

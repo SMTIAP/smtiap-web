@@ -1,9 +1,8 @@
 import { useState } from "react";
+import PasswordInput from "../components/PasswordInput";
 import axios from "axios";
 import { GoogleIcon, GithubIcon, LinkedInIcon } from "./AuthPage";
 import { useNavigate } from "react-router-dom";
-
-
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -24,19 +23,19 @@ export default function Login() {
         "http://localhost:5000/api/users/login",
         {
           email,
-          password
+          password,
         },
-         { withCredentials: true }
+        { withCredentials: true },
       );
       const userRole = res.data.role;
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
       }
-      
+
       if (userRole === "admin") {
         navigate("/admin");
       } else if (userRole === "creater") {
-        navigate("/creator-dashboard");
+        navigate("/admin");
       } else if (userRole === "super_admin") {
         navigate("/super-admin-dashboard");
       } else {
@@ -53,37 +52,49 @@ export default function Login() {
   };
 
   const handleGoogleLogin = () => {
-  window.location.href = "http://localhost:5000/api/users/google";
-};
+    window.location.href = "http://localhost:5000/api/users/google";
+  };
 
-const handleGithubLogin = () => {
-  window.location.href = "http://localhost:5000/api/users/github";
-};
+  const handleGithubLogin = () => {
+    window.location.href = "http://localhost:5000/api/users/github";
+  };
 
-const handleLinkedInLogin = () => {
-  window.location.href = "http://localhost:5000/api/users/linkedin";
-};
-
+  const handleLinkedInLogin = () => {
+    window.location.href = "http://localhost:5000/api/users/linkedin";
+  };
 
   return (
     <div className="w-full flex flex-col items-center">
-      <h1 className="text-[26px] font-[900] text-[#1a1a2e] mb-[18px] tracking-[-0.5px]">Sign In</h1>
+      <h1 className="text-[26px] font-[900] text-[#1a1a2e] mb-[18px] tracking-[-0.5px]">
+        Sign In
+      </h1>
 
       <div className="flex gap-[10px] mb-[16px]">
-        <button className="w-[42px] h-[42px] border-[1.5px] border-[#e0e0e8] rounded-[10px] bg-white flex items-center justify-center cursor-pointer transition-all duration-200 hover:border-[#7b6ee0] hover:shadow-[0_2px_10px_rgba(123,110,224,0.2)] hover:-translate-y-[2px]" onClick={handleGoogleLogin}>
+        <button
+          className="w-[42px] h-[42px] border-[1.5px] border-[#e0e0e8] rounded-[10px] bg-white flex items-center justify-center cursor-pointer transition-all duration-200 hover:border-[#7b6ee0] hover:shadow-[0_2px_10px_rgba(123,110,224,0.2)] hover:-translate-y-[2px]"
+          onClick={handleGoogleLogin}
+        >
           <GoogleIcon />
         </button>
 
-        <button className="w-[42px] h-[42px] border-[1.5px] border-[#e0e0e8] rounded-[10px] bg-white flex items-center justify-center cursor-pointer transition-all duration-200 hover:border-[#7b6ee0] hover:shadow-[0_2px_10px_rgba(123,110,224,0.2)] hover:-translate-y-[2px]" onClick={handleGithubLogin}>
+        <button
+          className="w-[42px] h-[42px] border-[1.5px] border-[#e0e0e8] rounded-[10px] bg-white flex items-center justify-center cursor-pointer transition-all duration-200 hover:border-[#7b6ee0] hover:shadow-[0_2px_10px_rgba(123,110,224,0.2)] hover:-translate-y-[2px]"
+          onClick={handleGithubLogin}
+        >
           <GithubIcon />
         </button>
 
-        <button className="w-[42px] h-[42px] border-[1.5px] border-[#e0e0e8] rounded-[10px] bg-white flex items-center justify-center cursor-pointer transition-all duration-200 hover:border-[#7b6ee0] hover:shadow-[0_2px_10px_rgba(123,110,224,0.2)] hover:-translate-y-[2px]" onClick={handleLinkedInLogin}>
+        <button
+          className="w-[42px] h-[42px] border-[1.5px] border-[#e0e0e8] rounded-[10px] bg-white flex items-center justify-center cursor-pointer transition-all duration-200 hover:border-[#7b6ee0] hover:shadow-[0_2px_10px_rgba(123,110,224,0.2)] hover:-translate-y-[2px]"
+          onClick={handleLinkedInLogin}
+        >
           <LinkedInIcon />
         </button>
       </div>
 
-      <p className="text-[12px] text-[#aaa] font-semibold mb-[16px] tracking-[0.3px]">or use your email for login</p>
+      <p className="text-[12px] text-[#aaa] font-semibold mb-[16px] tracking-[0.3px]">
+        or use your email for login
+      </p>
 
       <form onSubmit={handleSubmit} className="w-full">
         <input
@@ -91,16 +102,15 @@ const handleLinkedInLogin = () => {
           type="email"
           placeholder="Email"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.target.value)}
           required
         />
 
-        <input
+        <PasswordInput
           className="w-full py-[11px] px-[16px] border-none rounded-[10px] bg-[#f0f1f7] font-nunito text-[14px] font-semibold text-[#333] outline-none mb-[12px] transition-all duration-200 placeholder:text-[#aaa] placeholder:font-medium focus:bg-[#ebebf8] focus:ring-[2.5px] focus:ring-[#7b6ee0]/35"
-          type="password"
           placeholder="Password"
           value={password}
-          onChange={e => setPassword(e.target.value)}
+          onChange={(e) => setPassword(e.target.value)}
           required
         />
 
@@ -111,10 +121,16 @@ const handleLinkedInLogin = () => {
         >
           {loading ? "Signing in..." : "Sign In"}
         </button>
-        <p className="text-sm mt-4 text-center"><a href="/forgot-password" className="text-[#7b6ee0] hover:underline">Forgot Password?</a></p>
+        <p className="text-sm mt-4 text-center">
+          <a href="/forgot-password" className="text-[#7b6ee0] hover:underline">
+            Forgot Password?
+          </a>
+        </p>
       </form>
 
-      {message && <div className="mt-[10px] text-[12px] font-semibold">{message}</div>}
+      {message && (
+        <div className="mt-[10px] text-[12px] font-semibold">{message}</div>
+      )}
     </div>
   );
 }

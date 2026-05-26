@@ -8,7 +8,9 @@ interface AuditLogEntry {
   action: string;
   entity: string;
   entity_id: string;
-  timestamp: string;
+  createdAt: string;
+  description: string;
+  // timestamp: string;
 }
 
 interface PaginationInfo {
@@ -102,14 +104,16 @@ export default function Audit() {
       "Action",
       "Entity",
       "Entity ID",
+      "Description",
     ];
     const rows = logs.map((log) => [
-      new Date(log.timestamp).toLocaleString(),
+      new Date(log.createdAt).toLocaleString(),
       log.user_id?.username ?? "",
       log.user_id?.email ?? "",
       log.action,
       log.entity,
       log.entity_id,
+      log.description,
     ]);
     const csv = [headers, ...rows]
       .map((row) =>
@@ -132,6 +136,8 @@ export default function Audit() {
     if (a === "create") return "bg-green-400";
     if (a === "update") return "bg-yellow-400";
     if (a === "delete") return "bg-red-400";
+    if (a === "add") return "bg-green-700";
+    if (a === "ai-analysis-run") return "bg-purple-700";
     if (a.startsWith("status_change")) return "bg-purple-400";
     return "bg-gray-400";
   };
@@ -156,12 +162,12 @@ export default function Audit() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC]">
+    <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
       <div className="w-full max-w-6xl px-6 py-10 flex flex-col gap-10">
         <div className="flex justify-between items-center w-full">
           <div className="flex items-center gap-4 w-fit">
             <BackButton />
-            <h1 className="text-[#1E293B] font-inter text-3xl font-bold leading-9">
+            <h1 className="text-[#1E293B] dark:text-white font-inter text-3xl font-bold leading-9">
               Audit Trail
             </h1>
           </div>
@@ -173,7 +179,7 @@ export default function Audit() {
             <div className="flex flex-col gap-2 flex-1">
               <label
                 htmlFor="from-date"
-                className="text-gray-700 font-inter text-sm font-medium"
+                className="text-gray-700 dark:text-slate-300 font-inter text-sm font-medium"
               >
                 From
               </label>
@@ -182,7 +188,7 @@ export default function Audit() {
                 id="from-date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
@@ -190,7 +196,7 @@ export default function Audit() {
             <div className="flex flex-col gap-2 flex-1">
               <label
                 htmlFor="to-date"
-                className="text-gray-700 font-inter text-sm font-medium"
+                className="text-gray-700 dark:text-slate-300 font-inter text-sm font-medium"
               >
                 To
               </label>
@@ -199,7 +205,7 @@ export default function Audit() {
                 id="to-date"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
@@ -209,7 +215,7 @@ export default function Audit() {
             <div className="flex flex-col gap-2 flex-1">
               <label
                 htmlFor="action-type"
-                className="text-gray-700 font-inter text-sm font-medium"
+                className="text-gray-700 dark:text-slate-300 font-inter text-sm font-medium"
               >
                 Action Type
               </label>
@@ -217,7 +223,7 @@ export default function Audit() {
                 id="action-type"
                 value={actionFilter}
                 onChange={(e) => setActionFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Select Action</option>
                 {actions.map((action) => (
@@ -252,31 +258,31 @@ export default function Audit() {
 
         <div className="w-full overflow-x-auto mt-6">
           {loading ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-slate-400">
               Loading audit logs...
             </div>
           ) : logs.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-slate-400">
               No audit logs found
             </div>
           ) : (
             <>
-              <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-                <thead className="bg-gray-100">
+              <table className="min-w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg transition-colors duration-300">
+                <thead className="bg-gray-100 dark:bg-slate-900">
                   <tr>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">
+                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-700 dark:text-slate-300">
                       Timestamp
                     </th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">
+                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-700 dark:text-slate-300">
                       Username
                     </th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">
+                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-700 dark:text-slate-300">
                       Type
                     </th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">
+                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-700 dark:text-slate-300">
                       Entity
                     </th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-700">
+                    <th className="text-left px-6 py-3 text-sm font-medium text-gray-700 dark:text-slate-300">
                       Description
                     </th>
                   </tr>
@@ -285,24 +291,26 @@ export default function Audit() {
                   {logs.map((log) => (
                     <tr
                       key={log._id}
-                      className="border-b border-gray-300 hover:bg-gray-50"
+                      className="border-b border-gray-300 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
                     >
-                      <td className="px-6 py-4 text-gray-800">
-                        {formatTimestamp(log.timestamp)}
+                      <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
+                        {formatTimestamp(log.createdAt)}
                       </td>
-                      <td className="px-6 py-4 text-gray-800">
+                      <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
                         {log.user_id.username}
                       </td>
-                      <td className="px-6 py-4 text-gray-800">
+                      <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
                         <button
                           className={`px-3 py-1 ${getActionColor(log.action)} text-white text-sm rounded`}
                         >
                           {formatAction(log.action)}
                         </button>
                       </td>
-                      <td className="px-6 py-4 text-gray-800">{log.entity}</td>
-                      <td className="px-6 py-4 text-gray-800">
-                        {formatAction(log.action)} {log.entity}
+                      <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
+                        {log.entity}
+                      </td>
+                      <td className="px-6 py-4 text-gray-800 dark:text-slate-200 w-[300px] max-w-[300px] whitespace-normal break-words">
+                        {log.description}
                       </td>
                     </tr>
                   ))}
@@ -314,7 +322,7 @@ export default function Audit() {
                 <button
                   onClick={() => fetchLogs(pagination.page - 1)}
                   disabled={pagination.page === 1}
-                  className="text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-sm text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   &lt; Previous
                 </button>
@@ -328,7 +336,7 @@ export default function Audit() {
                     className={`px-3 py-1 text-sm rounded ${
                       pagination.page === page
                         ? "bg-blue-500 text-white"
-                        : "text-gray-700 hover:text-black"
+                        : "text-gray-700 dark:text-slate-300 hover:text-black dark:hover:text-white"
                     }`}
                   >
                     {page}
@@ -337,14 +345,14 @@ export default function Audit() {
                 <button
                   onClick={() => fetchLogs(pagination.page + 1)}
                   disabled={pagination.page === pagination.totalPages}
-                  className="text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-sm text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next &gt;
                 </button>
               </div>
 
               {/* Entries Info */}
-              <p className="text-sm text-gray-600 mt-4">
+              <p className="text-sm text-gray-600 dark:text-slate-400 mt-4">
                 Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
                 {Math.min(
                   pagination.page * pagination.limit,
@@ -353,7 +361,7 @@ export default function Audit() {
                 of {pagination.totalCount} entries
               </p>
 
-              <div className="mt-6 text-sm text-gray-500 text-center">
+              <div className="mt-6 text-sm text-gray-500 dark:text-slate-400 text-center">
                 <p>
                   Retention Policy: Logs are automatically purged after 1 year
                   (365 days)

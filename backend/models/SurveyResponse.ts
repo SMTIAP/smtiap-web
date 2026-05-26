@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const SurveyResponseSchema = new mongoose.Schema({
   surveyId: String,
+  tenantId: { type: String, default: null },
   respondentToken: { type: String, required: true, trim: true },
   ipAddress: { type: String, default: "", trim: true },
   userAgent: { type: String, default: "", trim: true },
@@ -9,6 +10,8 @@ const SurveyResponseSchema = new mongoose.Schema({
   responses: Object,
   submittedAt: { type: Date, default: Date.now },
 });
+
+SurveyResponseSchema.index({ tenantId: 1 });
 
 SurveyResponseSchema.index(
   { surveyId: 1, respondentToken: 1 },
