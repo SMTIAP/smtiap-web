@@ -26,19 +26,27 @@ const hasTenantAccess = (req: Request, tenantId: string): boolean =>
   reqTenantIds(req).includes(tenantId);
 
 /** Check if the authenticated user is the creator/owner of the tenant. */
-const isTenantCreator = async (
+const isTenantAdminOrCreator = async (
   req: Request,
-  tenantId: string,
+  tenantId: string
 ): Promise<boolean> => {
   const userId = (req as any).user?._id;
   if (!userId) return false;
-  try {
-    const tenant = await Tenant.findById(tenantId).select("createdBy").lean();
-    if (!tenant) return false;
-    return String(tenant.createdBy) === String(userId);
-  } catch {
-    return false;
-  }
+
+  // creator check
+  const tenant = await Tenant.findById(tenantId).select("createdBy").lean();
+  const isCreator = tenant && String(tenant.createdBy) === String(userId);
+
+  // admin check
+  const membership = await UserTenantRole.findOne({
+    userId,
+    tenantId,
+    status: "active",
+  });
+
+  const isAdmin = membership?.role === "admin";
+
+  return isCreator || isAdmin;
 };
 
 // ── Controllers ──────────────────────────────────────────────────────
@@ -89,9 +97,9 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
     const actor = (req as any).user;
 
     // Only the tenant creator can add users
-    if (!(await isTenantCreator(req, tenantId))) {
+    if (!(await isTenantAdminOrCreator(req, tenantId))) {
       return res.status(403).json({
-        message: "Forbidden: only the organization creator can add users",
+        message: "Forbidden: only admin or creator can add users",
       });
     }
 
@@ -171,9 +179,9 @@ export const updateOrgRole = async (req: Request, res: Response) => {
     }
 
     // Only the tenant creator can change roles
-    if (!(await isTenantCreator(req, tenantId))) {
+    if (!(await isTenantAdminOrCreator(req, tenantId))) {
       return res.status(403).json({
-        message: "Forbidden: only the organization creator can change roles",
+        message: "Forbidden: only admin or creator can change roles",
       });
     }
 
@@ -237,9 +245,9 @@ export const removeOrgUser = async (req: Request, res: Response) => {
     }
 
     // Only the tenant creator can remove users
-    if (!(await isTenantCreator(req, tenantId))) {
+    if (!(await isTenantAdminOrCreator(req, tenantId))) {
       return res.status(403).json({
-        message: "Forbidden: only the organization creator can remove users",
+        message: "Forbidden: only admin or creator can remove users",
       });
     }
 
@@ -294,10 +302,21 @@ export const removeTenant = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Tenant not found" });
     }
 
+    // 2. Deactivate all user-tenant relationships
+    await UserTenantRole.updateMany(
+      { tenantId },
+      {
+        $set: {
+          status: "inactive",
+        },
+      }
+    );
+
     return res.status(200).json({
-      message: "Tenant deactivated successfully",
+      message: "Tenant and related users deactivated successfully",
       tenant,
     });
+
   } catch (error) {
     console.error("Error removing tenant:", error);
     return res.status(500).json({ message: "Internal server error" });

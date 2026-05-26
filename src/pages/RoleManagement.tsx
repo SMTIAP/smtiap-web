@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import BackButton from "../components/BackButton";
 import { Search, Plus, ClipboardList, Trash2 } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
@@ -164,20 +164,52 @@ export default function RoleManagement() {
   })();
 
   // Helper: check if the current user is the creator of the tenant a membership belongs to
-  const isCreatorOfTenant = (membership: UserTenantRole): boolean => {
-    if (!currentUserId) return false;
-    const tenant = tenants.find((t) => t._id === membership.tenantId._id);
-    if (!tenant) return false;
-    return tenant.createdBy === currentUserId;
-  };
+  // const isCreatorOfTenant = (membership: UserTenantRole): boolean => {
+  //   if (!currentUserId) return false;
+  //   const tenant = tenants.find((t) => t._id === membership.tenantId._id);
+  //   if (!tenant) return false;
+  //   return tenant.createdBy === currentUserId;
+  // };
 
   // Helper: check if the current user is the creator of a given tenant by ID
-  const isCreatorOfTenantId = (tenantId: string): boolean => {
-    if (!currentUserId) return false;
-    const tenant = tenants.find((t) => t._id === tenantId);
-    if (!tenant) return false;
-    return tenant.createdBy === currentUserId;
-  };
+  // const isCreatorOfTenantId = (tenantId: string): boolean => {
+  //   if (!currentUserId) return false;
+  //   const tenant = tenants.find((t) => t._id === tenantId);
+  //   if (!tenant) return false;
+  //   return tenant.createdBy === currentUserId;
+  // };
+
+const canManageTenant = (tenantId: string) => {
+  const tenant = tenants.find(t => t._id === tenantId);
+  if (!tenant || !currentUserId) return false;
+
+  const isCreator = tenant.createdBy === currentUserId;
+
+  const isTenantAdmin = orgUsers.some(
+    u =>
+      u.tenantId._id === tenantId &&
+      u.userId._id === currentUserId &&
+      u.role === "admin"
+  );
+
+  return isCreator || isTenantAdmin;
+};
+
+const canManageTenantId = (tenantId: string) => {
+  const tenant = tenants.find((t) => t._id === tenantId);
+  if (!tenant || !currentUserId) return false;
+
+  const isCreator = tenant.createdBy === currentUserId;
+
+  const isTenantAdmin = orgUsers.some(
+    (u) =>
+      u.tenantId._id === tenantId &&
+      u.userId._id === currentUserId &&
+      u.role === "admin"
+  );
+
+  return isCreator || isTenantAdmin;
+};
 
   const filteredUsers = searchTerm.trim()
     ? users.filter((user) =>
@@ -195,7 +227,7 @@ export default function RoleManagement() {
   const filteredOrganizations = tenants;
 
   const handleAddUser = async (user: User, tenant: Tenant) => {
-    if (!isCreatorOfTenantId(tenant._id)) {
+    if (!canManageTenant(tenant._id)) {
       toast.error("Only the organization creator can add users");
       return;
     }
@@ -234,7 +266,7 @@ export default function RoleManagement() {
   };
 
   const handleUpdateOrgRole = async (item: UserTenantRole) => {
-    if (!isCreatorOfTenant(item)) {
+    if (!canManageTenant(item.tenantId._id)){
       toast.error("Only the organization creator can change roles");
       return;
     }
@@ -276,7 +308,7 @@ export default function RoleManagement() {
   };
 
   const handleRemoveOrgUser = async (item: UserTenantRole) => {
-    if (!isCreatorOfTenant(item)) {
+    if (!canManageTenant(item.tenantId._id)){
       toast.error("Only the organization creator can remove users");
       return;
     }
@@ -307,7 +339,7 @@ export default function RoleManagement() {
   };
 
   const handleDeleteTenant = async (tenant: Tenant) => {
-  if (!isCreatorOfTenantId(tenant._id)) {
+  if (!canManageTenant(tenant._id)) {
     toast.error("Only the organization creator can delete this organization");
     return;
   }
@@ -337,7 +369,7 @@ export default function RoleManagement() {
       throw new Error(data?.message || "Failed to delete organization");
     }
 
-    toast.success("Organization marked as inactive");
+    toast.success("Organization and related users marked as inactive");
 
     // Remove from frontend list immediately
     setTenants((prev) =>
@@ -362,6 +394,53 @@ export default function RoleManagement() {
     toast.error("Failed to delete organization");
   }
 };
+
+type GroupedTenant = {
+  tenant: {
+    _id: string;
+    name: string;
+  };
+  creator: string | null;
+  users: UserTenantRole[];
+};
+
+const groupedUsers = (): GroupedTenant[] => {
+  const tenantMap = new Map(tenants.map((t) => [t._id, t]));
+
+  const map = new Map<string, GroupedTenant>();
+
+  orgUsers.forEach((item) => {
+    const tenantId = item.tenantId._id;
+
+    if (!map.has(tenantId)) {
+      const fullTenant = tenantMap.get(tenantId);
+
+      map.set(tenantId, {
+        tenant: {
+          _id: item.tenantId._id,
+          name: item.tenantId.name,
+        },
+        creator: fullTenant?.createdBy || null,
+        users: [],
+      });
+    }
+
+    map.get(tenantId)!.users.push(item);
+  });
+
+  return Array.from(map.values());
+};
+
+  const groupedData = groupedUsers().filter((group) =>
+  group.tenant.name
+    .toLowerCase()
+    .includes(searchOrganization.toLowerCase())
+);
+
+
+
+
+
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
@@ -413,7 +492,7 @@ export default function RoleManagement() {
             className="w-full max-w-xs px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
           >
             <option value="">Select Organization</option>
-            {filteredOrganizations.filter((tenant) => tenant.status === "active").map((tenant) => (
+            {filteredOrganizations.filter((tenant) => tenant.status === "active" && canManageTenantId(tenant._id)).map((tenant) => (
               <option key={tenant._id} value={tenant._id}>
                 {tenant.name}
               </option>
@@ -421,12 +500,12 @@ export default function RoleManagement() {
           </select>
           <button
             disabled={
-              !selectedTenantId || !isCreatorOfTenantId(selectedTenantId)
+              !selectedTenantId || !canManageTenantId(selectedTenantId)
             }
             title={
               !selectedTenantId
                 ? "Select an organization first"
-                : !isCreatorOfTenantId(selectedTenantId)
+                : !canManageTenantId(selectedTenantId)
                   ? "Only the organization creator can delete it"
                   : undefined
             }
@@ -436,7 +515,7 @@ export default function RoleManagement() {
             }}
             className={`flex items-center gap-1.5 px-4 h-[40px] rounded-lg text-white font-semibold text-[13px] shadow-md transition-all duration-200 shrink-0
               ${
-                !selectedTenantId || !isCreatorOfTenantId(selectedTenantId)
+                !selectedTenantId || !canManageTenantId(selectedTenantId)
                   ? "bg-gray-400 cursor-not-allowed opacity-70"
                   : "bg-gradient-to-r from-red-500 to-rose-600 hover:shadow-lg hover:scale-[1.02]"
               }`}
@@ -584,75 +663,112 @@ export default function RoleManagement() {
               </tr>
             </thead>
             <tbody>
-              {filteredOrgUsers.length > 0 ? (
-                filteredOrgUsers.map((item) => (
-                  <tr
-                    key={item._id}
-                    className="border-b border-gray-300 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-                  >
-                    <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
-                      {item.userId.username}
-                    </td>
-                    <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
-                      {item.userId.email}
-                    </td>
-                    <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
-                      <select
-                        value={selectedRole[item._id] || item.role}
-                        onChange={(e) =>
-                          setSelectedRole((prev) => ({
-                            ...prev,
-                            [item._id]: e.target.value,
-                          }))
-                        }
-                        className="w-50 border border-gray-300 dark:border-slate-600 rounded-md px-3 py-1 bg-white dark:bg-slate-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                      >
-                        {Object.entries(roleLabels).map(([key, label]) => (
-                          <option key={key} value={key}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
-                      {item.tenantId.name}
-                    </td>
-                    <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleUpdateOrgRole(item)}
-                          disabled={
-                            !selectedRole[item._id] ||
-                            selectedRole[item._id] === item.role
-                          }
-                          className={`px-3 py-1 text-white text-sm rounded ${!selectedRole[item._id] || selectedRole[item._id] === item.role ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
-                        >
-                          Change
-                        </button>
-                        <button
-                          onClick={() => handleRemoveOrgUser(item)}
-                          className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-4 text-center text-gray-700 dark:text-slate-400"
-                  >
-                    No Organizations Found
-                  </td>
-                </tr>
-              )}
-            </tbody>
+  {groupedData.length > 0 ? (
+    groupedData.map((group) => {
+      const visibleUsers = canManageTenant(group.tenant._id)
+  ? group.users
+  : group.users.filter(
+      (u: any) => u.userId._id === currentUserId
+    );
+
+      if (visibleUsers.length === 0) return null;
+
+      return (
+        <Fragment key={group.tenant._id}>
+          {/* Tenant header row */}
+          <tr className="bg-gray-100 dark:bg-slate-900">
+            <td
+              colSpan={5}
+              className="px-6 py-3 font-bold text-indigo-600"
+            >
+              🏢 {group.tenant.name}
+            </td>
+          </tr>
+
+          {/* Users */}
+          {visibleUsers.map((item) => (
+            <tr
+              key={item._id}
+              className="border-b border-gray-300 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+            >
+              <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
+                {item.userId.username}
+              </td>
+
+              <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
+                {item.userId.email}
+              </td>
+
+              <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
+                <select
+                  value={selectedRole[item._id] || item.role}
+                  onChange={(e) =>
+                    setSelectedRole((prev) => ({
+                      ...prev,
+                      [item._id]: e.target.value,
+                    }))
+                  }
+                  disabled={!canManageTenant(group.tenant._id)}
+                  // disabled={group.creator !== currentUserId}
+                  className="w-50 border border-gray-300 dark:border-slate-600 rounded-md px-3 py-1 bg-white dark:bg-slate-700 text-gray-800 dark:text-white"
+                >
+                  {Object.entries(roleLabels).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </td>
+
+              <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
+                {item.tenantId.name}
+              </td>
+
+              <td className="px-6 py-4">
+                {canManageTenant(group.tenant._id) && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleUpdateOrgRole(item)}
+                      disabled={
+                        !selectedRole[item._id] ||
+                        selectedRole[item._id] === item.role
+                      }
+                      className={`px-3 py-1 text-white text-sm rounded ${
+                        !selectedRole[item._id] ||
+                        selectedRole[item._id] === item.role
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-blue-500 hover:bg-blue-600"
+                      }`}
+                    >
+                      Change
+                    </button>
+
+                    <button
+                      onClick={() => handleRemoveOrgUser(item)}
+                      className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </td>
+            </tr>
+          ))}
+        </Fragment>
+      );
+    })
+  ) : (
+    <tr>
+      <td colSpan={5} className="text-center py-4">
+        No Organizations Found
+      </td>
+    </tr>
+  )}
+</tbody>
           </table>
         </div>
       </div>
     </div>
   );
+  
 }
