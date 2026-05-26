@@ -79,6 +79,7 @@ interface SurveyPage {
 interface SetupFormData {
   customizeBranding?: boolean;
   themeColor?: string;
+  backgroundColor?: string;
   surveyTitle?: string;
   description?: string;
   websiteUrl?: string;
@@ -825,6 +826,9 @@ export default function AddQuestions() {
       ? setupData.themeColor
       : setupData?.themeColor || "#6366F1",
   );
+  const [backgroundColor, setBackgroundColor] = useState(
+    setupData?.backgroundColor || "#F8FAFC",
+  );
   const [loadingSurvey, setLoadingSurvey] = useState(false);
   const [surveyTitle, setSurveyTitle] = useState(
     setupData?.surveyTitle || "Survey creator",
@@ -1107,6 +1111,7 @@ export default function AddQuestions() {
             setPrimaryColor(
               data?.primaryColor || data?.themeColor || "#6366F1",
             );
+            setBackgroundColor(data?.backgroundColor || "#F8FAFC");
             setLogo(data?.logo || null);
             setDescription(data?.description || "");
             setWebsiteUrl(data?.websiteUrl || "");
@@ -1400,11 +1405,8 @@ export default function AddQuestions() {
       {!readOnly && (
         <aside className="w-72 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col z-10 shadow-sm transition-colors duration-300">
           <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-            <div
-              className="h-10 w-10 rounded-lg flex items-center justify-center border border-[#F1F5F9]"
-              style={{ backgroundColor: `${primaryColor}10` }}
-            >
-              <Layout size={20} style={{ color: primaryColor }} />
+            <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800">
+              <Layout size={20} className="text-indigo-600 dark:text-indigo-400" />
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-sm font-bold text-gray-900 dark:text-white truncate w-28">
@@ -1464,13 +1466,9 @@ export default function AddQuestions() {
                     }`}
                   >
                     <div
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{
-                        backgroundColor:
-                          activePageIndex === idx
-                            ? primaryColor
-                            : "transparent",
-                      }}
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        activePageIndex === idx ? "bg-indigo-500" : "bg-transparent"
+                      }`}
                     />
                     <span className="truncate flex-1">{page.title}</span>
                     {pages.length > 1 && (
@@ -1488,8 +1486,7 @@ export default function AddQuestions() {
                 ))}
                 <button
                   onClick={addPage}
-                  style={{ color: primaryColor }}
-                  className="w-full flex items-center gap-2 p-2 text-sm hover:bg-gray-50 rounded-lg transition-colors mt-2"
+                  className="w-full flex items-center gap-2 p-2 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-colors mt-2"
                 >
                   <Plus size={16} /> Add Page
                 </button>
@@ -1527,6 +1524,7 @@ export default function AddQuestions() {
                       customizeBranding: customizeBranding,
                       primaryColor,
                       themeColor: primaryColor,
+                      backgroundColor,
                       pages,
                       status: "Draft",
                       tenantId: tenantId ?? undefined,
@@ -1626,6 +1624,7 @@ export default function AddQuestions() {
                         customizeBranding: customizeBranding,
                         primaryColor,
                         themeColor: primaryColor,
+                        backgroundColor,
                         pages,
                         status: "Draft",
                         tenantId: tenantId ?? undefined,
@@ -1646,12 +1645,12 @@ export default function AddQuestions() {
                       websiteUrl: websiteUrl,
                       customizeBranding: customizeBranding,
                       primaryColor,
+                      backgroundColor,
                       pages,
                     },
                   });
                 }}
-                style={{ backgroundColor: primaryColor }}
-                className="text-white px-6 py-2 rounded-lg text-sm font-semibold hover:opacity-90 shadow-lg transition-all"
+                className="text-white px-6 py-2 rounded-lg text-sm font-semibold shadow-lg transition-all bg-[#6366F1] hover:opacity-90"
               >
                 Review & Publish
               </button>
@@ -1665,11 +1664,7 @@ export default function AddQuestions() {
               <div className="space-y-4">
                 <div className="mb-8">
                   <span
-                    style={{
-                      backgroundColor: `${primaryColor}20`,
-                      color: primaryColor,
-                    }}
-                    className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2"
+                    className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400"
                   >
                     {activePage.title}
                   </span>
@@ -1724,7 +1719,11 @@ export default function AddQuestions() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-gray-100 dark:border-slate-700 overflow-hidden min-h-150 flex flex-col">
+              // PREVIEW MODE - Uses theme colors for visual preview
+              <div 
+                className="rounded-3xl shadow-xl border border-gray-100 dark:border-slate-700 overflow-hidden min-h-150 flex flex-col transition-colors duration-300"
+                style={{ backgroundColor: backgroundColor || "#FFFFFF" }}
+              >
                 <div
                   style={{ backgroundColor: primaryColor }}
                   className="h-2"
@@ -1753,200 +1752,206 @@ export default function AddQuestions() {
                       {websiteUrl}
                     </a>
                   )}
- <p className="text-gray-500 dark:text-slate-400 mb-8">{activePage.title}</p>
+                  <p className="text-gray-500 dark:text-slate-400 mb-8">{activePage.title}</p>
 
-<div className="space-y-8">
-  {activePage.questions.map((q, idx) => (
-    <div key={q.id}>
-      <div className="flex gap-2 mb-3">
-        <span
-          style={{ color: primaryColor }}
-          className="font-bold"
-        >
-          {idx + 1}.
-        </span>
-        <h3 className="font-semibold text-gray-800 dark:text-slate-200">
-          {q.label}{" "}
-          {q.required && (
-            <span className="text-red-500">*</span>
-          )}
-        </h3>
-      </div>
-      <div className="pl-6">
-        {q.type === "short_text" && (
-          <input
-            type="text"
-            className="w-full border-b-2 border-gray-100 dark:border-slate-600 focus:border-gray-400 outline-none pb-2 transition-colors bg-transparent dark:text-white"
-            style={{ caretColor: primaryColor }}
-            placeholder={q.placeholder}
-          />
-        )}
-        {q.type === "long_text" && (
-          <textarea
-            className="w-full border-2 border-gray-100 dark:border-slate-600 rounded-xl p-3 outline-none min-h-25 transition-colors focus:border-gray-400 bg-transparent dark:text-white"
-            placeholder={q.placeholder}
-          />
-        )}
-        {(q.type === "multiple_choice" ||
-          q.type === "checkboxes") && (
-          <div className="space-y-3">
-            {q.options?.map((opt: string, i: number) => (
-              <label
-                key={i}
-                className="flex items-center gap-3 cursor-pointer group"
-              >
-                <input
-                  type={
-                    q.type === "multiple_choice"
-                      ? "radio"
-                      : "checkbox"
-                  }
-                  name={q.id}
-                  style={{ color: primaryColor }}
-                  className={`w-5 h-5 border-gray-300 dark:border-slate-600 focus:ring-0 ${
-                    q.type === "multiple_choice" ? "rounded-full" : "rounded"
-                  }`}
-                />
-                <span className="text-gray-700 dark:text-slate-300 transition-colors">
-                  {opt}
-                </span>
-              </label>
-            ))}
+                  <div className="space-y-8">
+                    {activePage.questions.map((q, idx) => (
+                      <div key={q.id}>
+                        <div className="flex gap-2 mb-3">
+                          <span
+                            style={{ color: primaryColor }}
+                            className="font-bold"
+                          >
+                            {idx + 1}.
+                          </span>
+                          <h3 className="font-semibold text-gray-800 dark:text-slate-200">
+                            {q.label}{" "}
+                            {q.required && (
+                              <span className="text-red-500">*</span>
+                            )}
+                          </h3>
+                        </div>
+                        <div className="pl-6">
+                          {q.type === "short_text" && (
+                            <input
+                              type="text"
+                              className="w-full border-b-2 border-gray-100 dark:border-slate-600 focus:border-gray-400 outline-none pb-2 transition-colors bg-transparent dark:text-white"
+                              style={{ caretColor: primaryColor }}
+                              placeholder={q.placeholder}
+                            />
+                          )}
+                          {q.type === "long_text" && (
+                            <textarea
+                              className="w-full border-2 border-gray-100 dark:border-slate-600 rounded-xl p-3 outline-none min-h-25 transition-colors focus:border-gray-400 bg-transparent dark:text-white"
+                              placeholder={q.placeholder}
+                            />
+                          )}
+                          {(q.type === "multiple_choice" ||
+                            q.type === "checkboxes") && (
+                            <div className="space-y-3">
+                              {q.options?.map((opt: string, i: number) => (
+                                <label
+                                  key={i}
+                                  className="flex items-center gap-3 cursor-pointer group"
+                                >
+                                  <input
+                                    type={
+                                      q.type === "multiple_choice"
+                                        ? "radio"
+                                        : "checkbox"
+                                    }
+                                    name={q.id}
+                                    style={{ accentColor: primaryColor }}
+                                    className={`w-5 h-5 border-gray-300 dark:border-slate-600 focus:ring-0 ${
+                                      q.type === "multiple_choice" ? "rounded-full" : "rounded"
+                                    }`}
+                                  />
+                                  <span className="text-gray-700 dark:text-slate-300 transition-colors">
+                                    {opt}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                          {q.type === "rating" && (
+                            <div className="flex gap-2">
+                              {[...Array(q.max)].map((_, i) => (
+                                <button
+                                  key={i}
+                                  className="transition-colors"
+                                  style={{ color: "#E2E8F0" }}
+                                >
+                                  <Star size={32} />
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {q.type === "number" && (
+                            <input
+                              type="number"
+                              className="border-2 border-gray-100 dark:border-slate-600 rounded-lg p-2 outline-none w-32 focus:border-gray-400 bg-transparent dark:text-white"
+                            />
+                          )}
+                          {q.type === "date" && (
+                            <DatePickerCalendar
+                              value={responses[q.id] || ""}
+                              onChange={(date) =>
+                                setResponses((prev) => ({
+                                  ...prev,
+                                  [q.id]: date,
+                                }))
+                              }
+                            />
+                          )}
+                          {q.branching?.enabled && (
+                            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300">
+                              Conditional flow mapped
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-8 bg-gray-50 dark:bg-slate-900 flex justify-between items-center border-t border-gray-100 dark:border-slate-700">
+                  <div className="flex gap-2">
+                    {pages.map((_, i) => (
+                      <div
+                        key={i}
+                        className="w-2 h-2 rounded-full transition-colors"
+                        style={{
+                          backgroundColor:
+                            activePageIndex === i ? primaryColor : "#D1D5DB",
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex gap-4">
+                    {activePageIndex > 0 && (
+                      <button
+                        onClick={() => setActivePageIndex(activePageIndex - 1)}
+                        className="px-6 py-2 border border-gray-200 dark:border-slate-600 rounded-xl font-semibold hover:bg-white dark:hover:bg-slate-800 transition-all text-gray-700 dark:text-slate-300"
+                      >
+                        Back
+                      </button>
+                    )}
+                    {activePageIndex < pages.length - 1 ? (
+                      <button
+                        onClick={() => setActivePageIndex(activePageIndex + 1)}
+                        style={{ backgroundColor: primaryColor }}
+                        className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all flex items-center gap-2"
+                      >
+                        Next <ChevronRight size={18} />
+                      </button>
+                    ) : (
+                      <button 
+                        style={{ backgroundColor: primaryColor }}
+                        className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all"
+                      >
+                        Submit Survey
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-        {q.type === "rating" && (
-          <div className="flex gap-2">
-            {[...Array(q.max)].map((_, i) => (
-              <button
-                key={i}
-                className="text-gray-200 dark:text-slate-600 hover:text-yellow-400 dark:hover:text-yellow-400 transition-colors"
-              >
-                <Star size={32} />
-              </button>
-            ))}
-          </div>
-        )}
-        {q.type === "number" && (
-          <input
-            type="number"
-            className="border-2 border-gray-100 dark:border-slate-600 rounded-lg p-2 outline-none w-32 focus:border-gray-400 bg-transparent dark:text-white"
+        </div>
+      </main>
+
+      {/* Right sidebar — question property editor */}
+      {!isPreviewMode && (
+        <aside className="w-80 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700 flex flex-col z-10 shadow-sm overflow-y-auto transition-colors duration-300">
+          <PropertyEditor
+            selectedQuestion={selectedQuestion || null}
+            updateQuestion={updateQuestion}
+            setSelectedQuestionId={setSelectedQuestionId}
+            branchTargets={branchTargets}
           />
-        )}
-        {q.type === "date" && (
-          <DatePickerCalendar
-            value={responses[q.id] || ""}
-            onChange={(date) =>
-              setResponses((prev) => ({
-                ...prev,
-                [q.id]: date,
-              }))
-            }
-          />
-        )}
-        {q.branching?.enabled && (
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300">
-            Conditional flow mapped
-          </div>
-        )}
-      </div>
+        </aside>
+      )}
+
+      {showSettings && (
+        <SurveySettingsModal
+          surveyTitle={surveyTitle}
+          description={description}
+          logo={logo}
+          websiteUrl={websiteUrl}
+          themeColor={primaryColor || "#6366F1"}
+          backgroundColor={backgroundColor || "#F8FAFC"}
+          customizeBranding={customizeBranding}
+          onSave={(settings) => {
+            setSurveyTitle(settings.surveyTitle);
+            setDescription(settings.description);
+            setLogo(settings.logo);
+            setWebsiteUrl(settings.websiteUrl);
+            setPrimaryColor(settings.themeColor);
+            setBackgroundColor(settings.backgroundColor);
+            setCustomizeBranding(settings.customizeBranding);
+          }}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {showAiModifier && (
+        <AiSurveyModifier
+          surveyTitle={surveyTitle}
+          pages={pages}
+          description={description}
+          onApply={handleAiModifyApplied}
+          onClose={() => setShowAiModifier(false)}
+        />
+      )}
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+      `}</style>
     </div>
-  ))}
-</div>
-</div>
-
-<div className="p-8 bg-gray-50 dark:bg-slate-900 flex justify-between items-center border-t border-gray-100 dark:border-slate-700">
-  <div className="flex gap-2">
-    {pages.map((_, i) => (
-      <div
-        key={i}
-        className="w-2 h-2 rounded-full transition-colors"
-        style={{
-          backgroundColor:
-            activePageIndex === i ? primaryColor : "#D1D5DB",
-        }}
-      />
-    ))}
-  </div>
-  <div className="flex gap-4">
-    {activePageIndex > 0 && (
-      <button
-        onClick={() => setActivePageIndex(activePageIndex - 1)}
-        className="px-6 py-2 border border-gray-200 dark:border-slate-600 rounded-xl font-semibold hover:bg-white dark:hover:bg-slate-800 transition-all text-gray-700 dark:text-slate-300"
-      >
-        Back
-      </button>
-    )}
-    {activePageIndex < pages.length - 1 ? (
-      <button
-        onClick={() => setActivePageIndex(activePageIndex + 1)}
-        style={{ backgroundColor: primaryColor }}
-        className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all flex items-center gap-2"
-      >
-        Next <ChevronRight size={18} />
-      </button>
-    ) : (
-      <button className="px-8 py-2 bg-green-600 dark:bg-green-700 text-white rounded-xl font-semibold hover:bg-green-700 dark:hover:bg-green-800 shadow-lg transition-all">
-        Submit Survey
-      </button>
-    )}
-  </div>
-</div>
-</div>
-)}
-</div>
-</div>
-</main>
-
-{/* Right sidebar — question property editor */}
-{!isPreviewMode && (
-  <aside className="w-80 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700 flex flex-col z-10 shadow-sm overflow-y-auto transition-colors duration-300">
-    <PropertyEditor
-      selectedQuestion={selectedQuestion || null}
-      updateQuestion={updateQuestion}
-      setSelectedQuestionId={setSelectedQuestionId}
-      branchTargets={branchTargets}
-    />
-  </aside>
-)}
-
-{showSettings && (
-  <SurveySettingsModal
-    surveyTitle={surveyTitle}
-    description={description}
-    logo={logo}
-    websiteUrl={websiteUrl}
-    themeColor={primaryColor || "#6366F1"}
-    customizeBranding={customizeBranding}
-    onSave={(settings) => {
-      setSurveyTitle(settings.surveyTitle);
-      setDescription(settings.description);
-      setLogo(settings.logo);
-      setWebsiteUrl(settings.websiteUrl);
-      setPrimaryColor(settings.themeColor);
-      setCustomizeBranding(settings.customizeBranding);
-    }}
-    onClose={() => setShowSettings(false)}
-  />
-)}
-
-{showAiModifier && (
-  <AiSurveyModifier
-    surveyTitle={surveyTitle}
-    pages={pages}
-    description={description}
-    onApply={handleAiModifyApplied}
-    onClose={() => setShowAiModifier(false)}
-  />
-)}
-
-<style>{`
-  .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-  .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
-`}</style>
-</div>
-);
+  );
 }

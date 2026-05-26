@@ -14,6 +14,7 @@ export default function CreateNewSurvey() {
     logo: string | null;
     websiteUrl: string;
     themeColor: string;
+    backgroundColor: string;
     surveyTitle: string;
     description: string;
     isAnonymous: boolean;
@@ -24,6 +25,7 @@ export default function CreateNewSurvey() {
     logo: null,
     websiteUrl: "",
     themeColor: "#6366F1",
+    backgroundColor: "#F8FAFC",
     surveyTitle: "",
     description: "",
     isAnonymous: false,
@@ -67,12 +69,12 @@ export default function CreateNewSurvey() {
   };
 
   const colorPresets = ["#6366F1", "#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#8B5CF6"];
+  const bgColorPresets = ["#FFFFFF", "#F8FAFC", "#F0FDF4", "#EFF6FF", "#FAF5FF", "#FFF7ED"];
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
       <div className="flex max-w-200 py-10 px-6 flex-col gap-8 w-full">
 
-        {/* Navigation */}
         <div className="flex justify-end w-full">
           <button
             onClick={() => navigate(-1)}
@@ -85,13 +87,11 @@ export default function CreateNewSurvey() {
           </button>
         </div>
 
-        {/* Header */}
         <div className="flex flex-col items-center gap-2 text-center mb-4">
           <h1 className="text-[#1E293B] dark:text-white text-3xl font-bold">Create New Survey</h1>
           <p className="text-[#64748B] dark:text-slate-400 text-sm">Create from scratch or use AI to generate one instantly.</p>
         </div>
 
-        {/* Mode Toggle */}
         <div className="flex bg-gray-100 dark:bg-slate-800 rounded-xl p-1 w-fit mx-auto border border-[#E2E8F0] dark:border-slate-700">
           <button
             onClick={() => setCreationMode("manual")}
@@ -118,11 +118,10 @@ export default function CreateNewSurvey() {
         <div className="flex flex-col gap-10 bg-white dark:bg-slate-800 p-10 rounded-2xl shadow-sm border border-[#E2E8F0] dark:border-slate-700 transition-colors duration-300">
           {creationMode === "manual" ? (
             <>
-              {/* Section 1: Branding */}
               <section className="flex flex-col gap-6">
                 <div className="flex justify-between items-center border-b border-[#F1F5F9] dark:border-slate-700 pb-4">
                   <h2 className="text-[#1E293B] dark:text-white text-sm font-bold uppercase tracking-wider">
-                    Customize Branding
+                    Customize Survey Theme
                   </h2>
                   <div
                     onClick={() => toggleField("customizeBranding")}
@@ -155,6 +154,7 @@ export default function CreateNewSurvey() {
                           className="w-full p-3 border border-[#E2E8F0] dark:border-slate-600 rounded-lg bg-[#F8FAFC] dark:bg-slate-900 dark:text-white text-sm outline-none focus:ring-1 focus:ring-blue-400 transition-colors"
                         />
                       </div>
+                      
                       <div className="flex flex-col gap-3">
                         <label className="text-[#1E293B] dark:text-white text-xs font-bold uppercase">Theme Color</label>
                         <div className="flex items-center gap-4">
@@ -173,13 +173,34 @@ export default function CreateNewSurvey() {
                             ))}
                           </div>
                         </div>
+                        <p className="text-[10px] text-slate-400">Controls header bar, buttons, and accent elements on the live survey</p>
+                      </div>
+
+                      <div className="flex flex-col gap-3">
+                        <label className="text-[#1E293B] dark:text-white text-xs font-bold uppercase">Background Color</label>
+                        <div className="flex items-center gap-4">
+                          <input
+                            type="color" name="backgroundColor" value={formData.backgroundColor} onChange={handleChange}
+                            className="w-10 h-10 rounded cursor-pointer border-none p-0 bg-transparent"
+                          />
+                          <div className="flex gap-2">
+                            {bgColorPresets.map((color) => (
+                              <button
+                                key={color}
+                                onClick={() => setFormData((p) => ({ ...p, backgroundColor: color }))}
+                                className={`w-6 h-6 rounded-full border-2 ${formData.backgroundColor === color ? "border-slate-400" : "border-transparent"}`}
+                                style={{ backgroundColor: color }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-slate-400">Controls the survey page background on the live survey</p>
                       </div>
                     </div>
                   </div>
                 )}
               </section>
 
-              {/* Section 2: Details */}
               <section className="flex flex-col gap-6 text-left">
                 <h2 className="text-[#1E293B] dark:text-white text-sm font-bold uppercase tracking-wider border-b border-[#F1F5F9] dark:border-slate-700 pb-4">
                   Survey Details
