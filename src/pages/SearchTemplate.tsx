@@ -236,7 +236,7 @@ export default function SearchTemplate() {
   const navigate = useNavigate();
   const [loadingTemplateId, setLoadingTemplateId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(["All"]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -246,23 +246,36 @@ export default function SearchTemplate() {
 
   const toggleCategory = (cat: string) => {
     if (cat === "All") {
-      setSelectedCategories(["All"]);
+      // If "All" is clicked, clear all selections (show everything)
+      if (selectedCategories.includes("All")) {
+        setSelectedCategories([]);
+      } else {
+        setSelectedCategories(["All"]);
+      }
       return;
     }
+    
     setSelectedCategories((prev) => {
-      const without = prev.filter((c) => c !== "All");
-      if (without.includes(cat)) {
-        const next = without.filter((c) => c !== cat);
-        return next.length === 0 ? ["All"] : next;
+      // Remove "All" if it exists when selecting other categories
+      const withoutAll = prev.filter((c) => c !== "All");
+      
+      if (withoutAll.includes(cat)) {
+        // Remove the category if already selected
+        const newSelection = withoutAll.filter((c) => c !== cat);
+        return newSelection;
+      } else {
+        // Add the category
+        return [...withoutAll, cat];
       }
-      return [...without, cat];
     });
   };
 
   const filteredTemplates = useMemo(() => {
     return TEMPLATES.filter((t) => {
-      const matchesCategory =
-        selectedCategories.includes("All") || selectedCategories.includes(t.category);
+      // If no categories selected OR "All" is selected, show all templates
+      const matchesCategory = selectedCategories.length === 0 || 
+        selectedCategories.includes("All") ||
+        selectedCategories.includes(t.category);
       const matchesSearch =
         !searchQuery.trim() ||
         t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
