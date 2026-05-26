@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  ArrowLeft, ArrowRight, X, Loader2,
+  ArrowLeft, X, Loader2,
   Monitor, Tablet, Smartphone, FileText, CopyPlus,
 } from "lucide-react";
 import { TEMPLATES } from "./SearchTemplate";
@@ -11,7 +11,7 @@ type DeviceType = "desktop" | "tablet" | "mobile";
 const deviceWidths: Record<DeviceType, string> = {
   desktop: "w-full max-w-2xl",
   tablet: "w-[600px]",
-  mobile: "w-[375px]",
+  mobile: "w-[375px] max-h-[600px]",
 };
 
 const DeviceIcon = ({ device, current, onClick }: { device: DeviceType; current: DeviceType; onClick: () => void }) => {
@@ -26,24 +26,26 @@ const DeviceIcon = ({ device, current, onClick }: { device: DeviceType; current:
   );
 };
 
-const QuestionPreview = ({ question, index, primaryColor }: { question: any; index: number; primaryColor: string }) => {
+const QuestionPreview = ({ question, index, primaryColor, deviceType }: { question: any; index: number; primaryColor: string; deviceType: DeviceType }) => {
+  const isMobile = deviceType === "mobile";
+  
   return (
-    <div className="mb-8">
-      <div className="flex gap-2 mb-3">
-        <span style={{ color: primaryColor }} className="font-bold text-sm">{index + 1}.</span>
-        <h3 className="font-semibold text-gray-800 dark:text-white text-sm">{question.label}</h3>
+    <div className={`mb-6 ${isMobile ? 'mb-5' : 'mb-8'}`}>
+      <div className={`flex gap-2 mb-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
+        <span style={{ color: primaryColor }} className={`font-bold ${isMobile ? 'text-sm' : 'text-sm'}`}>{index + 1}.</span>
+        <h3 className={`font-semibold text-gray-800 dark:text-white ${isMobile ? 'text-sm' : 'text-sm'} leading-tight`}>{question.label}</h3>
       </div>
-      <div className="pl-5">
+      <div className={`pl-4 ${isMobile ? 'pl-4' : 'pl-5'}`}>
         {question.type === "text" && (
-          <div className="w-full border-b-2 border-gray-200 dark:border-slate-600 pb-2 text-slate-300 dark:text-slate-500 text-sm italic">
+          <div className={`w-full border-b-2 border-gray-200 dark:border-slate-600 pb-2 text-slate-300 dark:text-slate-500 ${isMobile ? 'text-sm' : 'text-sm'} italic`}>
             Type your answer here...
           </div>
         )}
         {question.type === "rating" && (
-          <div className="flex gap-1.5">
+          <div className={`flex flex-wrap gap-1.5 ${isMobile ? 'gap-1' : 'gap-1.5'}`}>
             {[...Array(question.max ?? 5)].map((_, i) => (
-              <div key={i} className="flex flex-col items-center gap-1">
-                <div className="w-8 h-8 rounded-full border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500 font-bold">
+              <div key={i} className="flex flex-col items-center gap-0.5">
+                <div className={`${isMobile ? 'w-7 h-7 text-xs' : 'w-8 h-8 text-xs'} rounded-full border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-400 dark:text-slate-500 font-bold`}>
                   {i + 1}
                 </div>
               </div>
@@ -53,9 +55,9 @@ const QuestionPreview = ({ question, index, primaryColor }: { question: any; ind
         {question.type === "multiple_choice" && (
           <div className="space-y-2">
             {question.options?.map((opt: string, i: number) => (
-              <div key={i} className="flex items-center gap-3">
+              <div key={i} className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-500 shrink-0" />
-                <span className="text-sm text-slate-600 dark:text-slate-300">{opt}</span>
+                <span className={`${isMobile ? 'text-sm' : 'text-sm'} text-slate-600 dark:text-slate-300`}>{opt}</span>
               </div>
             ))}
           </div>
@@ -73,7 +75,6 @@ export default function TemplatePreview() {
 
   const [device, setDevice] = useState<DeviceType>("desktop");
   const [isCreating, setIsCreating] = useState(false);
-  const [currentPage, setCurrentPage] = useState(0);
 
   const token = localStorage.getItem("token");
 
@@ -90,19 +91,11 @@ export default function TemplatePreview() {
 
   const Icon = template.Icon;
   const primaryColor = "#6366F1";
-
-  // Split questions into pages of 3
-  const questionsPerPage = 3;
-  const pages = [];
-  for (let i = 0; i < template.previewQuestions.length; i += questionsPerPage) {
-    pages.push(template.previewQuestions.slice(i, i + questionsPerPage));
-  }
-  const totalPages = pages.length;
+  const isMobile = device === "mobile";
 
   const handleUseTemplate = async () => {
     setIsCreating(true);
     try {
-      // Convert template questions to the format expected by your AddQuestions component
       const surveyPages = [{
         id: `page-${Date.now()}`,
         title: "Page 1",
@@ -118,7 +111,6 @@ export default function TemplatePreview() {
         }))
       }];
 
-      // First, create the survey as a draft
       const createRes = await fetch("http://localhost:5000/api/surveys", {
         method: "POST",
         headers: { 
@@ -185,61 +177,43 @@ export default function TemplatePreview() {
         </div>
 
         {/* Device preview area */}
-        <div className="flex-1 overflow-y-auto flex flex-col items-center py-8 px-4 relative">
-
-          {/* Survey preview card */}
-          <div className={`transition-all duration-300 ${deviceWidths[device]}`}>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
-              {/* Colored header */}
-              <div className={`bg-gradient-to-br ${template.gradient} p-8 flex items-center gap-4`}>
-                <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
-                  <Icon size={28} className="text-white" />
+        <div className="flex-1 overflow-y-auto flex flex-col items-center py-6 px-3 relative">
+          <div className={`transition-all duration-300 ${deviceWidths[device]} ${isMobile ? 'overflow-y-auto' : ''}`}>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col max-h-full">
+              {/* Colored header - fixed */}
+              <div className={`bg-gradient-to-br ${template.gradient} ${isMobile ? 'p-5' : 'p-8'} flex items-center gap-3 shrink-0`}>
+                <div className={`${isMobile ? 'w-10 h-10' : 'w-14 h-14'} bg-white/20 rounded-2xl flex items-center justify-center shrink-0`}>
+                  <Icon size={isMobile ? 20 : 28} className="text-white" />
                 </div>
-                <div>
-                  <h2 className="text-white font-black text-xl leading-tight">{template.title}</h2>
-                  <p className="text-white/70 text-sm mt-0.5">{template.category}</p>
+                <div className="flex-1 min-w-0">
+                  <h2 className={`text-white font-black ${isMobile ? 'text-base' : 'text-xl'} leading-tight break-words`}>{template.title}</h2>
+                  <p className={`text-white/70 ${isMobile ? 'text-[10px]' : 'text-sm'} mt-0.5`}>{template.category}</p>
                 </div>
               </div>
 
-              {/* Questions */}
-              <div className="p-8">
-                <p className="text-slate-400 dark:text-slate-500 text-sm mb-6">{template.description}</p>
+              {/* Questions - scrollable area */}
+              <div className={`${isMobile ? 'flex-1 overflow-y-auto' : ''}`}>
+                <div className={`${isMobile ? 'p-5' : 'p-8'}`}>
+                  <p className={`text-slate-400 dark:text-slate-500 ${isMobile ? 'text-xs mb-4' : 'text-sm mb-6'}`}>{template.description}</p>
 
-                {pages[currentPage]?.map((q: any, idx: number) => (
-                  <QuestionPreview
-                    key={idx}
-                    question={q}
-                    index={currentPage * questionsPerPage + idx}
-                    primaryColor={primaryColor}
-                  />
-                ))}
-              </div>
-
-              {/* Page navigation */}
-              {totalPages > 1 && (
-                <div className="px-8 pb-6 flex items-center justify-between border-t border-slate-100 dark:border-slate-700 pt-4">
-                  <div className="flex gap-1.5">
-                    {pages.map((_, i) => (
-                      <div key={i} onClick={() => setCurrentPage(i)}
-                        className={`w-2 h-2 rounded-full cursor-pointer transition-all ${i === currentPage ? "bg-indigo-500 w-4" : "bg-slate-200 dark:bg-slate-600"}`} />
+                  {/* All questions in one scrollable list */}
+                  <div className="space-y-6">
+                    {template.previewQuestions.map((q: any, idx: number) => (
+                      <QuestionPreview
+                        key={idx}
+                        question={q}
+                        index={idx}
+                        primaryColor={primaryColor}
+                        deviceType={device}
+                      />
                     ))}
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setCurrentPage((p) => Math.max(0, p - 1))} disabled={currentPage === 0}
-                      className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 disabled:opacity-30 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
-                      <ArrowLeft size={16} className="text-slate-500 dark:text-slate-400" />
-                    </button>
-                    <button onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))} disabled={currentPage === totalPages - 1}
-                      className="p-2 rounded-lg border border-slate-200 dark:border-slate-600 disabled:opacity-30 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
-                      <ArrowRight size={16} className="text-slate-500 dark:text-slate-400" />
-                    </button>
-                  </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
-          {/* Device switcher — bottom left */}
+          {/* Device switcher */}
           <div className="fixed bottom-6 left-6 flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1.5 shadow-lg">
             <DeviceIcon device="desktop" current={device} onClick={() => setDevice("desktop")} />
             <DeviceIcon device="tablet" current={device} onClick={() => setDevice("tablet")} />
@@ -264,14 +238,14 @@ export default function TemplatePreview() {
           <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 mb-6 border border-slate-100 dark:border-slate-700">
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs">
               <FileText size={13} />
-              <span>{template.previewQuestions.length} questions · {totalPages} page{totalPages !== 1 ? "s" : ""}</span>
+              <span>{template.previewQuestions.length} questions · 1 page</span>
             </div>
             <p className="text-slate-400 dark:text-slate-500 text-xs mt-2">
               You can edit, add, or remove questions after creating.
             </p>
           </div>
 
-          {/* Use template button - Clean, professional look without AI styling */}
+          {/* Use template button */}
           <button 
             onClick={handleUseTemplate} 
             disabled={isCreating}
