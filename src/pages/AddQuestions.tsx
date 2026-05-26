@@ -507,7 +507,7 @@ const PropertyEditor = ({
 }: PropertyEditorProps) => {
   if (!selectedQuestion) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 text-center">
+      <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-slate-500 p-8 text-center bg-white dark:bg-slate-800">
         <Settings2 size={48} className="mb-4 opacity-20" />
         <p>Select a question to edit its properties</p>
       </div>
@@ -524,7 +524,6 @@ const PropertyEditor = ({
     defaultTargetQuestionId: "",
   };
 
-  // Updates or removes a branch rule for a specific answer option
   const updateBranchRule = (value: string, targetQuestionId: string) => {
     const nextRules = (branching.rules || []).filter(
       (rule) => rule.value !== value,
@@ -541,12 +540,12 @@ const PropertyEditor = ({
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-white dark:bg-slate-800 h-full overflow-y-auto">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-gray-900">Properties</h2>
+        <h2 className="font-semibold text-gray-900 dark:text-white">Properties</h2>
         <button
           onClick={() => setSelectedQuestionId(null)}
-          className="p-1 hover:bg-gray-100 rounded"
+          className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-gray-500 dark:text-slate-400"
         >
           <X size={18} />
         </button>
@@ -554,7 +553,7 @@ const PropertyEditor = ({
 
       <div className="space-y-4">
         <div>
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <label className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
             Question Label
           </label>
           <input
@@ -563,14 +562,14 @@ const PropertyEditor = ({
             onChange={(e) =>
               updateQuestion(selectedQuestion.id, { label: e.target.value })
             }
-            className="mt-1 w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+            className="mt-1 w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
           />
         </div>
 
         {(selectedQuestion.type === "short_text" ||
           selectedQuestion.type === "long_text") && (
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <label className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
               Placeholder
             </label>
             <input
@@ -581,7 +580,7 @@ const PropertyEditor = ({
                   placeholder: e.target.value,
                 })
               }
-              className="mt-1 w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="mt-1 w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
             />
           </div>
         )}
@@ -589,7 +588,7 @@ const PropertyEditor = ({
         {(selectedQuestion.type === "multiple_choice" ||
           selectedQuestion.type === "checkboxes") && (
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">
+            <label className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">
               Options
             </label>
             <div className="space-y-2">
@@ -618,7 +617,7 @@ const PropertyEditor = ({
                         branching: nextBranching,
                       });
                     }}
-                    className="flex-1 border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="flex-1 border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
                   />
                   <button
                     onClick={() => {
@@ -640,7 +639,7 @@ const PropertyEditor = ({
                         branching: nextBranching,
                       });
                     }}
-                    className="p-2 text-gray-400 hover:text-red-500"
+                    className="p-2 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400"
                   >
                     <X size={14} />
                   </button>
@@ -656,7 +655,7 @@ const PropertyEditor = ({
                     ],
                   });
                 }}
-                className="w-full mt-2 py-2 px-4 border border-dashed border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 flex items-center justify-center gap-2"
+                className="w-full mt-2 py-2 px-4 border border-dashed border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-center gap-2"
               >
                 <Plus size={14} /> Add Option
               </button>
@@ -664,11 +663,10 @@ const PropertyEditor = ({
           </div>
         )}
 
-        {/* Conditional branching — maps each answer option to a target question */}
         {supportsBranching && (
-          <div className="pt-4 border-t border-gray-100 space-y-3">
+          <div className="pt-4 border-t border-gray-100 dark:border-slate-700 space-y-3">
             <label className="flex items-center justify-between cursor-pointer">
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
                 Enable Conditional Branching
               </span>
               <div
@@ -684,7 +682,7 @@ const PropertyEditor = ({
                         },
                   })
                 }
-                className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${branching.enabled ? "bg-indigo-600" : "bg-gray-200"}`}
+                className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${branching.enabled ? "bg-indigo-600" : "bg-gray-300 dark:bg-slate-600"}`}
               >
                 <div
                   className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${branching.enabled ? "translate-x-5" : ""}`}
@@ -693,8 +691,8 @@ const PropertyEditor = ({
             </label>
 
             {branching.enabled && (
-              <div className="space-y-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
-                <p className="text-xs text-gray-600">
+              <div className="space-y-3 rounded-xl border border-indigo-100 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-900/20 p-3">
+                <p className="text-xs text-gray-600 dark:text-slate-400">
                   Map each answer to the next question.
                 </p>
                 {(selectedQuestion.options || []).map((optionValue) => {
@@ -706,7 +704,7 @@ const PropertyEditor = ({
                       key={optionValue}
                       className="grid grid-cols-2 gap-2 items-center"
                     >
-                      <span className="text-xs font-semibold text-gray-700 truncate">
+                      <span className="text-xs font-semibold text-gray-700 dark:text-slate-300 truncate">
                         {optionValue}
                       </span>
                       <select
@@ -714,7 +712,7 @@ const PropertyEditor = ({
                         onChange={(e) =>
                           updateBranchRule(optionValue, e.target.value)
                         }
-                        className="border border-gray-300 rounded-lg p-2 text-xs bg-white"
+                        className="border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-xs bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
                       >
                         <option value="">Next question (default order)</option>
                         <option value="__END__">End survey</option>
@@ -728,8 +726,8 @@ const PropertyEditor = ({
                   );
                 })}
 
-                <div className="grid grid-cols-2 gap-2 items-center pt-1 border-t border-indigo-100">
-                  <span className="text-xs font-semibold text-gray-700">
+                <div className="grid grid-cols-2 gap-2 items-center pt-1 border-t border-indigo-100 dark:border-indigo-800">
+                  <span className="text-xs font-semibold text-gray-700 dark:text-slate-300">
                     Otherwise
                   </span>
                   <select
@@ -743,7 +741,7 @@ const PropertyEditor = ({
                         },
                       })
                     }
-                    className="border border-gray-300 rounded-lg p-2 text-xs bg-white"
+                    className="border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-xs bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
                   >
                     <option value="">Next question (default order)</option>
                     <option value="__END__">End survey</option>
@@ -761,7 +759,7 @@ const PropertyEditor = ({
 
         {selectedQuestion.type === "rating" && (
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <label className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
               Max Stars
             </label>
             <input
@@ -772,14 +770,14 @@ const PropertyEditor = ({
                   max: parseInt(e.target.value) || 5,
                 })
               }
-              className="mt-1 w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="mt-1 w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
             />
           </div>
         )}
 
-        <div className="pt-4 border-t">
+        <div className="pt-4 border-t border-gray-100 dark:border-slate-700">
           <label className="flex items-center justify-between cursor-pointer">
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
               Required Field
             </span>
             <div
@@ -788,7 +786,7 @@ const PropertyEditor = ({
                   required: !selectedQuestion.required,
                 })
               }
-              className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${selectedQuestion.required ? "bg-indigo-600" : "bg-gray-200"}`}
+              className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${selectedQuestion.required ? "bg-indigo-600" : "bg-gray-300 dark:bg-slate-600"}`}
             >
               <div
                 className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${selectedQuestion.required ? "translate-x-5" : ""}`}
