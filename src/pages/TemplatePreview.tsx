@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  ArrowLeft, ArrowRight, X, Sparkles, Loader2,
-  Monitor, Tablet, Smartphone, Star, FileText,
+  ArrowLeft, ArrowRight, X, Loader2,
+  Monitor, Tablet, Smartphone, FileText, CopyPlus,
 } from "lucide-react";
 import { TEMPLATES } from "./SearchTemplate";
 
@@ -72,7 +72,7 @@ export default function TemplatePreview() {
   const template = TEMPLATES.find((t) => t.id === templateId);
 
   const [device, setDevice] = useState<DeviceType>("desktop");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
 
   const token = localStorage.getItem("token");
@@ -100,31 +100,70 @@ export default function TemplatePreview() {
   const totalPages = pages.length;
 
   const handleUseTemplate = async () => {
-    setIsGenerating(true);
+    setIsCreating(true);
     try {
-      const aiRes = await fetch("http://localhost:5000/api/ai/generate-survey", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        credentials: "include",
-        body: JSON.stringify({ prompt: template.aiPrompt }),
-      });
-      const aiData = await aiRes.json();
-      if (!aiRes.ok) throw new Error(aiData?.message || "AI generation failed");
-      const surveyTitle = aiData?.surveyTitle || template.title;
-      const surveyPages = aiData?.pages || [];
+      // Convert template questions to the format expected by your AddQuestions component
+      const surveyPages = [{
+        id: `page-${Date.now()}`,
+        title: "Page 1",
+        questions: template.previewQuestions.map((q: any, idx: number) => ({
+          id: `q-${Date.now()}-${idx}`,
+          type: q.type === "text" ? "long_text" : q.type,
+          label: q.label,
+          required: true,
+          placeholder: q.type === "text" ? "Enter your answer here..." : undefined,
+          options: q.options || undefined,
+          max: q.max || undefined,
+          branching: undefined,
+        }))
+      }];
+
+      // First, create the survey as a draft
       const createRes = await fetch("http://localhost:5000/api/surveys", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         credentials: "include",
-        body: JSON.stringify({ surveyTitle, status: "Draft", pages: surveyPages }),
+        body: JSON.stringify({
+          surveyTitle: template.title,
+          description: template.description,
+          status: "Draft",
+          pages: surveyPages,
+          primaryColor: "#6366F1",
+          themeColor: "#6366F1",
+          customizeBranding: false,
+        }),
       });
-      const created = await createRes.json();
-      const newSurveyId = created?._id || created?.survey?._id;
-      if (newSurveyId) navigate("/add-questions", { state: { surveyId: newSurveyId } });
+      
+      if (!createRes.ok) {
+        throw new Error(`HTTP ${createRes.status}: ${createRes.statusText}`);
+      }
+      
+      const data = await createRes.json();
+      const newSurveyId = data._id || data.survey?._id;
+      
+      if (newSurveyId) {
+        navigate("/add-questions", { 
+          state: { 
+            surveyId: newSurveyId,
+            formData: {
+              surveyTitle: template.title,
+              description: template.description,
+              customizeBranding: false,
+              themeColor: "#6366F1",
+            }
+          } 
+        });
+      } else {
+        throw new Error("No survey ID returned");
+      }
     } catch (err) {
-      console.error("Failed to use template:", err);
+      console.error("Failed to create survey from template:", err);
+      alert("Failed to create survey. Please try again.");
     } finally {
-      setIsGenerating(false);
+      setIsCreating(false);
     }
   };
 
@@ -228,16 +267,19 @@ export default function TemplatePreview() {
               <span>{template.previewQuestions.length} questions · {totalPages} page{totalPages !== 1 ? "s" : ""}</span>
             </div>
             <p className="text-slate-400 dark:text-slate-500 text-xs mt-2">
-              You can always make changes to the theme and template.
+              You can edit, add, or remove questions after creating.
             </p>
           </div>
 
-          {/* Use template button */}
-          <button onClick={handleUseTemplate} disabled={isGenerating}
-            className="w-full py-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-black rounded-2xl hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mb-3">
-            {isGenerating
-              ? <><Loader2 size={16} className="animate-spin" /> Generating...</>
-              : <><Sparkles size={16} /> Use this template</>
+          {/* Use template button - Clean, professional look without AI styling */}
+          <button 
+            onClick={handleUseTemplate} 
+            disabled={isCreating}
+            className="w-full py-3 bg-white dark:bg-slate-700 border-2 border-indigo-500 text-indigo-600 dark:text-indigo-400 font-black rounded-2xl hover:bg-indigo-50 dark:hover:bg-slate-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mb-3"
+          >
+            {isCreating
+              ? <><Loader2 size={16} className="animate-spin" /> Creating survey...</>
+              : <><CopyPlus size={16} /> Use this template</>
             }
           </button>
 
@@ -250,10 +292,10 @@ export default function TemplatePreview() {
 
           {/* Blank survey link */}
           <div className="text-center">
-            <p className="text-slate-400 text-xs mb-1">Didn't find what you're looking for?</p>
+            <p className="text-slate-400 text-xs mb-1">Want to start from scratch?</p>
             <button onClick={() => navigate("/create-new-survey")}
               className="text-indigo-600 dark:text-indigo-400 font-bold text-sm hover:underline transition-all">
-              Start with a blank survey
+              Create blank survey
             </button>
           </div>
         </div>
