@@ -15,6 +15,7 @@ export default function ReviewAndPublish() {
   const description = location.state?.description || "";
   const pages = location.state?.pages || [];
   const primaryColor = location.state?.primaryColor || "#6366F1";
+  const backgroundColor = location.state?.backgroundColor || "#F8FAFC";
   const surveyId = location.state?.surveyId;
   const logo = location.state?.logo || null;
   const websiteUrl = location.state?.websiteUrl || "";
@@ -37,6 +38,7 @@ export default function ReviewAndPublish() {
         customizeBranding,
         primaryColor,
         themeColor: primaryColor,
+        backgroundColor,
         pages,
         status,
       };
@@ -125,6 +127,7 @@ export default function ReviewAndPublish() {
                       websiteUrl,
                       customizeBranding,
                       themeColor: primaryColor,
+                      backgroundColor,
                     },
                   },
                 });
@@ -139,10 +142,8 @@ export default function ReviewAndPublish() {
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden transition-colors duration-300">
-          <div
-            style={{ backgroundColor: primaryColor }}
-            className="h-2 w-full"
-          />
+          {/* Removed colored header bar - using default gray */}
+          <div className="h-2 w-full bg-gray-200 dark:bg-slate-700" />
 
           <div className="p-10">
             <div className="flex items-start justify-between mb-10">
@@ -154,13 +155,8 @@ export default function ReviewAndPublish() {
                   Final check of the survey structure and content.
                 </p>
               </div>
-              <div
-                className="p-3 rounded-xl"
-                style={{
-                  backgroundColor: `${primaryColor}20`,
-                  color: primaryColor,
-                }}
-              >
+              {/* Removed colored circle - using default gray */}
+              <div className="p-3 rounded-xl bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-gray-400">
                 <CheckCircle2 size={28} />
               </div>
             </div>
@@ -209,17 +205,33 @@ export default function ReviewAndPublish() {
                   />
                 </div>
               )}
+              {/* Theme Color display - just for info, not applied to UI */}
               <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-700">
                 <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">
-                  Theme color
+                  Theme Color (Live Survey)
                 </p>
                 <div className="flex items-center gap-2">
                   <div
-                    className="w-5 h-5 rounded"
+                    className="w-5 h-5 rounded border border-gray-200"
                     style={{ backgroundColor: primaryColor }}
                   />
                   <span className="text-gray-900 dark:text-white font-bold font-mono text-sm">
                     {primaryColor}
+                  </span>
+                </div>
+              </div>
+              {/* Background Color display - just for info, not applied to UI */}
+              <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-700">
+                <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">
+                  Background Color (Live Survey)
+                </p>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-5 h-5 rounded border border-gray-200"
+                    style={{ backgroundColor: backgroundColor }}
+                  />
+                  <span className="text-gray-900 dark:text-white font-bold font-mono text-sm">
+                    {backgroundColor}
                   </span>
                 </div>
               </div>
@@ -241,8 +253,7 @@ export default function ReviewAndPublish() {
             {pages.length > 0 ? (
               <div className="space-y-8 mb-12">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Layout size={16} style={{ color: primaryColor }} /> Content
-                  Summary
+                  <Layout size={16} className="text-gray-500" /> Content Summary
                 </h3>
                 {pages.map((page: any, pIdx: number) => (
                   <div
@@ -320,8 +331,7 @@ export default function ReviewAndPublish() {
                 </p>
                 <button
                   onClick={() => navigate(-1)}
-                  className="mt-3 text-sm font-medium"
-                  style={{ color: primaryColor }}
+                  className="mt-3 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
                 >
                   ← Go back and add questions
                 </button>
@@ -337,8 +347,7 @@ export default function ReviewAndPublish() {
               </button>
               <button
                 onClick={() => handleFinalize("Running")}
-                style={{ backgroundColor: primaryColor }}
-                className="px-10 py-3 text-white rounded-xl font-bold text-sm hover:opacity-90 shadow-lg transition-all"
+                className="px-10 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 shadow-lg transition-all"
               >
                 Publish Survey
               </button>
