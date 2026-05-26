@@ -134,7 +134,7 @@ export default function NavBar() {
     : "?";
 
   const roleLabels: Record<string, string> = {
-    super_admin: "Organization Admin",
+super_admin: "Super Admin",
     admin: "Admin",
     viewer: "Viewer",
     creator: "Creator",

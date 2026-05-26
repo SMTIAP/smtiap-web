@@ -172,21 +172,67 @@ export const modifySurveyWithAi = async (
   }
 };
 
+const tryLocalNavigation = (prompt: string) => {
+  const normalized = prompt.toLowerCase().trim();
+  
+  // Define route mapping
+  const routes = [
+    { pattern: /\b(dashboard|creator-dashboard|creator dashboard)\b/, path: "/creator-dashboard", name: "Dashboard" },
+    { pattern: /\b(analytics|stats|charts|reports)\b/, path: "/analytics", name: "Analytics" },
+    { pattern: /\b(created surveys|my surveys|view surveys|surveys|survey list)\b/, path: "/created-surveys", name: "Created Surveys" },
+    { pattern: /\b(create new survey|create survey|new survey|make survey|add survey)\b/, path: "/create-new-survey", name: "Create New Survey" },
+    { pattern: /\b(templates|template)\b/, path: "/templates", name: "Templates" },
+    { pattern: /\b(subscription|billing|plan|credits|pricing)\b/, path: "/subscription", name: "Subscription" },
+    { pattern: /\b(organization registration|register organization|org registration|organization|org)\b/, path: "/organization-registration", name: "Organization Registration" },
+    { pattern: /\b(role management|roles|role|manage roles)\b/, path: "/role-management", name: "Role Management" },
+    { pattern: /\b(audit logs|audit log|logs|audit)\b/, path: "/audit-log", name: "Audit Logs" },
+    { pattern: /\b(admin|administrator)\b/, path: "/admin", name: "Admin" },
+    { pattern: /\b(home|landing|main|index)\b/, path: "/", name: "Home" }
+  ];
+
+  for (const route of routes) {
+    if (route.pattern.test(normalized)) {
+      return {
+        response_message: `Navigating you to your ${route.name.toLowerCase()} page.`,
+        action: "navigate",
+        path: route.path
+      };
+    }
+  }
+
+  // Also match general greets/questions for polite fallback
+  if (/\b(hi|hello|hey|greetings|yo)\b/.test(normalized)) {
+    return {
+      response_message: "Hello! I am your AI assistant. How can I help you navigate?",
+      action: "speak",
+      path: null
+    };
+  }
+
+  return null;
+};
+
 export const chatWithAi = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  try {
-    const { prompt } = req.body;
-    if (!prompt) {
-      res.status(400).json({ error: "Prompt is required" });
-      return;
-    }
+  const { prompt } = req.body;
+  if (!prompt) {
+    res.status(400).json({ error: "Prompt is required" });
+    return;
+  }
 
+  try {
     const apiKey =
       process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      res.status(500).json({ error: "Gemini API key is missing" });
+      // Local navigation fallback when API key is missing
+      const fallback = tryLocalNavigation(prompt);
+      if (fallback) {
+        res.json(fallback);
+        return;
+      }
+      res.status(500).json({ error: "Gemini API key is missing. Please set GEMINI_API_KEY in your backend/.env file." });
       return;
     }
 
@@ -234,6 +280,13 @@ If the user asks a general question or says hello, answer it in response_message
     res.json(aiResponse);
   } catch (error) {
     console.error("Error communicating with Gemini:", error);
+    // Even if Gemini fails at runtime (e.g. rate limit, invalid key, or network issue), try local navigation fallback before erroring
+    const fallback = tryLocalNavigation(prompt);
+    if (fallback) {
+      res.json(fallback);
+      return;
+    }
     res.status(500).json({ error: "Failed to communicate with AI" });
   }
 };
+
