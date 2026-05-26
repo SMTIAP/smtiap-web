@@ -153,7 +153,12 @@ function generateResponse(surveyId: string) {
   const improvement = pick(improvements);
   if (improvement) responses[q6Id] = improvement;
 
-  return { surveyId, responses, submittedAt: randDate(30) };
+  return {
+    surveyId,
+    responses,
+    respondentToken: "token-" + Math.random().toString(36).substring(2, 11) + "-" + Date.now(),
+    submittedAt: randDate(30)
+  };
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -161,15 +166,15 @@ async function seed() {
   await mongoose.connect(env.mongoUri);
   console.log("MongoDB connected.");
 
-  // Admin user
-  const existingAdmin = await User.findOne({ email: "admin@smtiap.com" });
-  if (existingAdmin) {
-    console.log("Admin user already exists, skipping.");
-  } else {
-    const hash = await bcrypt.hash("Admin@12345", 10);
-    await User.create({ email: "admin@smtiap.com", username: "Admin", password: hash, role: "admin" });
-    console.log("Admin user created.  admin@smtiap.com / Admin@12345");
-  }
+  // Clean and recreate Admin user to ensure correct single hashing
+  await User.deleteOne({ email: "admin@smtiap.com" });
+  await User.create({ email: "admin@smtiap.com", username: "Admin", password: "Admin@12345", role: "admin" });
+  console.log("Admin user created/reset. admin@smtiap.com / Admin@12345");
+
+  // Clean and recreate Super Admin user to ensure correct single hashing
+  await User.deleteOne({ email: "superadmin@smtiap.com" });
+  await User.create({ email: "superadmin@smtiap.com", username: "SuperAdmin", password: "SuperAdmin@12345", role: "super_admin" });
+  console.log("Super Admin user created/reset. superadmin@smtiap.com / SuperAdmin@12345");
 
   // Survey
   const existing = await Survey.findOne({ surveyTitle: "Customer Satisfaction Survey" });
@@ -197,7 +202,8 @@ async function seed() {
 
   await mongoose.disconnect();
   console.log("\nSeeding complete.");
-  console.log("  Login → admin@smtiap.com / Admin@12345");
+  console.log("  Admin Login → admin@smtiap.com / Admin@12345");
+  console.log("  Super Admin Login → superadmin@smtiap.com / SuperAdmin@12345");
 }
 
 seed().catch((err) => { console.error("Seed failed:", err); process.exit(1); });

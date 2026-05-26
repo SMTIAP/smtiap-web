@@ -156,6 +156,7 @@ export default function NavBar() {
       case "billing_manager":
         return "/subscription";
       case "super_admin":
+        return "/super-admin-dashboard";
       case "admin":
       default:
         return "/admin";

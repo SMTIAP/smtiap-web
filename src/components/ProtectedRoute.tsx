@@ -4,26 +4,30 @@ import api from "../api/api";
 
 interface Props {
   children: JSX.Element;
+  allowedRoles?: string[];
 }
 
-export default function ProtectedRoute({ children }: Props) {
+export default function ProtectedRoute({ children, allowedRoles }: Props) {
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [auth, setAuth] = useState<boolean | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
     api
       .get("/me")
-      .then(() => {
+      .then((res) => {
         if (mounted) {
           setAuth(true);
+          setUserRole(res.data.role);
         }
       })
       .catch(() => {
         if (mounted) {
           setAuth(false);
+          setUserRole(null);
         }
       })
       .finally(() => {
@@ -47,6 +51,13 @@ export default function ProtectedRoute({ children }: Props) {
 
   if (!auth) {
     return <Navigate to="/auth" replace state={{ from: location }} />;
+  }
+
+  if (allowedRoles && userRole && !allowedRoles.includes(userRole)) {
+    if (userRole === "creator" || userRole === "creater") {
+      return <Navigate to="/creator-dashboard" replace />;
+    }
+    return <Navigate to="/admin" replace />;
   }
 
   return children;
