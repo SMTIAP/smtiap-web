@@ -262,7 +262,9 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
       // Persist the AI result to the backend so it loads automatically next visit
       const saveResponse = await fetch(`${apiBaseUrl}/api/analytics`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json",
+          ...authHeaders(),
+         },
         body: JSON.stringify({
           surveyId,
           summary: String(analysis.summary ?? "").trim(),

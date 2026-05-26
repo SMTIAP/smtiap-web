@@ -1,5 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import AnalyticsResult from "../models/AnalyticsResult.js";
+import AuditLog from "../models/AuditLog.js";
+import Survey from "../models/Survey.js";
 
 export const saveAnalyticsResult = async (
   req: Request,
@@ -48,6 +50,29 @@ export const saveAnalyticsResult = async (
         setDefaultsOnInsert: true,
       },
     );
+
+    try {
+      const userId = (req as any).user?._id;
+
+      if (userId) {
+        
+        const survey = await Survey.findById(surveyId).select("surveyTitle tenantId");
+        // const tenantId = survey?.tenantId ?? null;
+
+        await AuditLog.create({
+          user_id: userId,
+          tenant_id: survey?.tenantId,
+          action: "ai-analysis-run",
+          entity: "Survey",
+          entity_id: surveyId,
+          description: `Performed AI Analysis for Survey ${survey?.surveyTitle ?? surveyId}`,
+        });
+      }
+    } catch (auditErr) {
+      console.error("Audit log failed:", auditErr);
+    }
+
+
     res.json(result);
   } catch (err) {
     next(err);
