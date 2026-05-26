@@ -1403,22 +1403,22 @@ export default function AddQuestions() {
 
       {/* Left sidebar — question type palette and page navigator */}
       {!readOnly && (
-        <aside className="w-72 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col z-10 shadow-sm transition-colors duration-300">
-          <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800">
+        <aside className="w-72 bg-gray-50 dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col z-10 shadow-sm transition-colors duration-300">
+          <div className="p-6 border-b border-gray-200 dark:border-slate-700 flex items-center gap-3 bg-gray-50 dark:bg-slate-900">
+            <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-indigo-100 dark:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800">
               <Layout size={20} className="text-indigo-600 dark:text-indigo-400" />
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-sm font-bold text-gray-900 dark:text-white truncate w-28">
                 {surveyTitle}
               </h1>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+              <p className="text-[10px] text-gray-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
                 Designer
               </p>
             </div>
             <button
               onClick={() => setShowSettings(true)}
-              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all shrink-0"
+              className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white transition-all shrink-0"
               title="Survey Settings"
             >
               <Settings2 size={16} />
@@ -1427,7 +1427,7 @@ export default function AddQuestions() {
 
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
             <div>
-              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-3">
+              <h3 className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest px-2 mb-3">
                 Essentials
               </h3>
               <div className="grid grid-cols-1 gap-2">
@@ -1435,15 +1435,15 @@ export default function AddQuestions() {
                   <button
                     key={type.id}
                     onClick={() => addQuestion(type.id)}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-transparent hover:border-gray-100 hover:bg-gray-50 transition-all text-left text-gray-700 font-medium group"
+                    className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all text-left text-gray-700 dark:text-slate-300 font-medium group bg-white dark:bg-slate-800"
                   >
-                    <span className="p-2 bg-gray-50 group-hover:bg-white rounded-lg transition-colors shadow-sm">
+                    <span className="p-2 bg-gray-100 dark:bg-slate-700 group-hover:bg-white dark:group-hover:bg-slate-600 rounded-lg transition-colors shadow-sm text-gray-600 dark:text-slate-300">
                       {type.icon}
                     </span>
                     {type.label}
                     <PlusCircle
                       size={14}
-                      className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-indigo-500"
                     />
                   </button>
                 ))}
@@ -1451,7 +1451,7 @@ export default function AddQuestions() {
             </div>
 
             <div>
-              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-3">
+              <h3 className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest px-2 mb-3">
                 Pages
               </h3>
               <div className="space-y-1">
@@ -1461,23 +1461,23 @@ export default function AddQuestions() {
                     onClick={() => setActivePageIndex(idx)}
                     className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
                       activePageIndex === idx
-                        ? "bg-gray-100 text-gray-900 font-semibold"
-                        : "hover:bg-gray-50 text-gray-600"
+                        ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 font-semibold"
+                        : "hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-600 dark:text-slate-400"
                     }`}
                   >
                     <div
                       className={`w-1.5 h-1.5 rounded-full ${
-                        activePageIndex === idx ? "bg-indigo-500" : "bg-transparent"
+                        activePageIndex === idx ? "bg-indigo-500" : "bg-gray-300 dark:bg-slate-600"
                       }`}
                     />
-                    <span className="truncate flex-1">{page.title}</span>
+                    <span className="truncate flex-1 text-sm">{page.title}</span>
                     {pages.length > 1 && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           deletePage(idx);
                         }}
-                        className="opacity-0 group-hover:opacity-100 hover:text-red-500"
+                        className="opacity-0 group-hover:opacity-100 hover:text-red-500 text-gray-400"
                       >
                         <X size={14} />
                       </button>
@@ -1486,7 +1486,7 @@ export default function AddQuestions() {
                 ))}
                 <button
                   onClick={addPage}
-                  className="w-full flex items-center gap-2 p-2 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-colors mt-2"
+                  className="w-full flex items-center gap-2 p-2 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors mt-2"
                 >
                   <Plus size={16} /> Add Page
                 </button>
@@ -1494,8 +1494,8 @@ export default function AddQuestions() {
             </div>
           </div>
 
-          {/* Save draft button — creates new survey or updates existing based on surveyId */}
-          <div className="p-4 border-t border-gray-100 bg-gray-50">
+          {/* Save draft button */}
+          <div className="p-4 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900">
             <button
               onClick={async () => {
                 const url = surveyId
@@ -1547,7 +1547,7 @@ export default function AddQuestions() {
                   alert("Could not save draft. Is the backend running?");
                 }
               }}
-              className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-white py-2 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-slate-600 shadow-sm transition-all"
+              className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-slate-700 shadow-sm transition-all"
             >
               <Save size={16} /> {surveyId ? "Update Draft" : "Save Draft"}
             </button>
