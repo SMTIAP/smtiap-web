@@ -66,6 +66,7 @@ export default function TakeSurvey() {
     pages: Page[];
     primaryColor?: string;
     themeColor?: string;
+    backgroundColor?: string;
     status?: string;
     isPasswordProtected?: boolean;
     surveyTitle?: string;
@@ -114,8 +115,8 @@ export default function TakeSurvey() {
     if (surveyId) fetchSurvey();
   }, [surveyId]);
 
-  const primaryColor =
-    surveyData?.primaryColor || surveyData?.themeColor || "#6366F1";
+  const primaryColor = surveyData?.primaryColor || surveyData?.themeColor || "#6366F1";
+  const backgroundColor = surveyData?.backgroundColor || "#F8FAFC";
 
   // Flattens all questions across all pages into a single ordered list for navigation
   const flattenedQuestions = useMemo<FlattenedQuestion[]>(() => {
@@ -167,7 +168,7 @@ export default function TakeSurvey() {
 
   if (loading)
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor }}>
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-slate-500 text-sm">Loading survey...</p>
@@ -177,8 +178,8 @@ export default function TakeSurvey() {
 
   if (error || !surveyData)
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <div className="text-center p-10">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor }}>
+        <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
           <p className="text-2xl font-bold text-slate-800 mb-2">
             Survey not found
           </p>
@@ -191,7 +192,7 @@ export default function TakeSurvey() {
 
   if (surveyData.status === "Finished")
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor }}>
         <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
           <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
@@ -219,7 +220,7 @@ export default function TakeSurvey() {
   // Password gate — blocks access until correct password is entered
   if (surveyData.isPasswordProtected && !passwordVerified)
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-6">
+      <div className="min-h-screen flex items-center justify-center px-6" style={{ backgroundColor }}>
         <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 w-full max-w-sm text-center">
           <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <svg
@@ -263,7 +264,8 @@ export default function TakeSurvey() {
           <button
             onClick={handlePasswordSubmit}
             disabled={!passwordInput || checkingPassword}
-            className="w-full py-3 bg-indigo-600 text-white rounded-2xl text-sm font-bold hover:bg-indigo-700 disabled:opacity-40 transition-all"
+            className="w-full py-3 text-white rounded-2xl text-sm font-bold hover:opacity-90 disabled:opacity-40 transition-all"
+            style={{ backgroundColor: primaryColor }}
           >
             {checkingPassword ? "Checking..." : "Enter Survey →"}
           </button>
@@ -273,7 +275,7 @@ export default function TakeSurvey() {
 
   if (submitted)
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor }}>
         <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
           <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
@@ -460,8 +462,8 @@ export default function TakeSurvey() {
 
   return (
     <div
-      className="min-h-screen py-12 px-6"
-      style={{ backgroundColor: "#F8FAFC" }}
+      className="min-h-screen py-12 px-6 transition-colors duration-300"
+      style={{ backgroundColor: backgroundColor }}
     >
       {/* Math captcha modal shown before final form submission */}
       {showCaptcha && (
@@ -527,7 +529,8 @@ export default function TakeSurvey() {
               </button>
               <button
                 onClick={handleCaptchaConfirm}
-                className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-bold hover:bg-indigo-700 transition-all"
+                className="flex-1 px-4 py-3 text-white rounded-2xl text-sm font-bold hover:opacity-90 transition-all"
+                style={{ backgroundColor: primaryColor }}
               >
                 Submit ✓
               </button>
@@ -537,10 +540,10 @@ export default function TakeSurvey() {
       )}
 
       <div className="max-w-2xl mx-auto">
-        {/* Survey header with title, description and question progress indicator */}
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+        {/* Survey header card - white with theme color top bar */}
+        <div className="bg-white rounded-3xl shadow-md border border-gray-200 overflow-hidden mb-6">
           <div
-            className="h-2 w-full"
+            className="h-2 w-full transition-colors duration-300"
             style={{ backgroundColor: primaryColor }}
           />
           <div className="p-8">
@@ -577,7 +580,7 @@ export default function TakeSurvey() {
                 {flattenedQuestions.map((_, i: number) => (
                   <div
                     key={i}
-                    className="h-1.5 rounded-full transition-all"
+                    className="h-1.5 rounded-full transition-all duration-300"
                     style={{
                       width: i === activeQuestionIndex ? "24px" : "8px",
                       backgroundColor:
@@ -614,7 +617,8 @@ export default function TakeSurvey() {
               </p>
             )}
 
-            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
+            {/* Question card - white background */}
+            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-md">
               <p className="text-base text-slate-800 font-semibold mb-4">
                 {activeQuestionIndex + 1}.{" "}
                 {currentQuestion.label || "Untitled Question"}
@@ -637,6 +641,7 @@ export default function TakeSurvey() {
                     )
                   }
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
+                  style={{ caretColor: primaryColor }}
                 />
               )}
 
@@ -654,6 +659,7 @@ export default function TakeSurvey() {
                   }
                   rows={4}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm resize-none"
+                  style={{ caretColor: primaryColor }}
                 />
               )}
 
@@ -674,7 +680,8 @@ export default function TakeSurvey() {
                         onChange={() =>
                           handleResponse(getResponseKey(currentQuestion), opt)
                         }
-                        className="w-4 h-4"
+                        className="w-4 h-4 transition-colors"
+                        style={{ accentColor: primaryColor }}
                       />
                       <span className="text-sm text-slate-700">{opt}</span>
                     </label>
@@ -713,7 +720,8 @@ export default function TakeSurvey() {
                             updated.join(","),
                           );
                         }}
-                        className="w-4 h-4 rounded"
+                        className="w-4 h-4 rounded transition-colors"
+                        style={{ accentColor: primaryColor }}
                       />
                       <span className="text-sm text-slate-700">{opt}</span>
                     </label>
@@ -722,7 +730,7 @@ export default function TakeSurvey() {
               )}
 
               {currentQuestion.type === "rating" && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {Array.from({ length: currentQuestion.max || 5 }, (_, i) => (
                     <button
                       key={i}
@@ -732,7 +740,7 @@ export default function TakeSurvey() {
                           String(i + 1),
                         )
                       }
-                      className="w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all"
+                      className="w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all duration-200"
                       style={{
                         borderColor:
                           Number(responses[getResponseKey(currentQuestion)]) > i
@@ -765,6 +773,7 @@ export default function TakeSurvey() {
                     )
                   }
                   className="w-32 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
+                  style={{ caretColor: primaryColor }}
                 />
               )}
 
@@ -779,16 +788,17 @@ export default function TakeSurvey() {
                     )
                   }
                   className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
+                  style={{ accentColor: primaryColor }}
                 />
               )}
             </div>
 
-            {/* Navigation buttons — Back uses history stack, Next resolves branching */}
+            {/* Navigation buttons */}
             <div className="flex justify-between items-center pt-4">
               {questionHistory.length > 0 ? (
                 <button
                   onClick={handleBack}
-                  className="px-6 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-gray-50 transition-all"
+                  className="px-6 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-gray-50 transition-all bg-white"
                 >
                   ← Back
                 </button>
@@ -806,7 +816,7 @@ export default function TakeSurvey() {
                       ? "#16A34A"
                       : primaryColor,
                 }}
-                className="px-8 py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg transition-all"
+                className="px-8 py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg transition-all duration-200"
               >
                 {currentResolvedTarget === -1 ||
                 (currentResolvedTarget === null &&
@@ -817,7 +827,7 @@ export default function TakeSurvey() {
             </div>
           </div>
         ) : (
-          <div className="p-10 text-center text-slate-400 italic">
+          <div className="p-10 text-center text-slate-400 italic bg-white rounded-2xl shadow-md">
             No questions found in this survey.
           </div>
         )}

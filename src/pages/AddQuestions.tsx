@@ -1578,23 +1578,22 @@ export default function AddQuestions() {
               </button>
             )}
             <button
-              onClick={() => {
-                if (readOnly) {
-                  navigate("/created-surveys");
-                  return;
-                }
-                setIsPreviewMode(!isPreviewMode);
-              }}
-              style={isPreviewMode ? { backgroundColor: primaryColor } : {}}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                isPreviewMode
-                  ? "text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              <Eye size={16} />
-              {isPreviewMode ? "Exit Preview" : "Preview"}
-            </button>
+  onClick={() => {
+    if (readOnly) {
+      navigate("/created-surveys");
+      return;
+    }
+    setIsPreviewMode(!isPreviewMode);
+  }}
+  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+    isPreviewMode
+      ? "bg-indigo-600 text-white"
+      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+  }`}
+>
+  <Eye size={16} />
+  {isPreviewMode ? "Exit Preview" : "Preview"}
+</button>
             {!readOnly && (
               <button
                 onClick={async () => {
