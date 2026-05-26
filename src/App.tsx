@@ -14,6 +14,7 @@ import OrganizationAdmin from "./pages/OrganizationAdmin";
 import LandingPage from "./pages/LandingPage";
 import CreatedSurveys from "./pages/CreatedSurveys";
 import SearchTemplate from "./pages/SearchTemplate";
+import TemplatePreview from "./pages/TemplatePreview";
 import CreateNewSurvey from "./pages/CreateNewSurvey";
 import AddQuestions from "./pages/AddQuestions";
 import ReviewAndPublish from "./pages/ReviewAndPublish";
@@ -115,7 +116,7 @@ export default function App() {
                       <SearchTemplate />
                     </ProtectedRoute>
                   }
-                />
+                /> <Route path="/template-preview" element={<ProtectedRoute><TemplatePreview /></ProtectedRoute>} />
                 <Route
                   path="/subscription"
                   element={
