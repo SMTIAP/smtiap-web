@@ -8,6 +8,7 @@ import {
   getUserTenantData,
   updateOrgRole,
   removeOrgUser,
+  removeTenant,
 } from "../controllers/roleManagementController.js";
 
 const router = Router();
@@ -19,5 +20,6 @@ router.put("/:userId/:tenantId", protect, loadTenant, addUserToOrganization);
 router.put("/:userId/:tenantId/role", protect, loadTenant, updateOrgRole);
 router.get("/user-tenant", protect, loadTenant, getUserTenantData);
 router.delete("/:userId/:tenantId", protect, loadTenant, removeOrgUser);
+router.patch("/tenant/:tenantId", protect, removeTenant)
 
 export default router;

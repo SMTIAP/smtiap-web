@@ -45,7 +45,14 @@ const tenantSchema = new Schema(
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } },
 );
 
-tenantSchema.index({ domain: 1 }, { unique: true });
+// tenantSchema.index({ domain: 1 }, { unique: true });
+tenantSchema.index(
+  { domain: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: "active" },
+  }
+);
 
 export type Tenant = InferSchemaType<typeof tenantSchema>;
 
