@@ -540,7 +540,7 @@ export default function TakeSurvey() {
       )}
 
       <div className="max-w-2xl mx-auto">
-        {/* Survey header card - white with theme color top bar */}
+        {/* Survey header - white card with theme color top bar */}
         <div className="bg-white rounded-3xl shadow-md border border-gray-200 overflow-hidden mb-6">
           <div
             className="h-2 w-full transition-colors duration-300"
@@ -827,7 +827,7 @@ export default function TakeSurvey() {
             </div>
           </div>
         ) : (
-          <div className="p-10 text-center text-slate-400 italic bg-white rounded-2xl shadow-md">
+          <div className="p-10 text-center text-slate-400 italic bg-white/80 backdrop-blur-sm rounded-2xl shadow-md">
             No questions found in this survey.
           </div>
         )}
