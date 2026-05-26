@@ -24,6 +24,7 @@ import TakeSurvey from "./pages/TakeSurvey";
 import SurveyResults from "./pages/SurveyResults";
 import OrganizationRegistration from "./pages/OrganizationRegistration.tsx";
 import VoiceAI from "./components/VoiceAI.tsx";
+import SuperAdminDashboard from "./pages/SuperAdmainDashboard.tsx";
 
 function Layout() {
   return (
@@ -181,6 +182,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Audit />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/super-admin-dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["super_admin"]}>
+                <SuperAdminDashboard />
               </ProtectedRoute>
             }
           />

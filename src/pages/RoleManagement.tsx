@@ -25,6 +25,7 @@ interface UserTenantRole {
         _id: string;
         username: string;
         email: string;
+        role?: string;
     };
     tenantId: {
         _id: string;
@@ -44,8 +45,8 @@ export default function RoleManagement(){
     const [orgUsers, setOrgUsers] = useState<UserTenantRole[]>([]);
 
     const roleLabels: Record<string, string> = {
-        super_admin: "Organization Admin",
-        admin: "Tenant Admin",
+        super_admin: "Super Admin",
+        admin: "Organization Admin",
         viewer: "Viewer",
         creator: "Creator",
         billing_manager: "Billing Manager"
@@ -118,10 +119,14 @@ if (token) {
     // const filteredUsers = users.filter((user) => user.email.toLowerCase().includes(searchTerm.toLowerCase()));
     const filteredUsers = searchTerm.trim()
   ? users.filter((user) =>
+      user.role !== "super_admin" &&
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
     )
   : [];
-    const filteredOrgUsers = orgUsers.filter((item) => item.tenantId.name.toLowerCase().includes(searchOrganization.toLowerCase()));
+    const filteredOrgUsers = orgUsers.filter((item) => 
+      item.userId?.role !== "super_admin" &&
+      item.tenantId.name.toLowerCase().includes(searchOrganization.toLowerCase())
+    );
     // const org = 
 //  const filteredOrganizations = tenants.filter((tenant) => tenant.name.toLowerCase().includes(searchOrganization.toLowerCase()))
 
@@ -353,8 +358,7 @@ const handleRemoveOrgUser = async (item: UserTenantRole) => {
                                                     });
                                                 }}
                                                 className="w-50 border border-gray-300 rounded-md px-3 py-1 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                                <option value="super_admin">Organization Admin</option>
-                                                <option value="admin">Tenant Admin</option>
+                                                <option value="admin">Organization Admin</option>
                                                 <option value="viewer">Viewer</option>
                                                 <option value="creator">Creator</option>
                                                 <option value="billing_manager">Billing Manager</option>
@@ -468,11 +472,13 @@ const handleRemoveOrgUser = async (item: UserTenantRole) => {
                                                 }));
                                             }}
                                             className="w-50 border border-gray-300 rounded-md px-3 py-1 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            >{Object.entries(roleLabels).map(([key, label]) => (
-                                                <option key={key} value={key}>
-                                                    {label}
-                                                </option>
-                                            ))}</select>
+                                            >{Object.entries(roleLabels)
+                                                .filter(([key]) => key !== "super_admin")
+                                                .map(([key, label]) => (
+                                                  <option key={key} value={key}>
+                                                      {label}
+                                                  </option>
+                                             ))}</select>
                                     </td>
                                     <td className="px-6 py-4 text-gray-800">{item.tenantId.name}</td>
                                     <td className="px-6 py-4 text-gray-800">

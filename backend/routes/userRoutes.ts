@@ -22,7 +22,7 @@ router.get("/me", protect, getMe);
 router.post("/forgot-password", forgotPassword);
 router.put("/reset-password/:token", resetPassword);
 
-router.get("/superadmin", protect, authorizeRoles("superadmin"), (req, res) => {
+router.get("/superadmin", protect, authorizeRoles("super_admin"), (req, res) => {
   res.json({ message: "Welcome Admin Dashboard" });
 });
 router.get(

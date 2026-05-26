@@ -82,8 +82,8 @@ export default function NavBar() {
     : "?";
 
   const roleLabels: Record<string, string> = {
-    super_admin: "Organization Admin",
-    admin: "Tenant Admin",
+    super_admin: "Super Admin",
+    admin: "Organization Admin",
     viewer: "Viewer",
     creator: "Creator",
     billing_manager: "Billing Manager",
@@ -95,6 +95,7 @@ export default function NavBar() {
       case "creater":
         return "/creator-dashboard";
       case "super_admin":
+        return "/super-admin-dashboard";
       case "admin":
       default:
         return "/admin"; // fallback to default admin dashboard
