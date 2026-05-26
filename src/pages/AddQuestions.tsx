@@ -540,265 +540,235 @@ const PropertyEditor = ({
   };
 
   return (
-    <div className="p-6 space-y-6 bg-white dark:bg-slate-800 h-full overflow-y-auto">
-      <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-gray-900 dark:text-white">Properties</h2>
+    <div className="p-5 space-y-5 bg-white dark:bg-slate-800 h-full overflow-y-auto">
+      <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-slate-700">
+        <h2 className="font-semibold text-gray-900 dark:text-white text-base">Properties</h2>
         <button
           onClick={() => setSelectedQuestionId(null)}
           className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-gray-500 dark:text-slate-400"
         >
-          <X size={18} />
+          <X size={16} />
         </button>
       </div>
 
-      <div className="space-y-4">
-        <div>
-          <label className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-            Question Label
+      {/* Question Label */}
+      <div className="space-y-1">
+        <label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+          Question Label
+        </label>
+        <input
+          type="text"
+          value={selectedQuestion.label}
+          onChange={(e) =>
+            updateQuestion(selectedQuestion.id, { label: e.target.value })
+          }
+          className="w-full border border-gray-200 dark:border-slate-600 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
+        />
+      </div>
+
+      {/* Placeholder for text questions */}
+      {(selectedQuestion.type === "short_text" || selectedQuestion.type === "long_text") && (
+        <div className="space-y-1">
+          <label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+            Placeholder
           </label>
           <input
             type="text"
-            value={selectedQuestion.label}
+            value={selectedQuestion.placeholder || ""}
             onChange={(e) =>
-              updateQuestion(selectedQuestion.id, { label: e.target.value })
+              updateQuestion(selectedQuestion.id, {
+                placeholder: e.target.value,
+              })
             }
-            className="mt-1 w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
+            className="w-full border border-gray-200 dark:border-slate-600 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
           />
         </div>
+      )}
 
-        {(selectedQuestion.type === "short_text" ||
-          selectedQuestion.type === "long_text") && (
-          <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-              Placeholder
-            </label>
-            <input
-              type="text"
-              value={selectedQuestion.placeholder || ""}
-              onChange={(e) =>
-                updateQuestion(selectedQuestion.id, {
-                  placeholder: e.target.value,
-                })
-              }
-              className="mt-1 w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
-            />
-          </div>
-        )}
-
-        {(selectedQuestion.type === "multiple_choice" ||
-          selectedQuestion.type === "checkboxes") && (
-          <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">
-              Options
-            </label>
-            <div className="space-y-2">
-              {selectedQuestion.options?.map((opt: string, i: number) => (
-                <div key={i} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={opt}
-                    onChange={(e) => {
-                      const newOpts = [...(selectedQuestion.options || [])];
-                      const oldValue = newOpts[i];
-                      newOpts[i] = e.target.value;
-                      const nextBranching = selectedQuestion.branching
-                        ? {
-                            ...selectedQuestion.branching,
-                            rules: (selectedQuestion.branching.rules || []).map(
-                              (rule) =>
-                                rule.value === oldValue
-                                  ? { ...rule, value: e.target.value }
-                                  : rule,
-                            ),
-                          }
-                        : undefined;
-                      updateQuestion(selectedQuestion.id, {
-                        options: newOpts,
-                        branching: nextBranching,
-                      });
-                    }}
-                    className="flex-1 border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
-                  />
-                  <button
-                    onClick={() => {
-                      const currentOptions = selectedQuestion.options || [];
-                      const removedOption = currentOptions[i];
-                      const newOpts = currentOptions.filter(
-                        (_: string, idx: number) => idx !== i,
-                      );
-                      const nextBranching = selectedQuestion.branching
-                        ? {
-                            ...selectedQuestion.branching,
-                            rules: (
-                              selectedQuestion.branching.rules || []
-                            ).filter((rule) => rule.value !== removedOption),
-                          }
-                        : undefined;
-                      updateQuestion(selectedQuestion.id, {
-                        options: newOpts,
-                        branching: nextBranching,
-                      });
-                    }}
-                    className="p-2 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
-              <button
-                onClick={() => {
-                  const currentOptions = selectedQuestion.options || [];
-                  updateQuestion(selectedQuestion.id, {
-                    options: [
-                      ...currentOptions,
-                      `Option ${currentOptions.length + 1}`,
-                    ],
-                  });
-                }}
-                className="w-full mt-2 py-2 px-4 border border-dashed border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-center gap-2"
-              >
-                <Plus size={14} /> Add Option
-              </button>
-            </div>
-          </div>
-        )}
-
-        {supportsBranching && (
-          <div className="pt-4 border-t border-gray-100 dark:border-slate-700 space-y-3">
-            <label className="flex items-center justify-between cursor-pointer">
-              <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                Enable Conditional Branching
-              </span>
-              <div
-                onClick={() =>
-                  updateQuestion(selectedQuestion.id, {
-                    branching: branching.enabled
-                      ? undefined
-                      : {
-                          enabled: true,
-                          rules: branching.rules || [],
-                          defaultTargetQuestionId:
-                            branching.defaultTargetQuestionId || "",
-                        },
-                  })
-                }
-                className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${branching.enabled ? "bg-indigo-600" : "bg-gray-300 dark:bg-slate-600"}`}
-              >
-                <div
-                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${branching.enabled ? "translate-x-5" : ""}`}
+      {/* Options for multiple choice/checkboxes */}
+      {(selectedQuestion.type === "multiple_choice" || selectedQuestion.type === "checkboxes") && (
+        <div className="space-y-2">
+          <label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">
+            Options
+          </label>
+          <div className="space-y-2">
+            {selectedQuestion.options?.map((opt: string, i: number) => (
+              <div key={i} className="flex gap-2">
+                <input
+                  type="text"
+                  value={opt}
+                  onChange={(e) => {
+                    const newOpts = [...(selectedQuestion.options || [])];
+                    newOpts[i] = e.target.value;
+                    updateQuestion(selectedQuestion.id, {
+                      options: newOpts,
+                    });
+                  }}
+                  className="flex-1 border border-gray-200 dark:border-slate-600 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
                 />
+                <button
+                  onClick={() => {
+                    const currentOptions = selectedQuestion.options || [];
+                    const newOpts = currentOptions.filter((_, idx) => idx !== i);
+                    updateQuestion(selectedQuestion.id, {
+                      options: newOpts,
+                    });
+                  }}
+                  className="p-2 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400"
+                >
+                  <X size={14} />
+                </button>
               </div>
-            </label>
-
-            {branching.enabled && (
-              <div className="space-y-3 rounded-xl border border-indigo-100 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-900/20 p-3">
-                <p className="text-xs text-gray-600 dark:text-slate-400">
-                  Map each answer to the next question.
-                </p>
-                {(selectedQuestion.options || []).map((optionValue) => {
-                  const selectedTarget = (branching.rules || []).find(
-                    (rule) => rule.value === optionValue,
-                  )?.targetQuestionId;
-                  return (
-                    <div
-                      key={optionValue}
-                      className="grid grid-cols-2 gap-2 items-center"
-                    >
-                      <span className="text-xs font-semibold text-gray-700 dark:text-slate-300 truncate">
-                        {optionValue}
-                      </span>
-                      <select
-                        value={selectedTarget || ""}
-                        onChange={(e) =>
-                          updateBranchRule(optionValue, e.target.value)
-                        }
-                        className="border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-xs bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
-                      >
-                        <option value="">Next question (default order)</option>
-                        <option value="__END__">End survey</option>
-                        {branchTargets.map((target) => (
-                          <option key={target.id} value={target.id}>
-                            {target.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  );
-                })}
-
-                <div className="grid grid-cols-2 gap-2 items-center pt-1 border-t border-indigo-100 dark:border-indigo-800">
-                  <span className="text-xs font-semibold text-gray-700 dark:text-slate-300">
-                    Otherwise
-                  </span>
-                  <select
-                    value={branching.defaultTargetQuestionId || ""}
-                    onChange={(e) =>
-                      updateQuestion(selectedQuestion.id, {
-                        branching: {
-                          enabled: true,
-                          rules: branching.rules || [],
-                          defaultTargetQuestionId: e.target.value,
-                        },
-                      })
-                    }
-                    className="border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-xs bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
-                  >
-                    <option value="">Next question (default order)</option>
-                    <option value="__END__">End survey</option>
-                    {branchTargets.map((target) => (
-                      <option key={target.id} value={target.id}>
-                        {target.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {selectedQuestion.type === "rating" && (
-          <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-              Max Stars
-            </label>
-            <input
-              type="number"
-              value={selectedQuestion.max}
-              onChange={(e) =>
+            ))}
+            <button
+              onClick={() => {
+                const currentOptions = selectedQuestion.options || [];
                 updateQuestion(selectedQuestion.id, {
-                  max: parseInt(e.target.value) || 5,
-                })
-              }
-              className="mt-1 w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
-            />
+                  options: [...currentOptions, `Option ${currentOptions.length + 1}`],
+                });
+              }}
+              className="w-full mt-1 py-2 px-3 border border-dashed border-gray-300 dark:border-slate-600 rounded-lg text-xs text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-center gap-1"
+            >
+              <Plus size={12} /> Add Option
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
-        <div className="pt-4 border-t border-gray-100 dark:border-slate-700">
+      {/* Conditional Branching */}
+      {supportsBranching && (
+        <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-slate-700">
           <label className="flex items-center justify-between cursor-pointer">
-            <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
-              Required Field
+            <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
+              Enable Conditional Branching
             </span>
             <div
               onClick={() =>
                 updateQuestion(selectedQuestion.id, {
-                  required: !selectedQuestion.required,
+                  branching: branching.enabled
+                    ? undefined
+                    : {
+                        enabled: true,
+                        rules: [],
+                        defaultTargetQuestionId: "",
+                      },
                 })
               }
-              className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${selectedQuestion.required ? "bg-indigo-600" : "bg-gray-300 dark:bg-slate-600"}`}
+              className={`w-10 h-5 flex items-center rounded-full p-1 transition-colors cursor-pointer ${branching.enabled ? "bg-indigo-600" : "bg-gray-300 dark:bg-slate-600"}`}
             >
               <div
-                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${selectedQuestion.required ? "translate-x-5" : ""}`}
+                className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform ${branching.enabled ? "translate-x-5" : ""}`}
               />
             </div>
           </label>
+
+          {branching.enabled && (
+            <div className="space-y-2 rounded-lg border border-indigo-100 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-900/20 p-3">
+              <p className="text-[10px] text-gray-600 dark:text-slate-400">
+                Map each answer to the next question
+              </p>
+              
+              {(selectedQuestion.options || []).map((optionValue) => {
+                const selectedTarget = (branching.rules || []).find(
+                  (rule) => rule.value === optionValue,
+                )?.targetQuestionId;
+                return (
+                  <div key={optionValue} className="flex items-center gap-2">
+                    <span className="text-xs text-gray-700 dark:text-slate-300 w-20 flex-shrink-0 truncate">
+                      {optionValue}
+                    </span>
+                    <select
+                      value={selectedTarget || ""}
+                      onChange={(e) =>
+                        updateBranchRule(optionValue, e.target.value)
+                      }
+                      className="flex-1 border border-gray-200 dark:border-slate-600 rounded-lg p-1.5 text-xs bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Next question</option>
+                      <option value="__END__">End survey</option>
+                      {branchTargets.map((target) => (
+                        <option key={target.id} value={target.id}>
+                          {target.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })}
+
+              <div className="flex items-center gap-2 pt-1 border-t border-indigo-100 dark:border-indigo-800">
+                <span className="text-xs text-gray-700 dark:text-slate-300 w-20 flex-shrink-0">
+                  Otherwise
+                </span>
+                <select
+                  value={branching.defaultTargetQuestionId || ""}
+                  onChange={(e) =>
+                    updateQuestion(selectedQuestion.id, {
+                      branching: {
+                        enabled: true,
+                        rules: branching.rules || [],
+                        defaultTargetQuestionId: e.target.value,
+                      },
+                    })
+                  }
+                  className="flex-1 border border-gray-200 dark:border-slate-600 rounded-lg p-1.5 text-xs bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
+                >
+                  <option value="">Next question</option>
+                  <option value="__END__">End survey</option>
+                  {branchTargets.map((target) => (
+                    <option key={target.id} value={target.id}>
+                      {target.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
         </div>
+      )}
+
+      {/* Max Stars for rating */}
+      {selectedQuestion.type === "rating" && (
+        <div className="space-y-1">
+          <label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+            Max Stars
+          </label>
+          <input
+            type="number"
+            value={selectedQuestion.max}
+            onChange={(e) =>
+              updateQuestion(selectedQuestion.id, {
+                max: parseInt(e.target.value) || 5,
+              })
+            }
+            className="w-full border border-gray-200 dark:border-slate-600 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
+          />
+        </div>
+      )}
+
+      {/* Required Field Toggle */}
+      <div className="pt-2 border-t border-gray-100 dark:border-slate-700">
+        <label className="flex items-center justify-between cursor-pointer">
+          <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
+            Required Field
+          </span>
+          <div
+            onClick={() =>
+              updateQuestion(selectedQuestion.id, {
+                required: !selectedQuestion.required,
+              })
+            }
+            className={`w-10 h-5 flex items-center rounded-full p-1 transition-colors cursor-pointer ${selectedQuestion.required ? "bg-indigo-600" : "bg-gray-300 dark:bg-slate-600"}`}
+          >
+            <div
+              className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform ${selectedQuestion.required ? "translate-x-5" : ""}`}
+            />
+          </div>
+        </label>
       </div>
     </div>
   );
 };
-
 export default function AddQuestions() {
   const location = useLocation();
   const navigate = useNavigate();
