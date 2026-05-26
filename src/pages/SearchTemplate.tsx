@@ -1,17 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Search, Plus, Pencil, Sparkles, Loader2, X,
+  Search, Plus, Sparkles, Loader2, X,
   Utensils, Coffee, Heart, GraduationCap, Users,
   Star, Building2, Mic, Zap, ShoppingBag, ChevronRight,
 } from "lucide-react";
-
-interface SurveyItem {
-  _id: string;
-  surveyTitle?: string;
-  status?: string;
-  createdAt?: string;
-}
 
 export const CATEGORIES = [
   "All",
@@ -242,8 +235,6 @@ const AI_SUGGESTIONS = [
 export default function SearchTemplate() {
   const navigate = useNavigate();
   const [loadingTemplateId, setLoadingTemplateId] = useState<string | null>(null);
-  const [draftSurveys, setDraftSurveys] = useState<SurveyItem[]>([]);
-  const [loadingDrafts, setLoadingDrafts] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>(["All"]);
   const [showAiModal, setShowAiModal] = useState(false);
@@ -252,27 +243,6 @@ export default function SearchTemplate() {
   const [aiError, setAiError] = useState("");
 
   const token = localStorage.getItem("token");
-
-  useEffect(() => {
-    const fetchDraftSurveys = async () => {
-      try {
-        setLoadingDrafts(true);
-        const response = await fetch("http://localhost:5000/api/surveys", {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          credentials: "include",
-        });
-        const data = await response.json();
-        const list = Array.isArray(data) ? (data as SurveyItem[]) : [];
-        setDraftSurveys(list.filter((s) => s.status === "Draft"));
-      } catch (err) {
-        console.error("Failed to load draft surveys:", err);
-        setDraftSurveys([]);
-      } finally {
-        setLoadingDrafts(false);
-      }
-    };
-    fetchDraftSurveys();
-  }, []);
 
   const toggleCategory = (cat: string) => {
     if (cat === "All") {
@@ -388,7 +358,6 @@ export default function SearchTemplate() {
                       : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                   }`}
                 >
-                  {/* Circle indicator with arrow */}
                   <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
                     isSelected
                       ? "border-indigo-500 bg-indigo-500"
@@ -414,38 +383,6 @@ export default function SearchTemplate() {
             </h1>
             <span className="text-slate-400 text-sm">{filteredTemplates.length} templates</span>
           </div>
-
-          {/* Draft Surveys */}
-          {!loadingDrafts && draftSurveys.length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[#0F172A] dark:text-white text-lg font-black">Continue Drafts</h2>
-                <span className="text-slate-400 text-[11px] font-bold uppercase tracking-widest">Edit existing</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {draftSurveys.map((survey) => {
-                  const title = survey.surveyTitle || "Untitled Survey";
-                  const matched = TEMPLATES.find((t) => t.title.toLowerCase() === title.toLowerCase());
-                  const gradient = matched?.gradient || "from-indigo-400 to-purple-500";
-                  const Icon = matched?.Icon || Pencil;
-                  return (
-                    <div key={survey._id}
-                      onClick={() => navigate("/add-questions", { state: { surveyId: survey._id } })}
-                      className="group cursor-pointer bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                      <div className={`h-20 bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
-                        <Icon size={28} className="text-white drop-shadow" />
-                        <span className="absolute top-2 right-2 text-[9px] font-black uppercase tracking-widest text-white/80 bg-black/20 px-2 py-0.5 rounded-full">Draft</span>
-                      </div>
-                      <div className="p-3">
-                        <p className="text-[#1E293B] dark:text-white font-black text-sm line-clamp-1">{title}</p>
-                        <p className="text-slate-400 text-xs mt-0.5">Click to continue</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           {/* Template Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
