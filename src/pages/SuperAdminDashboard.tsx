@@ -22,7 +22,9 @@ import {
   Ban,
   ArrowRightLeft,
   X,
-  ChevronRight
+  ChevronRight,
+  LayoutTemplate,
+  Tag
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
@@ -113,6 +115,10 @@ export default function SuperAdminDashboard() {
     password: "",
     role: "admin",
   });
+  
+  // Template count state
+  const [templatesCount, setTemplatesCount] = useState(0);
+  
   const navigate = useNavigate();
 
   const authHeaders = () => {
@@ -124,6 +130,22 @@ export default function SuperAdminDashboard() {
       headers.Authorization = `Bearer ${token}`;
     }
     return headers;
+  };
+
+  // Fetch template count
+  const fetchTemplateCount = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/templates", {
+        headers: authHeaders(),
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTemplatesCount(data.data?.length || 0);
+      }
+    } catch (err) {
+      console.error("Failed to fetch template count:", err);
+    }
   };
 
   // Fetch live stats & current user profile
@@ -227,6 +249,7 @@ export default function SuperAdminDashboard() {
         fetchManagedUsers(),
         fetchTenants(),
         fetchRecentLogs(),
+        fetchTemplateCount(),
       ]);
       setLoading(false);
     };
@@ -261,7 +284,6 @@ export default function SuperAdminDashboard() {
       setNewUser({ username: "", email: "", password: "", role: "admin" });
       setRoleUpdates((prev) => ({ ...prev, [data._id]: data.role }));
       
-      // Refresh all statistics & feeds
       fetchManagedUsers();
       fetchDashboardData();
       fetchRecentLogs();
@@ -293,7 +315,6 @@ export default function SuperAdminDashboard() {
         return updated;
       });
 
-      // Refresh all statistics & feeds
       fetchManagedUsers();
       fetchDashboardData();
       fetchRecentLogs();
@@ -320,7 +341,6 @@ export default function SuperAdminDashboard() {
         throw new Error(data.message || "Failed to delete user");
       }
 
-      // Refresh all statistics & feeds
       fetchManagedUsers();
       fetchDashboardData();
       fetchRecentLogs();
@@ -329,7 +349,6 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  // Update Tenant Status/Plan parameters
   const handleUpdateTenant = async (tenantId: string, status?: string, plan?: string) => {
     setError("");
     try {
@@ -349,7 +368,6 @@ export default function SuperAdminDashboard() {
         throw new Error(data.message || "Failed to update organization parameters");
       }
 
-      // Refresh stats and feeds
       fetchTenants();
       fetchDashboardData();
       fetchRecentLogs();
@@ -358,7 +376,6 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  // Allocate Promo Credits
   const handleAdjustCredits = async () => {
     if (!selectedTenantForCredits || creditAmount === "" || isNaN(Number(creditAmount))) {
       setCreditError("Please specify a valid numeric credit amount.");
@@ -389,13 +406,11 @@ export default function SuperAdminDashboard() {
       setCreditAmount("");
       setCreditReason("");
       
-      // Delay closing popup
       setTimeout(() => {
         setSelectedTenantForCredits(null);
         setCreditSuccess("");
       }, 1500);
 
-      // Refresh databases
       fetchTenants();
       fetchDashboardData();
       fetchRecentLogs();
@@ -406,7 +421,6 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  // Filter computations
   const filteredUsers = managedUsers.filter((u) => {
     const matchesSearch =
       u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -422,7 +436,6 @@ export default function SuperAdminDashboard() {
     );
   });
 
-  // Badge styler for audit logs
   const getLogActionBadge = (action: string) => {
     const act = action.toLowerCase();
     if (act === "login") return "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/50";
@@ -499,8 +512,8 @@ export default function SuperAdminDashboard() {
           </div>
         </div>
 
-        {/* Feature Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 w-full">
+        {/* Feature Cards Grid - Changed to 5 columns */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-5 w-full">
           
           {/* Card 1: Users & Team */}
           <div 
@@ -594,6 +607,28 @@ export default function SuperAdminDashboard() {
             <div className="border-t border-gray-50 dark:border-slate-700 pt-4 mt-auto">
               <span className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 dark:text-indigo-400 group-hover:gap-2 transition-all">
                 Review analytics <ChevronRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </span>
+            </div>
+          </div>
+
+          {/* Card 5: Templates Library - NEW */}
+          <div 
+            onClick={() => navigate("/super-admin/templates")}
+            className="group relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-xl hover:scale-[1.02] hover:border-orange-300 dark:hover:border-orange-500 transition-all duration-300 p-6 flex flex-col cursor-pointer"
+          >
+            <div className="flex items-start justify-between mb-5">
+              <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-linear-to-br from-orange-500 to-pink-600 shadow-sm shrink-0">
+                <LayoutTemplate size={20} className="text-white" />
+              </div>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold text-orange-600 bg-orange-50 dark:bg-orange-900/40 dark:text-orange-300">
+                {templatesCount} Templates
+              </span>
+            </div>
+            <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-1.5">Templates Library</h3>
+            <p className="text-gray-400 dark:text-slate-400 text-sm leading-relaxed mb-5">Create and manage survey templates for organization admins.</p>
+            <div className="border-t border-gray-50 dark:border-slate-700 pt-4 mt-auto">
+              <span className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 dark:text-indigo-400 group-hover:gap-2 transition-all">
+                Manage Templates <ChevronRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
               </span>
             </div>
           </div>
@@ -1067,8 +1102,7 @@ export default function SuperAdminDashboard() {
                             <div className="font-bold text-slate-900 dark:text-white text-sm">{tenant.name}</div>
                             <div className="text-xs text-indigo-600 dark:text-indigo-400 mt-0.5 tracking-wide">{tenant.domain}</div>
                             <div className="text-[10px] text-slate-400 mt-1">{tenant.country || "Global Region"}</div>
-                          </td>
-
+                           </td>
                           <td className="px-4 py-4">
                             <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                               {tenant.createdBy ? tenant.createdBy.username : "Platform System"}
@@ -1076,8 +1110,7 @@ export default function SuperAdminDashboard() {
                             <div className="text-[10px] text-slate-400 mt-0.5">
                               {tenant.createdBy ? tenant.createdBy.email : "daemon@core"}
                             </div>
-                          </td>
-
+                           </td>
                           <td className="px-4 py-4">
                             <select
                               value={tenant.plan}
@@ -1087,8 +1120,7 @@ export default function SuperAdminDashboard() {
                               <option value="free">Free Tier</option>
                               <option value="premium">Premium Pack</option>
                             </select>
-                          </td>
-
+                           </td>
                           <td className="px-4 py-4">
                             <select
                               value={tenant.status}
@@ -1101,8 +1133,7 @@ export default function SuperAdminDashboard() {
                               <option value="suspended">Suspended</option>
                               <option value="inactive">Inactive</option>
                             </select>
-                          </td>
-
+                           </td>
                           <td className="px-4 py-4 text-center">
                             <div className="inline-flex flex-col items-center gap-2">
                               <div className="text-sm font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1 px-3 py-1 rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50">
@@ -1121,9 +1152,8 @@ export default function SuperAdminDashboard() {
                                 Adjust
                               </button>
                             </div>
-                          </td>
-
-                        </tr>
+                           </td>
+                         </tr>
                       );
                     })}
                     {filteredTenants.length === 0 && !tenantsLoading && (
