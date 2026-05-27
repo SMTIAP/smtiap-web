@@ -24,6 +24,7 @@ interface UserTenantRole {
   role: string;
   userId: { _id: string; username: string; email: string };
   tenantId: { _id: string; name: string };
+  status: "active" | "inactive";
 }
 
 export default function RoleManagement() {
@@ -183,13 +184,21 @@ const canManageTenant = (tenantId: string) => {
   const tenant = tenants.find(t => t._id === tenantId);
   if (!tenant || !currentUserId) return false;
 
-  const isCreator = tenant.createdBy === currentUserId;
+  const isActiveMember = orgUsers.some(
+    u =>
+      u.tenantId._id === tenantId &&
+      u.userId._id === currentUserId &&
+      u.status === "active"
+  );
+
+  const isCreator = tenant.createdBy === currentUserId && isActiveMember;
 
   const isTenantAdmin = orgUsers.some(
     u =>
       u.tenantId._id === tenantId &&
       u.userId._id === currentUserId &&
-      u.role === "admin"
+      u.role === "admin" &&
+      u.status === "active"
   );
 
   return isCreator || isTenantAdmin;
@@ -199,13 +208,21 @@ const canManageTenantId = (tenantId: string) => {
   const tenant = tenants.find((t) => t._id === tenantId);
   if (!tenant || !currentUserId) return false;
 
-  const isCreator = tenant.createdBy === currentUserId;
+  const isActiveMember = orgUsers.some(
+    (u) =>
+      u.tenantId._id === tenantId &&
+      u.userId._id === currentUserId &&
+      u.status === "active"
+  );
+
+  const isCreator = tenant.createdBy === currentUserId && isActiveMember;
 
   const isTenantAdmin = orgUsers.some(
     (u) =>
       u.tenantId._id === tenantId &&
       u.userId._id === currentUserId &&
-      u.role === "admin"
+      u.role === "admin" &&
+      u.status === "active"
   );
 
   return isCreator || isTenantAdmin;
@@ -225,7 +242,14 @@ const canManageTenantId = (tenantId: string) => {
   console.log("DEBUG tenants length:", tenants.length);
 
   // Use all tenants the user belongs to (loadTenant middleware already filters by membership)
-  const filteredOrganizations = tenants;
+  const filteredOrganizations = tenants.filter((tenant) =>
+  orgUsers.some(
+    (u) =>
+      u.tenantId._id === tenant._id &&
+      u.userId._id === currentUserId &&
+      u.status === "active"
+  )
+);
 
   const handleAddUser = async (user: User, tenant: Tenant) => {
     if (!canManageTenant(tenant._id)) {
@@ -353,7 +377,7 @@ const canManageTenantId = (tenantId: string) => {
     }
   }
 
-  
+
     const confirmed = await confirmAsync(
       `Remove "${item.userId.username}" from "${item.tenantId.name}"? They can be re-added later.`,
     );
@@ -451,7 +475,12 @@ const groupedUsers = (): GroupedTenant[] => {
 
   const map = new Map<string, GroupedTenant>();
 
-  orgUsers.forEach((item) => {
+  orgUsers    
+    .filter((item) => {
+      // 🚫 REMOVE inactive memberships
+      return item.status !== "inactive";
+    })
+    .forEach((item) => {
     const tenantId = item.tenantId._id;
 
     if (!map.has(tenantId)) {
