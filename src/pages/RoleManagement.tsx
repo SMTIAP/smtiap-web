@@ -213,12 +213,13 @@ const canManageTenantId = (tenantId: string) => {
 
   const filteredUsers = searchTerm.trim()
     ? users.filter((user) =>
+      user.role !== "super_admin" &&
         user.email.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     : [];
-  const filteredOrgUsers = orgUsers.filter((item) =>
-    item.tenantId.name.toLowerCase().includes(searchOrganization.toLowerCase()),
-  );
+  // const filteredOrgUsers = orgUsers.filter((item) =>
+  //   item.tenantId.name.toLowerCase().includes(searchOrganization.toLowerCase()),
+  // );
   // Debug: log tenants data
   console.log("DEBUG tenants state:", tenants);
   console.log("DEBUG tenants length:", tenants.length);
@@ -450,9 +451,9 @@ const groupedUsers = (): GroupedTenant[] => {
         <div className="flex justify-between items-center w-full">
           <div className="flex items-center gap-4 w-fit">
             <BackButton />
-            <h1 className="text-[#1E293B] dark:text-white font-inter text-3xl font-bold leading-9">
+            <h2 className="text-3xl font-black tracking-tight text-[#0D141C] dark:text-white">
               Employees and Role Management
-            </h1>
+            </h2>
           </div>
           <div className="flex justify-end gap-2">
             <button
@@ -472,24 +473,24 @@ const groupedUsers = (): GroupedTenant[] => {
         </div>
 
         {/* Search Bar */}
-        <div className="flex flex-col md:flex-row gap-4 w-full">
-          <div className="relative w-full max-w-md">
+        <div className="flex flex-col md:flex-row gap-4 w-full items-center">
+          <div className="relative w-full md:max-w-md">
             <input
               type="text"
               placeholder="Search emails..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200 placeholder:text-slate-400"
             />
             <Search
               size={16}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
             />
           </div>
           <select
             value={selectedTenantId}
             onChange={(e) => setSelectedTenantId(e.target.value)}
-            className="w-full max-w-xs px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            className="w-full md:w-72 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200"
           >
             <option value="">Select Organization</option>
             {filteredOrganizations.filter((tenant) => tenant.status === "active" && canManageTenantId(tenant._id)).map((tenant) => (
@@ -517,7 +518,7 @@ const groupedUsers = (): GroupedTenant[] => {
               ${
                 !selectedTenantId || !canManageTenantId(selectedTenantId)
                   ? "bg-gray-400 cursor-not-allowed opacity-70"
-                  : "bg-gradient-to-r from-red-500 to-rose-600 hover:shadow-lg hover:scale-[1.02]"
+                  : "className=px-3 py-1.5 text-sm rounded-lg font-medium text-white bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-500 hover:to-rose-700 transition-all duration-200"
               }`}
           >
             <Trash2 size={16} />
@@ -526,20 +527,20 @@ const groupedUsers = (): GroupedTenant[] => {
         </div>
 
         {/* Users Table */}
-        <div className="w-full overflow-x-auto mt-6">
-          <table className="min-w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg transition-colors duration-300">
-            <thead className="bg-gray-100 dark:bg-slate-900">
-              <tr>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700 dark:text-slate-300">
+        <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+          <table className="min-w-full border-separate border-spacing-y-1">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-slate-100 dark:bg-slate-900">
+                <th className="text-left px-6 py-2 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                   Name
                 </th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700 dark:text-slate-300">
+                <th className="text-left px-6 py-2 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                   Email
                 </th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700 dark:text-slate-300">
+                <th className="text-left px-6 py-2 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                   Role
                 </th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700 dark:text-slate-300">
+                <th className="text-left px-6 py-2 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                   Actions
                 </th>
               </tr>
@@ -547,17 +548,17 @@ const groupedUsers = (): GroupedTenant[] => {
             <tbody>
               {filteredUsers.length > 0 ? (
                 filteredUsers.map((user) => (
-                  <tr
+                  <tr 
                     key={user._id}
-                    className="border-b border-gray-300 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                    className="group bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition rounded-xl"
                   >
-                    <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
+                    <td className="px-6 py-2 text-slate-800 dark:text-slate-200 font-medium">
                       {user.username}
                     </td>
-                    <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
+                    <td className="px-6 py-2 text-slate-600 dark:text-slate-300">
                       {user.email}
                     </td>
-                    <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
+                    <td className="px-6 py-2">
                       <select
                         value={selectedRole[user._id] || user.role}
                         onChange={(e) => {
@@ -572,7 +573,7 @@ const groupedUsers = (): GroupedTenant[] => {
                             return updated;
                           });
                         }}
-                        className="w-50 border border-gray-300 dark:border-slate-600 rounded-md px-3 py-1 bg-white dark:bg-slate-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                        className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                       >
                         {/* <option value="super_admin">Organization Admin</option> */}
                         <option value="admin">Tenant Admin</option>
@@ -581,7 +582,8 @@ const groupedUsers = (): GroupedTenant[] => {
                         <option value="billing_manager">Billing Manager</option>
                       </select>
                     </td>
-                    <td className="px-6 py-4 text-gray-800 dark:text-slate-200 flex gap-2">
+                    <td className="px-6 py-2">
+                      <div className="flex gap-2 opacity-90 group-hover:opacity-100">
                       <button
                         onClick={() => {
                           const tenant = tenants.find(
@@ -596,10 +598,11 @@ const groupedUsers = (): GroupedTenant[] => {
                             ? "Select an organization first"
                             : undefined
                         }
-                        className={`px-3 py-1 text-white text-sm rounded ${!selectedTenantId ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
+                        className={`px-3 py-1.5 text-sm rounded-lg font-medium transition ${!selectedTenantId ? "bg-slate-300 dark:bg-slate-600 text-white cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 text-white"}`}
                       >
                         Add User
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -641,132 +644,131 @@ const groupedUsers = (): GroupedTenant[] => {
         </div>
 
         {/* Org Members Table */}
-        <div className="w-full overflow-x-auto">
-          <table className="min-w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg transition-colors duration-300">
-            <thead className="bg-gray-100 dark:bg-slate-900">
+<div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+  <table className="min-w-full border-separate border-spacing-y-1">
+    {/* HEADER */}
+    <thead className="sticky top-0 z-10">
+      <tr className="bg-slate-100 dark:bg-slate-900">
+        <th className="text-left px-6 py-2 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+          Name
+        </th>
+        <th className="text-left px-6 py-2 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+          Email
+        </th>
+        <th className="text-left px-6 py-2 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+          Role
+        </th>
+        <th className="text-left px-6 py-2 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+          Organization
+        </th>
+        <th className="text-left px-6 py-2 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+          Actions
+        </th>
+      </tr>
+    </thead>
+
+    {/* BODY */}
+    <tbody>
+      {groupedData.length > 0 ? (
+        groupedData.map((group) => {
+          const visibleUsers = canManageTenant(group.tenant._id)
+            ? group.users
+            : group.users.filter((u: any) => u.userId._id === currentUserId);
+
+          if (visibleUsers.length === 0) return null;
+
+          return (
+            <Fragment key={group.tenant._id}>
+              {/* Tenant Header Row */}
               <tr>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700 dark:text-slate-300">
-                  Name
-                </th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700 dark:text-slate-300">
-                  Email
-                </th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700 dark:text-slate-300">
-                  Current Role
-                </th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700 dark:text-slate-300">
-                  Organization
-                </th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-700 dark:text-slate-300">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-  {groupedData.length > 0 ? (
-    groupedData.map((group) => {
-      const visibleUsers = canManageTenant(group.tenant._id)
-  ? group.users
-  : group.users.filter(
-      (u: any) => u.userId._id === currentUserId
-    );
-
-      if (visibleUsers.length === 0) return null;
-
-      return (
-        <Fragment key={group.tenant._id}>
-          {/* Tenant header row */}
-          <tr className="bg-gray-100 dark:bg-slate-900">
-            <td
-              colSpan={5}
-              className="px-6 py-3 font-bold text-indigo-600"
-            >
-              🏢 {group.tenant.name}
-            </td>
-          </tr>
-
-          {/* Users */}
-          {visibleUsers.map((item) => (
-            <tr
-              key={item._id}
-              className="border-b border-gray-300 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-            >
-              <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
-                {item.userId.username}
-              </td>
-
-              <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
-                {item.userId.email}
-              </td>
-
-              <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
-                <select
-                  value={selectedRole[item._id] || item.role}
-                  onChange={(e) =>
-                    setSelectedRole((prev) => ({
-                      ...prev,
-                      [item._id]: e.target.value,
-                    }))
-                  }
-                  disabled={!canManageTenant(group.tenant._id)}
-                  // disabled={group.creator !== currentUserId}
-                  className="w-50 border border-gray-300 dark:border-slate-600 rounded-md px-3 py-1 bg-white dark:bg-slate-700 text-gray-800 dark:text-white"
-                >
-                  {Object.entries(roleLabels).map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </td>
-
-              <td className="px-6 py-4 text-gray-800 dark:text-slate-200">
-                {item.tenantId.name}
-              </td>
-
-              <td className="px-6 py-4">
-                {canManageTenant(group.tenant._id) && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleUpdateOrgRole(item)}
-                      disabled={
-                        !selectedRole[item._id] ||
-                        selectedRole[item._id] === item.role
-                      }
-                      className={`px-3 py-1 text-white text-sm rounded ${
-                        !selectedRole[item._id] ||
-                        selectedRole[item._id] === item.role
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-blue-500 hover:bg-blue-600"
-                      }`}
-                    >
-                      Change
-                    </button>
-
-                    <button
-                      onClick={() => handleRemoveOrgUser(item)}
-                      className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
-                    >
-                      Remove
-                    </button>
+                <td colSpan={5} className="px-2 py-2">
+                  <div className="bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 rounded-xl px-5 py-3 text-indigo-700 dark:text-indigo-300 font-semibold flex items-center gap-2">
+                    🏢 {group.tenant.name}
                   </div>
-                )}
-              </td>
-            </tr>
-          ))}
-        </Fragment>
-      );
-    })
-  ) : (
-    <tr>
-      <td colSpan={5} className="text-center py-4">
-        No Organizations Found
-      </td>
-    </tr>
-  )}
-</tbody>
-          </table>
-        </div>
+                </td>
+              </tr>
+
+              {/* Users */}
+              {visibleUsers.map((item) => (
+                <tr
+                  key={item._id}
+                  className="group bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition rounded-xl"
+                >
+                  <td className="px-6 py-2 text-slate-800 dark:text-slate-200 font-medium">
+                    {item.userId.username}
+                  </td>
+
+                  <td className="px-6 py-2 text-slate-600 dark:text-slate-300">
+                    {item.userId.email}
+                  </td>
+
+                  <td className="px-6 py-2">
+                    <select
+                      value={selectedRole[item._id] || item.role}
+                      onChange={(e) =>
+                        setSelectedRole((prev) => ({
+                          ...prev,
+                          [item._id]: e.target.value,
+                        }))
+                      }
+                      disabled={!canManageTenant(group.tenant._id)}
+                      className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    >
+                      {Object.entries(roleLabels).map(([key, label]) => (
+                        <option key={key} value={key}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+
+                  <td className="px-6 py-2 text-slate-600 dark:text-slate-300">
+                    {item.tenantId.name}
+                  </td>
+
+                  <td className="px-6 py-2">
+                    {canManageTenant(group.tenant._id) && (
+                      <div className="flex gap-2 opacity-90 group-hover:opacity-100">
+                        <button
+                          onClick={() => handleUpdateOrgRole(item)}
+                          disabled={
+                            !selectedRole[item._id] ||
+                            selectedRole[item._id] === item.role
+                          }
+                          className={`px-3 py-1.5 text-sm rounded-lg font-medium transition ${
+                            !selectedRole[item._id] ||
+                            selectedRole[item._id] === item.role
+                              ? "bg-slate-300 dark:bg-slate-600 text-white cursor-not-allowed"
+                              : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                          }`}
+                        >
+                          Change
+                        </button>
+
+                        <button
+                          onClick={() => handleRemoveOrgUser(item)}
+                          className="px-3 py-1.5 text-sm rounded-lg font-medium bg-rose-500 hover:bg-rose-600 text-white transition"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </Fragment>
+          );
+        })
+      ) : (
+        <tr>
+          <td colSpan={5} className="text-center py-10 text-slate-500">
+            No Organizations Found
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
       </div>
     </div>
   );
