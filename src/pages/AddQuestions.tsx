@@ -1513,21 +1513,15 @@ export default function AddQuestions() {
       )}
 
       <main className={`flex-1 flex flex-col h-full overflow-hidden ${readOnly ? "pt-12" : ""}`}>
-<header className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-8 flex items-center justify-between z-0 transition-colors duration-300">
-  <input
-    type="text"
-    value={surveyTitle}
-    onChange={(e) => setSurveyTitle(e.target.value)}
-    readOnly={readOnly}
-    className={`text-lg font-semibold bg-transparent border-none focus:outline-none focus:ring-0 w-1/2 dark:text-white ${readOnly ? "text-gray-500 cursor-default" : ""}`}
-  />
-  <div className="flex items-center gap-3">
+<header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 transition-colors duration-300">
+  {/* Button bar - top row */}
+  <div className="flex items-center justify-end gap-2 px-4 py-2">
     {!readOnly && (
       <button
         onClick={() => setShowAiModifier(true)}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all"
       >
-        <Wand2 size={16} />
+        <Wand2 size={14} />
         AI Modify
       </button>
     )}
@@ -1541,39 +1535,39 @@ export default function AddQuestions() {
         }
         setIsPreviewMode(!isPreviewMode);
       }}
-      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
         isPreviewMode
           ? "bg-indigo-600 text-white"
-          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
       }`}
     >
-      <Eye size={16} />
+      <Eye size={14} />
       {isPreviewMode ? "Exit Preview" : "Preview"}
     </button>
     
     {/* Device Switcher - only show in preview mode */}
     {isPreviewMode && (
-      <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-700 rounded-lg px-2 py-1.5">
+      <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-slate-700 rounded-lg px-1.5 py-1">
         <button
           onClick={() => setPreviewDevice("desktop")}
-          className={`p-1.5 rounded-md transition-all ${previewDevice === "desktop" ? "bg-indigo-600 text-white" : "text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
+          className={`p-1 rounded-md transition-all ${previewDevice === "desktop" ? "bg-indigo-600 text-white" : "text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
           title="Desktop"
         >
-          <Monitor size={16} />
+          <Monitor size={14} />
         </button>
         <button
           onClick={() => setPreviewDevice("tablet")}
-          className={`p-1.5 rounded-md transition-all ${previewDevice === "tablet" ? "bg-indigo-600 text-white" : "text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
+          className={`p-1 rounded-md transition-all ${previewDevice === "tablet" ? "bg-indigo-600 text-white" : "text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
           title="Tablet"
         >
-          <Tablet size={16} />
+          <Tablet size={14} />
         </button>
         <button
           onClick={() => setPreviewDevice("mobile")}
-          className={`p-1.5 rounded-md transition-all ${previewDevice === "mobile" ? "bg-indigo-600 text-white" : "text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
+          className={`p-1 rounded-md transition-all ${previewDevice === "mobile" ? "bg-indigo-600 text-white" : "text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
           title="Mobile"
         >
-          <Smartphone size={16} />
+          <Smartphone size={14} />
         </button>
       </div>
     )}
@@ -1633,11 +1627,25 @@ export default function AddQuestions() {
             },
           });
         }}
-        className="text-white px-6 py-2 rounded-lg text-sm font-semibold shadow-lg transition-all bg-[#6366F1] hover:opacity-90"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all bg-indigo-600 text-white hover:bg-indigo-700"
       >
         Review & Publish
       </button>
     )}
+  </div>
+  
+  {/* Title bar - bottom row */}
+  <div className="px-6 pb-4">
+    <input
+      type="text"
+      value={surveyTitle}
+      onChange={(e) => setSurveyTitle(e.target.value)}
+      readOnly={readOnly}
+      className={`text-xl font-bold bg-transparent border-none focus:outline-none focus:ring-0 w-full dark:text-white ${
+        readOnly ? "text-gray-500 cursor-default" : ""
+      }`}
+      placeholder="Survey Title"
+    />
   </div>
 </header>
 
