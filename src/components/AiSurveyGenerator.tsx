@@ -8,12 +8,31 @@ interface AiSurveyGeneratorProps {
 }
 
 const SUGGESTED_PROMPTS = [
-  "A customer satisfaction survey for a new coffee shop",
+  "Customer satisfaction survey for a coffee shop",
   "Employee engagement and workplace happiness survey",
   "Event feedback form for a tech conference",
   "University course evaluation survey for students",
   "Healthcare patient experience questionnaire",
 ];
+
+// Helper function to clean up survey title
+const cleanSurveyTitle = (title: string): string => {
+  // Remove brackets and their content like [Coffee Shop]
+  let cleaned = title.replace(/\[[^\]]*\]/g, '').trim();
+  // Remove extra dashes and spaces
+  cleaned = cleaned.replace(/\s*-\s*$/, '').trim();
+  // Remove any trailing special characters
+  cleaned = cleaned.replace(/[-–—]\s*$/, '').trim();
+  // If empty, return a default
+  return cleaned || "AI Generated Survey";
+};
+
+// Helper function to clean up question labels
+const cleanQuestionLabel = (label: string): string => {
+  // Remove asterisks from labels
+  let cleaned = label.replace(/\*/g, '').trim();
+  return cleaned;
+};
 
 export default function AiSurveyGenerator({ onGenerated, onCancel }: AiSurveyGeneratorProps) {
   const [aiPrompt, setAiPrompt] = useState("");
@@ -37,7 +56,28 @@ export default function AiSurveyGenerator({ onGenerated, onCancel }: AiSurveyGen
       if (!data.surveyTitle || !data.pages || !Array.isArray(data.pages)) {
         throw new Error("AI returned an incomplete survey. Please try again.");
       }
-      onGenerated({ surveyTitle: data.surveyTitle, description: data.description || "", pages: data.pages });
+      
+      // Clean up the survey data
+      const cleanedTitle = cleanSurveyTitle(data.surveyTitle);
+      const cleanedDescription = data.description || "";
+      
+      // Clean up pages and questions
+      const cleanedPages = (data.pages || []).map((page: any) => ({
+        ...page,
+        title: page.title || "Page 1",
+        questions: (page.questions || []).map((question: any) => ({
+          ...question,
+          label: cleanQuestionLabel(question.label || "Untitled Question"),
+          // Ensure required is a boolean
+          required: question.required === true || question.required === "true",
+        }))
+      }));
+      
+      onGenerated({ 
+        surveyTitle: cleanedTitle, 
+        description: cleanedDescription, 
+        pages: cleanedPages 
+      });
     } catch (err: any) {
       setError(err.response?.data?.error || err.message || "Failed to connect to AI. Is the backend running?");
     } finally {
@@ -71,7 +111,7 @@ export default function AiSurveyGenerator({ onGenerated, onCancel }: AiSurveyGen
         <textarea
           value={aiPrompt}
           onChange={(e) => setAiPrompt(e.target.value)}
-          placeholder="e.g. A customer feedback survey about our new mobile app's user experience and performance..."
+          placeholder="Example: A customer feedback survey about our new mobile app's user experience and performance..."
           className="w-full p-4 border border-[#E2E8F0] dark:border-slate-600 rounded-xl bg-[#F8FAFC] dark:bg-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-indigo-400 min-h-30 resize-y transition-all"
           disabled={isGenerating}
         />
