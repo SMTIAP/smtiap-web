@@ -335,6 +335,25 @@ const canManageTenantId = (tenantId: string) => {
       toast.error("Only the organization creator can remove users");
       return;
     }
+
+      // 🚫 Prevent removing last Tenant Admin
+  if (item.role === "admin") {
+    const otherAdmins = orgUsers.filter(
+      (u) =>
+        u.tenantId._id === item.tenantId._id &&
+        u.userId._id !== item.userId._id &&
+        u.role === "admin"
+    );
+
+    if (otherAdmins.length === 0) {
+      toast.error(
+        "You cannot remove the last Tenant Admin in this organization"
+      );
+      return;
+    }
+  }
+
+  
     const confirmed = await confirmAsync(
       `Remove "${item.userId.username}" from "${item.tenantId.name}"? They can be re-added later.`,
     );
