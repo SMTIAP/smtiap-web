@@ -34,6 +34,7 @@ import auditRoutes from "./routes/auditRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import superAdminRoutes from "./routes/superAdminRoutes.js";
+import templateRoutes from "./routes/templateRoutes";
 import { createDefaultSuperAdmin } from "./utils/createDefaultSuperAdmin.js";
 const ensureCollections = async () => {
   await Promise.all([
@@ -84,6 +85,7 @@ app.use("/api/organization-registration", organizationRegistrationRoutes);
 app.use("/api/super-admin", superAdminRoutes);
 app.use("/api/audit-logs", auditRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/templates", templateRoutes);
 app.use("/api/ai", aiRoutes);
 app.use(analyticsRoutes);
 app.use(errorHandler);
