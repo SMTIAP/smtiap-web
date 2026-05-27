@@ -95,11 +95,11 @@ export default function SuperAdminCategories() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <button
-              onClick={() => navigate("/super-admin-dashboard")}
+              onClick={() => navigate("/super-admin/templates")}
               className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 mb-3 text-sm"
             >
               <ChevronLeft size={16} />
-              Back to Dashboard
+              Back to Templates
             </button>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Tag size={24} className="text-indigo-500" />
