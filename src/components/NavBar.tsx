@@ -134,7 +134,7 @@ export default function NavBar() {
     : "?";
 
   const roleLabels: Record<string, string> = {
-super_admin: "Super Admin",
+    super_admin: "Super Admin",
     admin: "Admin",
     viewer: "Viewer",
     creator: "Creator",
@@ -165,12 +165,9 @@ super_admin: "Super Admin",
 
   const links = roleLinks[effectiveRole] ?? roleLinks.admin;
 
-  // Show theme toggle on authenticated pages only
-  const showDarkToggle = !isLanding;
-
   return (
     <nav
-      className={`sticky top-0 z-100 w-full h-17.5 transition-colors duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.08)] ${isLanding ? "bg-white" : "bg-white dark:bg-[#0F172A] dark:shadow-[0_1px_3px_rgba(0,0,0,0.4)]"}`}
+      className={`sticky top-0 z-100 w-full h-17.5 transition-colors duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.08)] ${isLanding ? "bg-white dark:bg-[#0F172A]" : "bg-white dark:bg-[#0F172A] dark:shadow-[0_1px_3px_rgba(0,0,0,0.4)]"}`}
     >
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
         {/* Logo */}
@@ -207,27 +204,25 @@ super_admin: "Super Admin",
         )}
 
         <div className="flex items-center gap-3">
-          {/* Dark Mode Toggle — hidden on landing page */}
-          {showDarkToggle && (
-            <button
-              onClick={toggleDarkMode}
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-              title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {darkMode ? (
-                <Sun size={16} className="text-yellow-400" />
-              ) : (
-                <Moon size={16} className="text-slate-500" />
-              )}
-            </button>
-          )}
+          {/* Dark Mode Toggle */}
+          <button
+            onClick={toggleDarkMode}
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+            title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {darkMode ? (
+              <Sun size={16} className="text-yellow-400" />
+            ) : (
+              <Moon size={16} className="text-slate-500" />
+            )}
+          </button>
 
           {/* Landing page auth buttons */}
           {isLanding && !isAuthenticated && (
             <>
               <Link
                 to="/auth"
-                className="text-[14px] font-bold text-[#475569] hover:text-[#5C38E1] transition-colors"
+                className="text-[14px] font-bold text-[#475569] dark:text-slate-300 hover:text-[#5C38E1] dark:hover:text-purple-400 transition-colors"
               >
                 Sign In
               </Link>
