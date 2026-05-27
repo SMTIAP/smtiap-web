@@ -192,9 +192,20 @@ MONGO_URI=mongodb://localhost:27017/smtiap
 JWT_SECRET=your_jwt_secret
 PAYHERE_MERCHANT_ID=your_payhere_merchant_id
 PAYHERE_SECRET=your_payhere_secret
+SUPER_ADMIN_EMAIL=superadmin@smtiap.com
+SUPER_ADMIN_PASSWORD=SuperAdmin@12345
+SUPER_ADMIN_USERNAME=Super Admin
+CREATE_DEFAULT_SUPER_ADMIN=true
 ```
 
 > _Copy these files and fill in your actual credentials before running the project._
+
+You can bootstrap the super admin account with:
+
+```bash
+cd backend
+npm run seed
+```
 
 ---
 
