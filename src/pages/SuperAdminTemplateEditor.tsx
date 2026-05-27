@@ -60,14 +60,13 @@ export default function SuperAdminTemplateEditor() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form state
+  // Form state - REMOVED aiPrompt
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     category: "",
     gradient: "from-orange-400 to-rose-500",
     icon: "Star",
-    aiPrompt: "",
   });
 
   const [questions, setQuestions] = useState<PreviewQuestion[]>([
@@ -103,7 +102,6 @@ export default function SuperAdminTemplateEditor() {
             category: template.category,
             gradient: template.gradient,
             icon: template.icon,
-            aiPrompt: template.aiPrompt,
           });
           setQuestions(template.previewQuestions);
         } catch (err) {
@@ -157,7 +155,8 @@ export default function SuperAdminTemplateEditor() {
   };
 
   const handleSave = async () => {
-    if (!formData.title || !formData.description || !formData.category || !formData.aiPrompt) {
+    // Removed aiPrompt validation
+    if (!formData.title || !formData.description || !formData.category) {
       setError("Please fill all required fields");
       return;
     }
@@ -171,8 +170,13 @@ export default function SuperAdminTemplateEditor() {
     setError(null);
 
     try {
+      // Removed aiPrompt from templateData
       const templateData = {
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        gradient: formData.gradient,
+        icon: formData.icon,
         previewQuestions: questions,
         usedCount: isEditing ? undefined : "0+",
       };
@@ -338,21 +342,7 @@ export default function SuperAdminTemplateEditor() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                AI Prompt <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={formData.aiPrompt}
-                onChange={(e) => setFormData({ ...formData, aiPrompt: e.target.value })}
-                rows={3}
-                placeholder="Prompt for AI generation when using this template..."
-                className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <p className="text-xs text-slate-400 mt-1">
-                This prompt will be sent to AI when users select "Use this template"
-              </p>
-            </div>
+            {/* AI Prompt Section REMOVED */}
           </div>
         </div>
 
