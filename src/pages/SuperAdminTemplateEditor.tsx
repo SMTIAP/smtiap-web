@@ -83,15 +83,12 @@ export default function SuperAdminTemplateEditor() {
     { type: "short_text", label: "" },
   ]);
 
-  // Fetch categories
+  // Fetch categories - NO DEFAULT AUTO-SET
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const data = await templateApi.getCategories();
         setCategories(data);
-        if (data.length > 0 && !formData.category) {
-          setFormData(prev => ({ ...prev, category: data[0].name }));
-        }
       } catch (err) {
         console.error("Failed to fetch categories:", err);
       }
@@ -402,6 +399,7 @@ export default function SuperAdminTemplateEditor() {
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
+                  <option value="">Select a category</option>
                   {categories.map((cat) => (
                     <option key={cat._id} value={cat.name}>
                       {cat.name}
