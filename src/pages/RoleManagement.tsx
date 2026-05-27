@@ -228,6 +228,15 @@ const canManageTenantId = (tenantId: string) => {
   return isCreator || isTenantAdmin;
 };
 
+const isActiveTenantAdmin = (tenantId: string) =>
+  orgUsers.some(
+    (u) =>
+      u.tenantId._id === tenantId &&
+      u.userId._id === currentUserId &&
+      u.role === "admin" &&
+      u.status === "active"
+  );
+
   const filteredUsers = searchTerm.trim()
     ? users.filter((user) =>
       user.role !== "super_admin" &&
@@ -291,7 +300,7 @@ const canManageTenantId = (tenantId: string) => {
   };
 
   const handleUpdateOrgRole = async (item: UserTenantRole) => {
-    if (!canManageTenant(item.tenantId._id)){
+    if (!isActiveTenantAdmin(item.tenantId._id)){
       toast.error("Only the organization creator can change roles");
       return;
     }
@@ -563,7 +572,7 @@ const groupedUsers = (): GroupedTenant[] => {
             className="w-full md:w-72 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200"
           >
             <option value="">Select Organization</option>
-            {filteredOrganizations.filter((tenant) => tenant.status === "active" && canManageTenantId(tenant._id)).map((tenant) => (
+            {filteredOrganizations.filter((tenant) => tenant.status === "active" && isActiveTenantAdmin(tenant._id)).map((tenant) => (
               <option key={tenant._id} value={tenant._id}>
                 {tenant.name}
               </option>
@@ -781,7 +790,7 @@ const groupedUsers = (): GroupedTenant[] => {
                           [item._id]: e.target.value,
                         }))
                       }
-                      disabled={!canManageTenant(group.tenant._id)}
+                      disabled={!isActiveTenantAdmin(group.tenant._id)}
                       className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                     >
                       {Object.entries(roleLabels).map(([key, label]) => (
@@ -797,7 +806,7 @@ const groupedUsers = (): GroupedTenant[] => {
                   </td>
 
                   <td className="px-6 py-2">
-                    {canManageTenant(group.tenant._id) && (
+                    {isActiveTenantAdmin(group.tenant._id) && (
                       <div className="flex gap-2 opacity-90 group-hover:opacity-100">
                         <button
                           onClick={() => handleUpdateOrgRole(item)}
