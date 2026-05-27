@@ -30,19 +30,48 @@ const DeviceIcon = ({ device, current, onClick }: { device: DeviceType; current:
 const QuestionPreview = ({ question, index, primaryColor, deviceType }: { question: any; index: number; primaryColor: string; deviceType: DeviceType }) => {
   const isMobile = deviceType === "mobile";
   
-  return (
-    <div className={`mb-6 ${isMobile ? 'mb-5' : 'mb-8'}`}>
-      <div className={`flex gap-2 mb-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
-        <span style={{ color: primaryColor }} className={`font-bold ${isMobile ? 'text-sm' : 'text-sm'}`}>{index + 1}.</span>
-        <h3 className={`font-semibold text-gray-800 dark:text-white ${isMobile ? 'text-sm' : 'text-sm'} leading-tight`}>{question.label}</h3>
-      </div>
-      <div className={`pl-4 ${isMobile ? 'pl-4' : 'pl-5'}`}>
-        {question.type === "text" && (
+  const getPreviewInput = () => {
+    switch (question.type) {
+      case "short_text":
+        return (
           <div className={`w-full border-b-2 border-gray-200 dark:border-slate-600 pb-2 text-slate-300 dark:text-slate-500 ${isMobile ? 'text-sm' : 'text-sm'} italic`}>
-            Type your answer here...
+            {question.placeholder || "Short answer text..."}
           </div>
-        )}
-        {question.type === "rating" && (
+        );
+      
+      case "long_text":
+        return (
+          <div className={`w-full border-2 border-gray-200 dark:border-slate-600 rounded-xl p-3 text-slate-300 dark:text-slate-500 ${isMobile ? 'text-sm' : 'text-sm'} italic min-h-20`}>
+            {question.placeholder || "Long answer text..."}
+          </div>
+        );
+      
+      case "multiple_choice":
+        return (
+          <div className="space-y-2">
+            {question.options?.map((opt: string, i: number) => (
+              <div key={i} className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-500 shrink-0" />
+                <span className={`${isMobile ? 'text-sm' : 'text-sm'} text-slate-600 dark:text-slate-300`}>{opt}</span>
+              </div>
+            ))}
+          </div>
+        );
+      
+      case "checkboxes":
+        return (
+          <div className="space-y-2">
+            {question.options?.map((opt: string, i: number) => (
+              <div key={i} className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-slate-300 dark:border-slate-500 rounded shrink-0" />
+                <span className={`${isMobile ? 'text-sm' : 'text-sm'} text-slate-600 dark:text-slate-300`}>{opt}</span>
+              </div>
+            ))}
+          </div>
+        );
+      
+      case "rating":
+        return (
           <div className={`flex flex-wrap gap-1.5 ${isMobile ? 'gap-1' : 'gap-1.5'}`}>
             {[...Array(question.max ?? 5)].map((_, i) => (
               <div key={i} className="flex flex-col items-center gap-0.5">
@@ -52,17 +81,42 @@ const QuestionPreview = ({ question, index, primaryColor, deviceType }: { questi
               </div>
             ))}
           </div>
-        )}
-        {question.type === "multiple_choice" && (
-          <div className="space-y-2">
-            {question.options?.map((opt: string, i: number) => (
-              <div key={i} className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-500 shrink-0" />
-                <span className={`${isMobile ? 'text-sm' : 'text-sm'} text-slate-600 dark:text-slate-300`}>{opt}</span>
-              </div>
-            ))}
+        );
+      
+      case "number":
+        return (
+          <div className={`w-24 border-b-2 border-gray-200 dark:border-slate-600 pb-2 text-slate-300 dark:text-slate-500 ${isMobile ? 'text-sm' : 'text-sm'} italic`}>
+            {question.min !== undefined && question.max !== undefined 
+              ? `${question.min} - ${question.max}`
+              : "Number..."}
           </div>
-        )}
+        );
+      
+      case "date":
+        return (
+          <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500">
+            <Calendar size={isMobile ? 14 : 16} />
+            <span className={`${isMobile ? 'text-sm' : 'text-sm'} italic`}>Select a date</span>
+          </div>
+        );
+      
+      default:
+        return (
+          <div className={`w-full border-b-2 border-gray-200 dark:border-slate-600 pb-2 text-slate-300 dark:text-slate-500 ${isMobile ? 'text-sm' : 'text-sm'} italic`}>
+            Answer here...
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className={`mb-6 ${isMobile ? 'mb-5' : 'mb-8'}`}>
+      <div className={`flex gap-2 mb-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
+        <span style={{ color: primaryColor }} className={`font-bold ${isMobile ? 'text-sm' : 'text-sm'}`}>{index + 1}.</span>
+        <h3 className={`font-semibold text-gray-800 dark:text-white ${isMobile ? 'text-sm' : 'text-sm'} leading-tight`}>{question.label}</h3>
+      </div>
+      <div className={`pl-4 ${isMobile ? 'pl-4' : 'pl-5'}`}>
+        {getPreviewInput()}
       </div>
     </div>
   );
@@ -133,12 +187,13 @@ export default function TemplatePreview() {
         title: "Page 1",
         questions: template.previewQuestions.map((q: any, idx: number) => ({
           id: `q-${Date.now()}-${idx}`,
-          type: q.type === "text" ? "long_text" : q.type,
+          type: q.type,
           label: q.label,
           required: true,
-          placeholder: q.type === "text" ? "Enter your answer here..." : undefined,
-          options: q.options || undefined,
-          max: q.max || undefined,
+          placeholder: q.placeholder,
+          options: q.options,
+          max: q.max,
+          min: q.min,
           branching: undefined,
         }))
       }];
