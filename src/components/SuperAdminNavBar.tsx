@@ -91,12 +91,17 @@ export default function SuperAdminNavBar() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Dark Mode Toggle - Updated to match regular NavBar style */}
           <button
             onClick={toggleDarkMode}
-            className="flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition-all"
+            title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
-            {darkMode ? <Moon size={16} /> : <Sun size={16} />}
-            <span className="hidden sm:inline">Light Mode</span>
+            {darkMode ? (
+              <Sun size={16} className="text-yellow-300" />
+            ) : (
+              <Moon size={16} className="text-white" />
+            )}
           </button>
 
           <div className="relative" ref={dropdownRef}>
