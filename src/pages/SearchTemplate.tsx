@@ -5,224 +5,8 @@ import {
   Utensils, Coffee, Heart, GraduationCap, Users,
   Star, Building2, Mic, Zap, ShoppingBag, ChevronRight,
 } from "lucide-react";
-
-export const CATEGORIES = [
-  "All",
-  "Most Popular",
-  "Restaurant",
-  "HR",
-  "Education",
-  "Healthcare",
-  "Events",
-  "Corporate",
-  "Product",
-  "Retail",
-];
-
-export const TEMPLATES = [
-  {
-    id: "csat",
-    title: "Customer Satisfaction Survey",
-    description: "Keep your customers happy and turn them into advocates. Measure satisfaction across all touchpoints.",
-    category: "Most Popular",
-    usedCount: "388,600+",
-    gradient: "from-orange-400 to-rose-500",
-    Icon: Star,
-    aiPrompt: "Create a detailed customer satisfaction survey covering overall experience, product/service quality, staff friendliness, value for money, likelihood to recommend (NPS), and open feedback.",
-    previewQuestions: [
-      { type: "rating", label: "How satisfied are you with our product/service overall?", max: 5 },
-      { type: "multiple_choice", label: "How did you hear about us?", options: ["Friend/Family", "Social Media", "Google", "Advertisement", "Other"] },
-      { type: "rating", label: "How likely are you to recommend us to a friend?", max: 10 },
-      { type: "text", label: "What did you enjoy most about your experience?" },
-      { type: "text", label: "What could we improve?" },
-    ],
-  },
-  {
-    id: "employee",
-    title: "Employee Engagement Survey",
-    description: "Learn about your employees' experience and workplace happiness. Build a better culture.",
-    category: "HR",
-    usedCount: "345,600+",
-    gradient: "from-pink-400 to-rose-500",
-    Icon: Users,
-    aiPrompt: "Create an employee engagement survey covering job satisfaction, team culture, manager support, work-life balance, recognition, career growth, and NPS for recommending the company.",
-    previewQuestions: [
-      { type: "rating", label: "How satisfied are you with your current role?", max: 5 },
-      { type: "rating", label: "How would you rate the team culture and collaboration?", max: 5 },
-      { type: "multiple_choice", label: "How would you describe your work-life balance?", options: ["Excellent", "Good", "Fair", "Poor"] },
-      { type: "rating", label: "How likely are you to recommend this company as a great place to work?", max: 10 },
-      { type: "text", label: "What do you enjoy most about working here?" },
-      { type: "text", label: "What would make your work experience better?" },
-    ],
-  },
-  {
-    id: "nps",
-    title: "Net Promoter Score (NPS)",
-    description: "Measure customer loyalty and identify your promoters, passives, and detractors.",
-    category: "Most Popular",
-    usedCount: "280,000+",
-    gradient: "from-blue-400 to-indigo-500",
-    Icon: Zap,
-    aiPrompt: "Create an NPS survey with the standard NPS question (0-10 scale), follow-up reason question, and open-ended feedback for improvement.",
-    previewQuestions: [
-      { type: "rating", label: "How likely are you to recommend us to a friend or colleague?", max: 10 },
-      { type: "multiple_choice", label: "What is the primary reason for your score?", options: ["Product quality", "Customer service", "Value for money", "Ease of use", "Other"] },
-      { type: "text", label: "What could we do to improve your experience?" },
-    ],
-  },
-  {
-    id: "food-res",
-    title: "Food Satisfaction Survey",
-    description: "Rate food quality, service speed, and overall dining experience at your restaurant.",
-    category: "Restaurant",
-    usedCount: "120,000+",
-    gradient: "from-orange-400 to-amber-500",
-    Icon: Utensils,
-    aiPrompt: "Create a food satisfaction survey for a restaurant covering food quality, service speed, staff friendliness, ambiance, value for money, and overall experience.",
-    previewQuestions: [
-      { type: "rating", label: "How would you rate the overall food quality?", max: 5 },
-      { type: "rating", label: "How satisfied are you with the service?", max: 5 },
-      { type: "rating", label: "How would you rate the ambiance and atmosphere?", max: 5 },
-      { type: "multiple_choice", label: "Would you recommend us to a friend?", options: ["Definitely yes", "Probably yes", "Not sure", "Probably not", "Definitely not"] },
-      { type: "text", label: "Any suggestions to improve our food or service?" },
-    ],
-  },
-  {
-    id: "cafe",
-    title: "Daily Cafe Feedback",
-    description: "Get daily feedback on coffee quality, service speed, and cafe atmosphere.",
-    category: "Restaurant",
-    usedCount: "85,000+",
-    gradient: "from-amber-400 to-orange-500",
-    Icon: Coffee,
-    aiPrompt: "Create a daily cafe feedback survey covering coffee and drink quality, service speed, seating comfort, cleanliness, visit frequency, and suggestions for improvement.",
-    previewQuestions: [
-      { type: "rating", label: "How would you rate the quality of your coffee/drink?", max: 5 },
-      { type: "rating", label: "How satisfied are you with the speed of service?", max: 5 },
-      { type: "multiple_choice", label: "What did you order today?", options: ["Coffee", "Tea", "Smoothie", "Pastry", "Full meal", "Other"] },
-      { type: "text", label: "What would make your cafe experience better?" },
-    ],
-  },
-  {
-    id: "patient",
-    title: "Patient Experience Survey",
-    description: "Measure healthcare quality, staff communication, and patient satisfaction scores.",
-    category: "Healthcare",
-    usedCount: "95,000+",
-    gradient: "from-emerald-400 to-teal-500",
-    Icon: Heart,
-    aiPrompt: "Create a healthcare patient experience survey covering quality of care, wait times, staff communication, facility cleanliness, likelihood to return, and improvement suggestions.",
-    previewQuestions: [
-      { type: "rating", label: "How would you rate the overall quality of care you received?", max: 5 },
-      { type: "rating", label: "How satisfied were you with the wait time?", max: 5 },
-      { type: "rating", label: "How well did the staff communicate with you?", max: 5 },
-      { type: "multiple_choice", label: "Would you return to this facility?", options: ["Definitely yes", "Probably yes", "Not sure", "Probably not"] },
-      { type: "text", label: "Is there anything specific we could do to improve your experience?" },
-    ],
-  },
-  {
-    id: "course",
-    title: "Course Evaluation Survey",
-    description: "Collect detailed feedback on instructor effectiveness and course content quality.",
-    category: "Education",
-    usedCount: "110,000+",
-    gradient: "from-indigo-400 to-violet-500",
-    Icon: GraduationCap,
-    aiPrompt: "Create a university course evaluation survey covering instructor effectiveness, course content quality, pace, difficulty level, learning outcomes, and improvement suggestions.",
-    previewQuestions: [
-      { type: "rating", label: "How would you rate the overall quality of this course?", max: 5 },
-      { type: "rating", label: "How effective was the instructor at explaining concepts?", max: 5 },
-      { type: "multiple_choice", label: "How was the pace of the course?", options: ["Too fast", "Slightly fast", "Just right", "Slightly slow", "Too slow"] },
-      { type: "multiple_choice", label: "Would you recommend this course to others?", options: ["Definitely yes", "Probably yes", "Not sure", "Probably not"] },
-      { type: "text", label: "What improvements would you suggest for this course?" },
-    ],
-  },
-  {
-    id: "event",
-    title: "Event Feedback Survey",
-    description: "Measure attendee satisfaction, speaker quality, and improve your future events.",
-    category: "Events",
-    usedCount: "75,000+",
-    gradient: "from-yellow-400 to-amber-500",
-    Icon: Star,
-    aiPrompt: "Create a post-event feedback survey covering overall experience, organization, speaker or content quality, venue, networking value, likelihood to attend future events, and suggestions.",
-    previewQuestions: [
-      { type: "rating", label: "How would you rate the overall event experience?", max: 5 },
-      { type: "rating", label: "How satisfied were you with the event organisation and logistics?", max: 5 },
-      { type: "rating", label: "How would you rate the quality of speakers/content?", max: 5 },
-      { type: "multiple_choice", label: "Would you attend future events by us?", options: ["Definitely yes", "Probably yes", "Not sure", "Probably not"] },
-      { type: "text", label: "What could we improve for next time?" },
-    ],
-  },
-  {
-    id: "staff",
-    title: "Staff Performance Review",
-    description: "Evaluate team member performance, communication skills, and collaboration.",
-    category: "Corporate",
-    usedCount: "60,000+",
-    gradient: "from-blue-400 to-cyan-500",
-    Icon: Building2,
-    aiPrompt: "Create a staff performance review survey covering overall performance, communication, collaboration, deadline management, problem-solving, strengths, and areas for improvement.",
-    previewQuestions: [
-      { type: "rating", label: "How would you rate this team member's overall performance?", max: 5 },
-      { type: "rating", label: "How effectively does this team member communicate?", max: 5 },
-      { type: "multiple_choice", label: "Does this team member consistently meet deadlines?", options: ["Always", "Usually", "Sometimes", "Rarely", "Never"] },
-      { type: "text", label: "What are this team member's greatest strengths?" },
-      { type: "text", label: "What areas could this team member improve in?" },
-    ],
-  },
-  {
-    id: "product",
-    title: "Product Feedback Survey",
-    description: "Gather feature requests, pain points, usage patterns, and satisfaction scores.",
-    category: "Product",
-    usedCount: "130,000+",
-    gradient: "from-purple-400 to-fuchsia-500",
-    Icon: Mic,
-    aiPrompt: "Create a product feedback survey covering overall satisfaction, ease of use, usage frequency, most valued features, NPS score, feature requests, and pain points.",
-    previewQuestions: [
-      { type: "rating", label: "How satisfied are you with the product overall?", max: 5 },
-      { type: "rating", label: "How easy is the product to use?", max: 5 },
-      { type: "multiple_choice", label: "How often do you use this product?", options: ["Daily", "Several times a week", "Weekly", "Monthly", "Rarely"] },
-      { type: "rating", label: "How likely are you to recommend this product to others?", max: 10 },
-      { type: "text", label: "What feature would you most like to see added?" },
-    ],
-  },
-  {
-    id: "retail",
-    title: "Retail Shopping Experience",
-    description: "Understand the in-store buying journey, staff helpfulness, and product availability.",
-    category: "Retail",
-    usedCount: "50,000+",
-    gradient: "from-rose-400 to-pink-500",
-    Icon: ShoppingBag,
-    aiPrompt: "Create a retail shopping experience survey covering store layout, product availability, staff helpfulness, checkout experience, value for money, and likelihood to return.",
-    previewQuestions: [
-      { type: "rating", label: "How would you rate your overall shopping experience?", max: 5 },
-      { type: "rating", label: "How helpful was our staff?", max: 5 },
-      { type: "multiple_choice", label: "Did you find everything you were looking for?", options: ["Yes, everything", "Most items", "Some items", "No, nothing"] },
-      { type: "rating", label: "How likely are you to shop with us again?", max: 5 },
-      { type: "text", label: "Any suggestions to improve your shopping experience?" },
-    ],
-  },
-  {
-    id: "remote-work",
-    title: "Remote Work Check-In",
-    description: "Support employees by checking in with them weekly on productivity and wellbeing.",
-    category: "HR",
-    usedCount: "88,000+",
-    gradient: "from-teal-400 to-cyan-500",
-    Icon: Users,
-    aiPrompt: "Create a remote work check-in survey covering productivity, communication with team, work-life balance, technology satisfaction, mental wellbeing, and support needed from management.",
-    previewQuestions: [
-      { type: "rating", label: "How productive have you felt this week?", max: 5 },
-      { type: "rating", label: "How well are you communicating with your team remotely?", max: 5 },
-      { type: "multiple_choice", label: "How would you describe your work-life balance?", options: ["Excellent", "Good", "Fair", "Poor", "Very poor"] },
-      { type: "rating", label: "How satisfied are you with the technology tools provided?", max: 5 },
-      { type: "text", label: "What support do you need from management this week?" },
-    ],
-  },
-];
+import { templateApi, type Template, type Category } from "../api/templateApi";
+import { getIcon } from "../utils/iconMap";
 
 const AI_SUGGESTIONS = [
   "A customer satisfaction survey for a coffee shop",
@@ -241,12 +25,38 @@ export default function SearchTemplate() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
+  
+  // State for API data
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const token = localStorage.getItem("token");
 
+  // Fetch templates and categories from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [templatesData, categoriesData] = await Promise.all([
+          templateApi.getTemplates(),
+          templateApi.getCategories(),
+        ]);
+        setTemplates(templatesData);
+        setCategories(categoriesData);
+      } catch (err) {
+        console.error("Failed to fetch templates:", err);
+        setError("Failed to load templates. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const toggleCategory = (cat: string) => {
     if (cat === "All") {
-      // If "All" is clicked, clear all selections (show everything)
       if (selectedCategories.includes("All")) {
         setSelectedCategories([]);
       } else {
@@ -256,23 +66,19 @@ export default function SearchTemplate() {
     }
     
     setSelectedCategories((prev) => {
-      // Remove "All" if it exists when selecting other categories
       const withoutAll = prev.filter((c) => c !== "All");
       
       if (withoutAll.includes(cat)) {
-        // Remove the category if already selected
         const newSelection = withoutAll.filter((c) => c !== cat);
         return newSelection;
       } else {
-        // Add the category
         return [...withoutAll, cat];
       }
     });
   };
 
   const filteredTemplates = useMemo(() => {
-    return TEMPLATES.filter((t) => {
-      // If no categories selected OR "All" is selected, show all templates
+    return templates.filter((t) => {
       const matchesCategory = selectedCategories.length === 0 || 
         selectedCategories.includes("All") ||
         selectedCategories.includes(t.category);
@@ -283,7 +89,7 @@ export default function SearchTemplate() {
         t.category.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [selectedCategories, searchQuery]);
+  }, [templates, selectedCategories, searchQuery]);
 
   const generateAndSave = async (title: string, prompt: string) => {
     const aiRes = await fetch("http://localhost:5000/api/ai/generate-survey", {
@@ -307,7 +113,7 @@ export default function SearchTemplate() {
   };
 
   const handleUseTemplate = async (templateId: string) => {
-    const template = TEMPLATES.find((t) => t.id === templateId);
+    const template = templates.find((t) => t._id === templateId);
     if (!template) return;
     setLoadingTemplateId(templateId);
     try {
@@ -337,6 +143,33 @@ export default function SearchTemplate() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#FDFDFD] dark:bg-[#0F172A]">
+        <div className="text-center">
+          <Loader2 size={40} className="animate-spin text-indigo-500 mx-auto mb-4" />
+          <p className="text-slate-400">Loading templates...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#FDFDFD] dark:bg-[#0F172A]">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="text-indigo-600 font-bold"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-[#FDFDFD] dark:bg-[#0F172A] transition-colors duration-300">
       <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 fixed top-[70px] left-0 z-10" />
@@ -358,13 +191,34 @@ export default function SearchTemplate() {
 
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Categories</p>
           <div className="flex flex-col gap-0.5">
-            {CATEGORIES.map((cat) => {
-              const isSelected = selectedCategories.includes(cat);
-              const count = cat === "All" ? TEMPLATES.length : TEMPLATES.filter((t) => t.category === cat).length;
+            <button
+              onClick={() => toggleCategory("All")}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all w-full text-left group ${
+                selectedCategories.includes("All") || selectedCategories.length === 0
+                  ? "bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                selectedCategories.includes("All") || selectedCategories.length === 0
+                  ? "border-indigo-500 bg-indigo-500"
+                  : "border-slate-300 dark:border-slate-600 group-hover:border-indigo-400"
+              }`}>
+                {(selectedCategories.includes("All") || selectedCategories.length === 0) && (
+                  <ChevronRight size={11} className="text-white" />
+                )}
+              </span>
+              <span className="flex-1">All</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">{templates.length}</span>
+            </button>
+            
+            {categories.map((cat) => {
+              const isSelected = selectedCategories.includes(cat.name);
+              const count = templates.filter((t) => t.category === cat.name).length;
               return (
                 <button
-                  key={cat}
-                  onClick={() => toggleCategory(cat)}
+                  key={cat._id}
+                  onClick={() => toggleCategory(cat.name)}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all w-full text-left group ${
                     isSelected
                       ? "bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400"
@@ -376,11 +230,11 @@ export default function SearchTemplate() {
                       ? "border-indigo-500 bg-indigo-500"
                       : "border-slate-300 dark:border-slate-600 group-hover:border-indigo-400"
                   }`}>
-                    {isSelected ? (
+                    {isSelected && (
                       <ChevronRight size={11} className="text-white" />
-                    ) : null}
+                    )}
                   </span>
-                  <span className="flex-1">{cat}</span>
+                  <span className="flex-1">{cat.name}</span>
                   <span className="text-xs text-slate-400 dark:text-slate-500">{count}</span>
                 </button>
               );
@@ -427,11 +281,11 @@ export default function SearchTemplate() {
 
             {/* Template Cards */}
             {filteredTemplates.map((temp) => {
-              const Icon = temp.Icon;
-              const isGenerating = loadingTemplateId === temp.id;
+              const Icon = getIcon(temp.icon);
+              const isGenerating = loadingTemplateId === temp._id;
               return (
-                <div key={temp.id}
-                  onClick={() => !isGenerating && navigate("/template-preview", { state: { templateId: temp.id } })}
+                <div key={temp._id}
+                  onClick={() => !isGenerating && navigate("/template-preview", { state: { templateId: temp._id } })}
                   className="group cursor-pointer bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
                   <div className={`h-40 bg-gradient-to-br ${temp.gradient} flex items-center justify-center relative overflow-hidden`}>
                     <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />

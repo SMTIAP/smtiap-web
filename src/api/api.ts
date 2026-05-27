@@ -10,8 +10,6 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  // Send active tenant context for multi-tenant support.
-  // Only send x-tenant-id when a real tenant is selected (not system context).
   const activeTenantId = localStorage.getItem("activeTenantId");
   if (activeTenantId && activeTenantId !== "__system__") {
     config.headers["x-tenant-id"] = activeTenantId;
