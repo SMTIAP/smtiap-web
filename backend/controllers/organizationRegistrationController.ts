@@ -73,11 +73,11 @@ export const createOrganization = async (req: Request, res: Response) => {
       tenant,
     });
   } catch (error: any) {
-  console.error("Create Organization Error:", error);
+    console.error("Create Organization Error:", error);
 
-  return res.status(500).json({
-    message: error?.message || "Server Error",
-    error, // ⚠️ full error (ONLY for dev)
-  });
-}
+    return res.status(500).json({
+      message: error?.message || "Server Error",
+      error, // ⚠️ full error (ONLY for dev)
+    });
+  }
 };
