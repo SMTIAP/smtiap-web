@@ -708,18 +708,20 @@ const groupedUsers = (): GroupedTenant[] => {
           </h3>
         </div>
 
-        <div className="relative w-full max-w-md">
+        <div className="flex flex-col md:flex-row gap-4 w-full items-center">
+          <div className="relative w-full md:max-w-md">
           <input
             type="text"
             placeholder="Search organization..."
             value={searchOrganization}
             onChange={(e) => setSearchOrganization(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200 placeholder:text-slate-400"
           />
           <Search
             size={16}
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
           />
+        </div>
         </div>
 
         {/* Org Members Table */}
