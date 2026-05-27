@@ -29,6 +29,9 @@ import {
   PlusCircle,
   FileText,
   Wand2,
+  Monitor,
+  Tablet,
+  Smartphone,
 } from "lucide-react";
 import AiSurveyModifier from "../components/AiSurveyModifier";
 import SurveySettingsModal from "../components/SurveySettingsModal";
@@ -153,6 +156,26 @@ interface IncomingPage {
   title?: string;
   questions?: IncomingQuestion[];
 }
+
+type PreviewDeviceType = "desktop" | "tablet" | "mobile";
+
+const previewDeviceWidths: Record<PreviewDeviceType, string> = {
+  desktop: "w-full max-w-3xl",
+  tablet: "w-[600px]",
+  mobile: "w-[375px]",
+};
+
+const PreviewDeviceIcon = ({ device, current, onClick }: { device: PreviewDeviceType; current: PreviewDeviceType; onClick: () => void }) => {
+  const icons = { desktop: Monitor, tablet: Tablet, mobile: Smartphone };
+  const Icon = icons[device];
+  return (
+    <button onClick={onClick}
+      className={`p-2 rounded-lg transition-all ${current === device ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"}`}
+      title={device.charAt(0).toUpperCase() + device.slice(1)}>
+      <Icon size={18} />
+    </button>
+  );
+};
 
 // Interactive calendar picker used in preview mode for date question types
 const DatePickerCalendar = ({ value, onChange }: DatePickerCalendarProps) => {
@@ -769,24 +792,20 @@ const PropertyEditor = ({
     </div>
   );
 };
+
 export default function AddQuestions() {
   const location = useLocation();
   const navigate = useNavigate();
   const routeState = (location.state as RouteState | null) ?? {};
   const setupData = routeState.formData;
 
-  // surveyId is present when editing an existing draft, absent when creating new
   const surveyId = routeState.surveyId;
-
-  // aiGeneratedPages is present when coming from AI survey generation
   const aiGeneratedPages = routeState.aiGeneratedPages;
 
   const { activeTenant, isSystemContext } = useTenant();
   const tenantRole =
     !isSystemContext && activeTenant ? activeTenant.role : null;
   const isViewer = tenantRole === "viewer" || tenantRole === "billing_manager";
-
-  // readOnly — viewer is viewing a draft survey (cannot edit/publish)
   const readOnly = routeState.readOnly === true || isViewer;
 
   const [primaryColor, setPrimaryColor] = useState(
@@ -819,8 +838,9 @@ export default function AddQuestions() {
   );
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [tenantId, setTenantId] = useState<string | null>(null);
+  const [previewDevice, setPreviewDevice] = useState<PreviewDeviceType>("desktop");
 
-  // Pre-populates pages from AI-generated survey data when coming from AI Assisted mode
+  // Rest of your existing useEffect hooks (keep them as is)
   useEffect(() => {
     if (
       aiGeneratedPages &&
@@ -828,8 +848,6 @@ export default function AddQuestions() {
       aiGeneratedPages.length > 0
     ) {
       const timestamp = Date.now();
-
-      // First pass: create all questions with IDs assigned (no branching yet)
       const normalizedPages: SurveyPage[] = aiGeneratedPages.map(
         (page: IncomingPage, idx: number) => {
           const pageQuestions = Array.isArray(page?.questions)
@@ -868,8 +886,6 @@ export default function AddQuestions() {
         },
       );
 
-      // Second pass: resolve branching targetQuestionLabel → targetQuestionId
-      // Build a flat label→id map across all pages
       const labelToIdMap = new Map<string, string>();
       normalizedPages.forEach((page) => {
         page.questions.forEach((q) => {
@@ -877,18 +893,15 @@ export default function AddQuestions() {
         });
       });
 
-      // Flatten incoming AI questions for lookup by label
       const flatIncomingQuestions = aiGeneratedPages.flatMap(
         (p: IncomingPage) => p.questions || [],
       );
 
       normalizedPages.forEach((page) => {
         page.questions.forEach((q) => {
-          // Find the matching incoming question by label
           const incomingQ = flatIncomingQuestions.find(
             (inq: IncomingQuestion) => inq.label === q.label || inq.id === q.id,
           );
-
           const branchingRaw = incomingQ?.branching;
           if (branchingRaw?.enabled) {
             type RawRule = {
@@ -916,7 +929,6 @@ export default function AddQuestions() {
               .filter((rule: { value: string; targetQuestionId: string }) =>
                 Boolean(rule.targetQuestionId),
               );
-
             const defaultLabel = branchingRaw.defaultTargetQuestionLabel;
             let defaultTargetId = "";
             if (defaultLabel === "__END__") {
@@ -926,7 +938,6 @@ export default function AddQuestions() {
             } else if (branchingRaw.defaultTargetQuestionId) {
               defaultTargetId = branchingRaw.defaultTargetQuestionId;
             }
-
             if (rules.length > 0) {
               q.branching = {
                 enabled: true,
@@ -942,11 +953,8 @@ export default function AddQuestions() {
       setActivePageIndex(0);
       setSelectedQuestionId(null);
     }
-    // Only run once on mount when aiGeneratedPages is present
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetches the tenantId for the currently logged-in user on mount
   useEffect(() => {
     const token = localStorage.getItem("token");
     fetch("http://localhost:5000/api/users/me/tenant", {
@@ -960,7 +968,6 @@ export default function AddQuestions() {
       .catch(() => {});
   }, []);
 
-  // Maps incoming question type strings to valid internal QuestionTypeId values
   const normalizeQuestionType = useCallback((type?: string): QuestionTypeId => {
     if (type === "checkbox") return "checkboxes";
     const allowedTypes: QuestionTypeId[] = [
@@ -977,13 +984,11 @@ export default function AddQuestions() {
       : "short_text";
   }, []);
 
-  // Converts raw API page/question data into the internal SurveyPage structure
   const normalizeSurveyPages = useCallback(
     (incomingPages: unknown): SurveyPage[] => {
       if (!Array.isArray(incomingPages) || incomingPages.length === 0) {
         return [{ id: "page-1", title: "Page 1", questions: [] }];
       }
-
       return (incomingPages as IncomingPage[]).map((page, pageIndex) => {
         const pageQuestions = Array.isArray(page?.questions)
           ? page.questions
@@ -1053,7 +1058,6 @@ export default function AddQuestions() {
     [normalizeQuestionType],
   );
 
-  // Loads existing survey data when editing a draft, populating pages and settings
   useEffect(() => {
     if (surveyId) {
       const loadSurvey = async () => {
@@ -1140,7 +1144,6 @@ export default function AddQuestions() {
     setPages(updatedPages);
   };
 
-  // Removes a question and cleans up any branching rules that reference it
   const deleteQuestion = (id: string) => {
     const updatedPages = pages.map((page) => ({
       ...page,
@@ -1212,7 +1215,6 @@ export default function AddQuestions() {
     activePage?.questions.find((q) => q.id === selectedQuestionId) ||
     pages.flatMap((p) => p.questions).find((q) => q.id === selectedQuestionId);
 
-  // Builds the list of valid branch target questions (only questions after the selected one)
   const branchTargets = useMemo(() => {
     const flattened = pages.flatMap((page, pageIndex) =>
       page.questions.map((question, questionIndex) => ({
@@ -1227,7 +1229,6 @@ export default function AddQuestions() {
     return flattened.filter((_, index) => index > selectedIndex);
   }, [pages, selectedQuestionId]);
 
-  // Handles AI modification results — resolves branching labels to IDs
   const handleAiModifyApplied = useCallback(
     (result: {
       surveyTitle: string;
@@ -1236,8 +1237,6 @@ export default function AddQuestions() {
     }) => {
       const timestamp = Date.now();
       const rawPages = Array.isArray(result.pages) ? result.pages : [];
-
-      // First pass: normalize with IDs
       const normalized: SurveyPage[] = rawPages.map(
         (page: IncomingPage, idx: number) => ({
           id: `ai-page-${idx}-${timestamp}`,
@@ -1272,8 +1271,6 @@ export default function AddQuestions() {
           ),
         }),
       );
-
-      // Second pass: resolve branching labels
       const labelToIdMap = new Map<string, string>();
       normalized.forEach((page) =>
         page.questions.forEach((qq) => labelToIdMap.set(qq.label, qq.id)),
@@ -1281,7 +1278,6 @@ export default function AddQuestions() {
       const flatIncoming = rawPages.flatMap(
         (p: IncomingPage) => p.questions || [],
       );
-
       normalized.forEach((page) => {
         page.questions.forEach((qq) => {
           const incomingQ = flatIncoming.find(
@@ -1337,7 +1333,6 @@ export default function AddQuestions() {
           }
         });
       });
-
       setSurveyTitle(result.surveyTitle || surveyTitle);
       setPages(normalized);
       setActivePageIndex(0);
@@ -1360,16 +1355,13 @@ export default function AddQuestions() {
 
   return (
     <div className="flex h-screen bg-[#F8F9FB] dark:bg-[#0F172A] text-gray-800 dark:text-slate-200 overflow-hidden font-sans transition-colors duration-300">
-      {/* Read-only banner */}
       {readOnly && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-amber-50 border-b border-amber-200 px-6 py-3 text-center text-sm font-semibold text-amber-800">
           <Eye size={16} className="inline mr-2 -mt-0.5" />
-          Viewing draft survey (read-only) — you do not have permission to edit
-          or publish
+          Viewing draft survey (read-only) — you do not have permission to edit or publish
         </div>
       )}
 
-      {/* Left sidebar — question type palette and page navigator */}
       {!readOnly && (
         <aside className="w-72 bg-gray-50 dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col z-10 shadow-sm transition-colors duration-300">
           <div className="p-6 border-b border-gray-200 dark:border-slate-700 flex items-center gap-3 bg-gray-50 dark:bg-slate-900">
@@ -1462,7 +1454,6 @@ export default function AddQuestions() {
             </div>
           </div>
 
-          {/* Save draft button */}
           <div className="p-4 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900">
             <button
               onClick={async () => {
@@ -1470,7 +1461,6 @@ export default function AddQuestions() {
                   ? `http://localhost:5000/api/surveys/${surveyId}`
                   : "http://localhost:5000/api/surveys";
                 const method = surveyId ? "PUT" : "POST";
-
                 try {
                   const token = localStorage.getItem("token");
                   const tenantId_hdr = localStorage.getItem("activeTenantId");
@@ -1500,7 +1490,6 @@ export default function AddQuestions() {
                   });
                   const data = await res.json();
                   const finalId = surveyId || data.survey._id;
-
                   navigate("/created-surveys", {
                     state: {
                       newSurvey: {
@@ -1523,107 +1512,134 @@ export default function AddQuestions() {
         </aside>
       )}
 
-      {/* Main canvas — question builder and preview mode */}
-      <main
-        className={`flex-1 flex flex-col h-full overflow-hidden ${readOnly ? "pt-12" : ""}`}
+      <main className={`flex-1 flex flex-col h-full overflow-hidden ${readOnly ? "pt-12" : ""}`}>
+<header className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-8 flex items-center justify-between z-0 transition-colors duration-300">
+  <input
+    type="text"
+    value={surveyTitle}
+    onChange={(e) => setSurveyTitle(e.target.value)}
+    readOnly={readOnly}
+    className={`text-lg font-semibold bg-transparent border-none focus:outline-none focus:ring-0 w-1/2 dark:text-white ${readOnly ? "text-gray-500 cursor-default" : ""}`}
+  />
+  <div className="flex items-center gap-3">
+    {!readOnly && (
+      <button
+        onClick={() => setShowAiModifier(true)}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all"
       >
-        <header className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-8 flex items-center justify-between z-0 transition-colors duration-300">
-          <input
-            type="text"
-            value={surveyTitle}
-            onChange={(e) => setSurveyTitle(e.target.value)}
-            readOnly={readOnly}
-            className={`text-lg font-semibold bg-transparent border-none focus:outline-none focus:ring-0 w-1/2 dark:text-white ${readOnly ? "text-gray-500 cursor-default" : ""}`}
-          />
-          <div className="flex items-center gap-3">
-            {!readOnly && (
-              <button
-                onClick={() => setShowAiModifier(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all"
-              >
-                <Wand2 size={16} />
-                AI Modify
-              </button>
-            )}
-            <button
-  onClick={() => {
-    if (readOnly) {
-      navigate("/created-surveys");
-      return;
-    }
-    setIsPreviewMode(!isPreviewMode);
-  }}
-  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-    isPreviewMode
-      ? "bg-indigo-600 text-white"
-      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-  }`}
->
-  <Eye size={16} />
-  {isPreviewMode ? "Exit Preview" : "Preview"}
-</button>
-            {!readOnly && (
-              <button
-                onClick={async () => {
-                  const url = surveyId
-                    ? `http://localhost:5000/api/surveys/${surveyId}`
-                    : "http://localhost:5000/api/surveys";
-                  const method = surveyId ? "PUT" : "POST";
-                  let finalId = surveyId;
-                  try {
-                    const token = localStorage.getItem("token");
-                    const tenantId_hdr = localStorage.getItem("activeTenantId");
-                    const res = await fetch(url, {
-                      method,
-                      credentials: "include",
-                      headers: {
-                        "Content-Type": "application/json",
-                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                        ...(tenantId_hdr && tenantId_hdr !== "__system__"
-                          ? { "x-tenant-id": tenantId_hdr }
-                          : {}),
-                      },
-                      body: JSON.stringify({
-                        surveyTitle,
-                        description: description,
-                        logo: logo,
-                        websiteUrl: websiteUrl,
-                        customizeBranding: customizeBranding,
-                        primaryColor,
-                        themeColor: primaryColor,
-                        backgroundColor,
-                        pages,
-                        status: "Draft",
-                        tenantId: tenantId ?? undefined,
-                      }),
-                    });
-                    const data = await res.json();
-                    finalId = surveyId || data.survey._id;
-                  } catch {
-                    alert("Could not save draft. Is the backend running?");
-                    return;
-                  }
-                  navigate("/review-publish", {
-                    state: {
-                      surveyId: finalId,
-                      surveyTitle,
-                      description: description,
-                      logo,
-                      websiteUrl: websiteUrl,
-                      customizeBranding: customizeBranding,
-                      primaryColor,
-                      backgroundColor,
-                      pages,
-                    },
-                  });
-                }}
-                className="text-white px-6 py-2 rounded-lg text-sm font-semibold shadow-lg transition-all bg-[#6366F1] hover:opacity-90"
-              >
-                Review & Publish
-              </button>
-            )}
-          </div>
-        </header>
+        <Wand2 size={16} />
+        AI Modify
+      </button>
+    )}
+    
+    {/* Preview button */}
+    <button
+      onClick={() => {
+        if (readOnly) {
+          navigate("/created-surveys");
+          return;
+        }
+        setIsPreviewMode(!isPreviewMode);
+      }}
+      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+        isPreviewMode
+          ? "bg-indigo-600 text-white"
+          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+      }`}
+    >
+      <Eye size={16} />
+      {isPreviewMode ? "Exit Preview" : "Preview"}
+    </button>
+    
+    {/* Device Switcher - only show in preview mode */}
+    {isPreviewMode && (
+      <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-700 rounded-lg px-2 py-1.5">
+        <button
+          onClick={() => setPreviewDevice("desktop")}
+          className={`p-1.5 rounded-md transition-all ${previewDevice === "desktop" ? "bg-indigo-600 text-white" : "text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
+          title="Desktop"
+        >
+          <Monitor size={16} />
+        </button>
+        <button
+          onClick={() => setPreviewDevice("tablet")}
+          className={`p-1.5 rounded-md transition-all ${previewDevice === "tablet" ? "bg-indigo-600 text-white" : "text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
+          title="Tablet"
+        >
+          <Tablet size={16} />
+        </button>
+        <button
+          onClick={() => setPreviewDevice("mobile")}
+          className={`p-1.5 rounded-md transition-all ${previewDevice === "mobile" ? "bg-indigo-600 text-white" : "text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
+          title="Mobile"
+        >
+          <Smartphone size={16} />
+        </button>
+      </div>
+    )}
+    
+    {!readOnly && (
+      <button
+        onClick={async () => {
+          const url = surveyId
+            ? `http://localhost:5000/api/surveys/${surveyId}`
+            : "http://localhost:5000/api/surveys";
+          const method = surveyId ? "PUT" : "POST";
+          let finalId = surveyId;
+          try {
+            const token = localStorage.getItem("token");
+            const tenantId_hdr = localStorage.getItem("activeTenantId");
+            const res = await fetch(url, {
+              method,
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                ...(tenantId_hdr && tenantId_hdr !== "__system__"
+                  ? { "x-tenant-id": tenantId_hdr }
+                  : {}),
+              },
+              body: JSON.stringify({
+                surveyTitle,
+                description: description,
+                logo: logo,
+                websiteUrl: websiteUrl,
+                customizeBranding: customizeBranding,
+                primaryColor,
+                themeColor: primaryColor,
+                backgroundColor,
+                pages,
+                status: "Draft",
+                tenantId: tenantId ?? undefined,
+              }),
+            });
+            const data = await res.json();
+            finalId = surveyId || data.survey._id;
+          } catch {
+            alert("Could not save draft. Is the backend running?");
+            return;
+          }
+          navigate("/review-publish", {
+            state: {
+              surveyId: finalId,
+              surveyTitle,
+              description: description,
+              logo,
+              websiteUrl: websiteUrl,
+              customizeBranding: customizeBranding,
+              primaryColor,
+              backgroundColor,
+              pages,
+            },
+          });
+        }}
+        className="text-white px-6 py-2 rounded-lg text-sm font-semibold shadow-lg transition-all bg-[#6366F1] hover:opacity-90"
+      >
+        Review & Publish
+      </button>
+    )}
+  </div>
+</header>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <div className="max-w-3xl mx-auto py-12 px-6">
@@ -1651,12 +1667,8 @@ export default function AddQuestions() {
                 {activePage.questions.length === 0 ? (
                   <div className="border-4 border-dashed border-gray-100 rounded-3xl p-20 flex flex-col items-center justify-center text-gray-400">
                     <Plus size={48} className="mb-4 opacity-10" />
-                    <p className="text-lg font-medium opacity-40">
-                      Your survey is empty
-                    </p>
-                    <p className="text-sm opacity-30">
-                      Add elements from the left sidebar to begin
-                    </p>
+                    <p className="text-lg font-medium opacity-40">Your survey is empty</p>
+                    <p className="text-sm opacity-30">Add elements from the left sidebar to begin</p>
                   </div>
                 ) : (
                   activePage.questions.map((q, idx) => (
@@ -1686,188 +1698,111 @@ export default function AddQuestions() {
                 </div>
               </div>
             ) : (
-              // PREVIEW MODE - Uses theme colors for visual preview
-              <div 
-                className="rounded-3xl shadow-xl border border-gray-100 dark:border-slate-700 overflow-hidden min-h-150 flex flex-col transition-colors duration-300"
-                style={{ backgroundColor: backgroundColor || "#FFFFFF" }}
-              >
-                <div
-                  style={{ backgroundColor: primaryColor }}
-                  className="h-2"
-                />
-                <div className="p-10 flex-1">
-                  {logo && (
-                    <div className="flex justify-center mb-6">
-                      <img
-                        src={logo}
-                        alt="Survey logo"
-                        className="max-h-20 object-contain rounded"
-                      />
-                    </div>
-                  )}
-                  <h1 className="text-2xl font-bold mb-2 dark:text-white">{surveyTitle}</h1>
-                  {description && (
-                    <p className="text-gray-500 dark:text-slate-400 text-sm mb-1">{description}</p>
-                  )}
-                  {customizeBranding && websiteUrl && (
-                    <a
-                      href={websiteUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block text-xs text-blue-500 hover:text-blue-700 underline mb-6"
-                    >
-                      {websiteUrl}
-                    </a>
-                  )}
-                  <p className="text-gray-500 dark:text-slate-400 mb-8">{activePage.title}</p>
+              // PREVIEW MODE with device switcher
+              <div className="relative">
+                <div className={`transition-all duration-300 mx-auto ${previewDeviceWidths[previewDevice]}`}>
+                  <div 
+                    className="rounded-3xl shadow-xl border border-gray-100 dark:border-slate-700 overflow-hidden min-h-150 flex flex-col transition-colors duration-300"
+                    style={{ backgroundColor: backgroundColor || "#FFFFFF" }}
+                  >
+                    <div
+                      style={{ backgroundColor: primaryColor }}
+                      className="h-2"
+                    />
+                    <div className="p-10 flex-1">
+                      {logo && (
+                        <div className="flex justify-center mb-6">
+                          <img src={logo} alt="Survey logo" className="max-h-20 object-contain rounded" />
+                        </div>
+                      )}
+                      <h1 className="text-2xl font-bold mb-2 dark:text-white">{surveyTitle}</h1>
+                      {description && <p className="text-gray-500 dark:text-slate-400 text-sm mb-1">{description}</p>}
+                      {customizeBranding && websiteUrl && (
+                        <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-xs text-blue-500 hover:text-blue-700 underline mb-6">
+                          {websiteUrl}
+                        </a>
+                      )}
+                      <p className="text-gray-500 dark:text-slate-400 mb-8">{activePage.title}</p>
 
-                  <div className="space-y-8">
-                    {activePage.questions.map((q, idx) => (
-                      <div key={q.id}>
-                        <div className="flex gap-2 mb-3">
-                          <span
-                            style={{ color: primaryColor }}
-                            className="font-bold"
-                          >
-                            {idx + 1}.
-                          </span>
-                          <h3 className="font-semibold text-gray-800 dark:text-slate-200">
-                            {q.label}{" "}
-                            {q.required && (
-                              <span className="text-red-500">*</span>
-                            )}
-                          </h3>
-                        </div>
-                        <div className="pl-6">
-                          {q.type === "short_text" && (
-                            <input
-                              type="text"
-                              className="w-full border-b-2 border-gray-100 dark:border-slate-600 focus:border-gray-400 outline-none pb-2 transition-colors bg-transparent dark:text-white"
-                              style={{ caretColor: primaryColor }}
-                              placeholder={q.placeholder}
-                            />
-                          )}
-                          {q.type === "long_text" && (
-                            <textarea
-                              className="w-full border-2 border-gray-100 dark:border-slate-600 rounded-xl p-3 outline-none min-h-25 transition-colors focus:border-gray-400 bg-transparent dark:text-white"
-                              placeholder={q.placeholder}
-                            />
-                          )}
-                          {(q.type === "multiple_choice" ||
-                            q.type === "checkboxes") && (
-                            <div className="space-y-3">
-                              {q.options?.map((opt: string, i: number) => (
-                                <label
-                                  key={i}
-                                  className="flex items-center gap-3 cursor-pointer group"
-                                >
-                                  <input
-                                    type={
-                                      q.type === "multiple_choice"
-                                        ? "radio"
-                                        : "checkbox"
-                                    }
-                                    name={q.id}
-                                    style={{ accentColor: primaryColor }}
-                                    className={`w-5 h-5 border-gray-300 dark:border-slate-600 focus:ring-0 ${
-                                      q.type === "multiple_choice" ? "rounded-full" : "rounded"
-                                    }`}
-                                  />
-                                  <span className="text-gray-700 dark:text-slate-300 transition-colors">
-                                    {opt}
-                                  </span>
-                                </label>
-                              ))}
+                      <div className="space-y-8">
+                        {activePage.questions.map((q, idx) => (
+                          <div key={q.id}>
+                            <div className="flex gap-2 mb-3">
+                              <span style={{ color: primaryColor }} className="font-bold">{idx + 1}.</span>
+                              <h3 className="font-semibold text-gray-800 dark:text-slate-200">
+                                {q.label} {q.required && <span className="text-red-500">*</span>}
+                              </h3>
                             </div>
-                          )}
-                          {q.type === "rating" && (
-                            <div className="flex gap-2">
-                              {[...Array(q.max)].map((_, i) => (
-                                <button
-                                  key={i}
-                                  className="transition-colors"
-                                  style={{ color: "#E2E8F0" }}
-                                >
-                                  <Star size={32} />
-                                </button>
-                              ))}
+                            <div className="pl-6">
+                              {q.type === "short_text" && (
+                                <input type="text" className="w-full border-b-2 border-gray-100 dark:border-slate-600 focus:border-gray-400 outline-none pb-2 transition-colors bg-transparent dark:text-white" style={{ caretColor: primaryColor }} placeholder={q.placeholder} />
+                              )}
+                              {q.type === "long_text" && (
+                                <textarea className="w-full border-2 border-gray-100 dark:border-slate-600 rounded-xl p-3 outline-none min-h-25 transition-colors focus:border-gray-400 bg-transparent dark:text-white" placeholder={q.placeholder} />
+                              )}
+                              {(q.type === "multiple_choice" || q.type === "checkboxes") && (
+                                <div className="space-y-3">
+                                  {q.options?.map((opt: string, i: number) => (
+                                    <label key={i} className="flex items-center gap-3 cursor-pointer group">
+                                      <input type={q.type === "multiple_choice" ? "radio" : "checkbox"} name={q.id} style={{ accentColor: primaryColor }} className={`w-5 h-5 border-gray-300 dark:border-slate-600 focus:ring-0 ${q.type === "multiple_choice" ? "rounded-full" : "rounded"}`} />
+                                      <span className="text-gray-700 dark:text-slate-300 transition-colors">{opt}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                              {q.type === "rating" && (
+                                <div className="flex gap-2 flex-wrap">
+                                  {[...Array(q.max || 5)].map((_, i) => (
+                                    <button key={i} className="w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all duration-200" style={{ borderColor: "#E2E8F0", color: "#94A3B8" }}>
+                                      <Star size={20} />
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              {q.type === "number" && (
+                                <input type="number" className="border-2 border-gray-100 dark:border-slate-600 rounded-lg p-2 outline-none w-32 focus:border-gray-400 bg-transparent dark:text-white" />
+                              )}
+                              {q.type === "date" && (
+                                <DatePickerCalendar value={responses[q.id] || ""} onChange={(date) => setResponses((prev) => ({ ...prev, [q.id]: date }))} />
+                              )}
+                              {q.branching?.enabled && (
+                                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300">
+                                  Conditional flow mapped
+                                </div>
+                              )}
                             </div>
-                          )}
-                          {q.type === "number" && (
-                            <input
-                              type="number"
-                              className="border-2 border-gray-100 dark:border-slate-600 rounded-lg p-2 outline-none w-32 focus:border-gray-400 bg-transparent dark:text-white"
-                            />
-                          )}
-                          {q.type === "date" && (
-                            <DatePickerCalendar
-                              value={responses[q.id] || ""}
-                              onChange={(date) =>
-                                setResponses((prev) => ({
-                                  ...prev,
-                                  [q.id]: date,
-                                }))
-                              }
-                            />
-                          )}
-                          {q.branching?.enabled && (
-                            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300">
-                              Conditional flow mapped
-                            </div>
-                          )}
-                        </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+
+                    <div className="p-8 bg-gray-50 dark:bg-slate-900 flex justify-between items-center border-t border-gray-100 dark:border-slate-700">
+                      <div className="flex gap-2">
+                        {pages.map((_, i) => (
+                          <div key={i} className="w-2 h-2 rounded-full transition-colors" style={{ backgroundColor: activePageIndex === i ? primaryColor : "#D1D5DB" }} />
+                        ))}
+                      </div>
+                      <div className="flex gap-4">
+                        {activePageIndex > 0 && (
+                          <button onClick={() => setActivePageIndex(activePageIndex - 1)} className="px-6 py-2 border border-gray-200 dark:border-slate-600 rounded-xl font-semibold hover:bg-white dark:hover:bg-slate-800 transition-all text-gray-700 dark:text-slate-300">Back</button>
+                        )}
+                        {activePageIndex < pages.length - 1 ? (
+                          <button onClick={() => setActivePageIndex(activePageIndex + 1)} style={{ backgroundColor: primaryColor }} className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all flex items-center gap-2">Next <ChevronRight size={18} /></button>
+                        ) : (
+                          <button style={{ backgroundColor: primaryColor }} className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all">Submit Survey</button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="p-8 bg-gray-50 dark:bg-slate-900 flex justify-between items-center border-t border-gray-100 dark:border-slate-700">
-                  <div className="flex gap-2">
-                    {pages.map((_, i) => (
-                      <div
-                        key={i}
-                        className="w-2 h-2 rounded-full transition-colors"
-                        style={{
-                          backgroundColor:
-                            activePageIndex === i ? primaryColor : "#D1D5DB",
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex gap-4">
-                    {activePageIndex > 0 && (
-                      <button
-                        onClick={() => setActivePageIndex(activePageIndex - 1)}
-                        className="px-6 py-2 border border-gray-200 dark:border-slate-600 rounded-xl font-semibold hover:bg-white dark:hover:bg-slate-800 transition-all text-gray-700 dark:text-slate-300"
-                      >
-                        Back
-                      </button>
-                    )}
-                    {activePageIndex < pages.length - 1 ? (
-                      <button
-                        onClick={() => setActivePageIndex(activePageIndex + 1)}
-                        style={{ backgroundColor: primaryColor }}
-                        className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all flex items-center gap-2"
-                      >
-                        Next <ChevronRight size={18} />
-                      </button>
-                    ) : (
-                      <button 
-                        style={{ backgroundColor: primaryColor }}
-                        className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all"
-                      >
-                        Submit Survey
-                      </button>
-                    )}
-                  </div>
-                </div>
+
               </div>
             )}
           </div>
         </div>
       </main>
 
-      {/* Right sidebar — question property editor */}
       {!isPreviewMode && (
         <aside className="w-80 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700 flex flex-col z-10 shadow-sm overflow-y-auto transition-colors duration-300">
           <PropertyEditor
