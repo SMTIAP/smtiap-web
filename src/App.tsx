@@ -35,6 +35,9 @@ import SurveyResults from "./pages/SurveyResults";
 import OrganizationRegistration from "./pages/OrganizationRegistration.tsx";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SuperAdminLogin from "./pages/SuperAdminLogin.tsx";
+import SuperAdminTemplates from "./pages/SuperAdminTemplates";
+import SuperAdminTemplateEditor from "./pages/SuperAdminTemplateEditor";
+import SuperAdminCategories from "./pages/SuperAdminCategories";
 import VoiceAI from "./components/VoiceAI.tsx";
 import { TenantProvider } from "./contexts/TenantContext";
 
@@ -97,6 +100,40 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
+              
+              {/* Super Admin Template Management Routes */}
+              <Route
+                path="/super-admin/templates"
+                element={
+                  <ProtectedRoute allowedRoles={["super_admin"]}>
+                    <SuperAdminTemplates />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/super-admin/templates/new"
+                element={
+                  <ProtectedRoute allowedRoles={["super_admin"]}>
+                    <SuperAdminTemplateEditor />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/super-admin/templates/:id/edit"
+                element={
+                  <ProtectedRoute allowedRoles={["super_admin"]}>
+                    <SuperAdminTemplateEditor />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/super-admin/categories"
+                element={
+                  <ProtectedRoute allowedRoles={["super_admin"]}>
+                    <SuperAdminCategories />
+                  </ProtectedRoute>
+                }
+              />
 
               <Route element={<Layout />}>
                 <Route path="/" element={<LandingPage />} />
@@ -127,7 +164,8 @@ export default function App() {
                       <SearchTemplate />
                     </ProtectedRoute>
                   }
-                /> <Route path="/template-preview" element={<ProtectedRoute><TemplatePreview /></ProtectedRoute>} />
+                /> 
+                <Route path="/template-preview" element={<ProtectedRoute><TemplatePreview /></ProtectedRoute>} />
                 <Route
                   path="/subscription"
                   element={
