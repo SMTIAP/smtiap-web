@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft, X, Loader2,
   Monitor, Tablet, Smartphone, FileText, CopyPlus,
 } from "lucide-react";
-import { TEMPLATES } from "./SearchTemplate";
+import { templateApi, type Template } from "../api/templateApi";
+import { getIcon } from "../utils/iconMap";
 
 type DeviceType = "desktop" | "tablet" | "mobile";
 
@@ -71,25 +72,56 @@ export default function TemplatePreview() {
   const navigate = useNavigate();
   const location = useLocation();
   const templateId = location.state?.templateId;
-  const template = TEMPLATES.find((t) => t.id === templateId);
-
+  
+  const [template, setTemplate] = useState<Template | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [device, setDevice] = useState<DeviceType>("desktop");
   const [isCreating, setIsCreating] = useState(false);
 
   const token = localStorage.getItem("token");
 
-  if (!template) {
+  useEffect(() => {
+    const fetchTemplate = async () => {
+      if (!templateId) {
+        setError("Template not found");
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const data = await templateApi.getTemplateById(templateId);
+        setTemplate(data);
+      } catch (err) {
+        console.error("Failed to fetch template:", err);
+        setError("Template not found");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTemplate();
+  }, [templateId]);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center dark:bg-[#0F172A]">
+        <Loader2 size={40} className="animate-spin text-indigo-500" />
+      </div>
+    );
+  }
+
+  if (error || !template) {
     return (
       <div className="flex h-screen items-center justify-center dark:bg-[#0F172A]">
         <div className="text-center">
-          <p className="text-slate-500 dark:text-slate-400 mb-4">Template not found.</p>
+          <p className="text-slate-500 dark:text-slate-400 mb-4">{error || "Template not found."}</p>
           <button onClick={() => navigate("/templates")} className="text-indigo-600 font-bold">← Back to templates</button>
         </div>
       </div>
     );
   }
 
-  const Icon = template.Icon;
+  const Icon = getIcon(template.icon);
   const primaryColor = "#6366F1";
   const isMobile = device === "mobile";
 
