@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft, X, Loader2,
-  Monitor, Tablet, Smartphone, FileText, CopyPlus,
+  Monitor, Tablet, Smartphone, FileText, CopyPlus, Calendar
 } from "lucide-react";
 import { templateApi, type Template } from "../api/templateApi";
 import { getIcon } from "../utils/iconMap";
@@ -185,7 +185,7 @@ export default function TemplatePreview() {
       const surveyPages = [{
         id: `page-${Date.now()}`,
         title: "Page 1",
-        questions: template.previewQuestions.map((q: any, idx: number) => ({
+        questions: (template.previewQuestions || []).map((q: any, idx: number) => ({
           id: `q-${Date.now()}-${idx}`,
           type: q.type,
           label: q.label,
@@ -259,7 +259,7 @@ export default function TemplatePreview() {
             <X size={18} />
             <span>Close preview</span>
           </button>
-          <div className="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1" />
+          <div className="w-px h-5 bg-slate-200 dark:border-slate-700 mx-1" />
           <span className="text-slate-400 text-sm truncate max-w-xs">{template.title}</span>
         </div>
 
@@ -285,15 +285,22 @@ export default function TemplatePreview() {
 
                   {/* All questions in one scrollable list */}
                   <div className="space-y-6">
-                    {template.previewQuestions.map((q: any, idx: number) => (
-                      <QuestionPreview
-                        key={idx}
-                        question={q}
-                        index={idx}
-                        primaryColor={primaryColor}
-                        deviceType={device}
-                      />
-                    ))}
+                    {template.previewQuestions && template.previewQuestions.length > 0 ? (
+                      template.previewQuestions.map((q: any, idx: number) => (
+                        <QuestionPreview
+                          key={idx}
+                          question={q}
+                          index={idx}
+                          primaryColor={primaryColor}
+                          deviceType={device}
+                        />
+                      ))
+                    ) : (
+                      <div className="text-center text-slate-400 py-8">
+                        <p>No questions in this template yet.</p>
+                        <p className="text-sm mt-2">Edit the template to add questions.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -325,7 +332,7 @@ export default function TemplatePreview() {
           <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 mb-6 border border-slate-100 dark:border-slate-700">
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs">
               <FileText size={13} />
-              <span>{template.previewQuestions.length} questions · 1 page</span>
+              <span>{template.previewQuestions?.length || 0} questions · 1 page</span>
             </div>
             <p className="text-slate-400 dark:text-slate-500 text-xs mt-2">
               You can edit, add, or remove questions after creating.
