@@ -10,15 +10,23 @@ import {
   Star,
   Type,
   List,
+  CheckSquare,
+  Hash,
+  Calendar,
+  FileText,
 } from "lucide-react";
 import { templateApi, type Template, type Category } from "../api/templateApi";
 import SuperAdminNavBar from "../components/SuperAdminNavBar";
 
-// Question type options
+// Question type options - ALL 7 TYPES
 const QUESTION_TYPES = [
-  { id: "text", label: "Text Question", icon: Type },
-  { id: "rating", label: "Rating Scale", icon: Star },
+  { id: "short_text", label: "Short Text", icon: Type },
+  { id: "long_text", label: "Long Text", icon: FileText },
   { id: "multiple_choice", label: "Multiple Choice", icon: List },
+  { id: "checkboxes", label: "Checkboxes", icon: CheckSquare },
+  { id: "rating", label: "Rating Scale", icon: Star },
+  { id: "number", label: "Number", icon: Hash },
+  { id: "date", label: "Date", icon: Calendar },
 ];
 
 // Gradient options
@@ -44,10 +52,12 @@ const iconOptions = [
 ];
 
 interface PreviewQuestion {
-  type: "text" | "rating" | "multiple_choice";
+  type: "short_text" | "long_text" | "multiple_choice" | "checkboxes" | "rating" | "number" | "date";
   label: string;
   max?: number;
+  min?: number;
   options?: string[];
+  placeholder?: string;
 }
 
 export default function SuperAdminTemplateEditor() {
@@ -60,7 +70,7 @@ export default function SuperAdminTemplateEditor() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form state - REMOVED aiPrompt
+  // Form state
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -70,7 +80,7 @@ export default function SuperAdminTemplateEditor() {
   });
 
   const [questions, setQuestions] = useState<PreviewQuestion[]>([
-    { type: "text", label: "" },
+    { type: "short_text", label: "" },
   ]);
 
   // Fetch categories
@@ -116,7 +126,7 @@ export default function SuperAdminTemplateEditor() {
   }, [id, isEditing]);
 
   const addQuestion = () => {
-    setQuestions([...questions, { type: "text", label: "" }]);
+    setQuestions([...questions, { type: "short_text", label: "" }]);
   };
 
   const removeQuestion = (index: number) => {
@@ -155,7 +165,6 @@ export default function SuperAdminTemplateEditor() {
   };
 
   const handleSave = async () => {
-    // Removed aiPrompt validation
     if (!formData.title || !formData.description || !formData.category) {
       setError("Please fill all required fields");
       return;
@@ -170,7 +179,6 @@ export default function SuperAdminTemplateEditor() {
     setError(null);
 
     try {
-      // Removed aiPrompt from templateData
       const templateData = {
         title: formData.title,
         description: formData.description,
@@ -193,6 +201,114 @@ export default function SuperAdminTemplateEditor() {
       setError("Failed to save template");
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Helper to render question type specific fields
+  const renderQuestionTypeFields = (question: PreviewQuestion, qIdx: number) => {
+    switch (question.type) {
+      case "rating":
+        return (
+          <div className="mt-3">
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              Max Rating (1-10)
+            </label>
+            <select
+              value={question.max || 5}
+              onChange={(e) => updateQuestion(qIdx, { max: parseInt(e.target.value) })}
+              className="w-32 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              {[5, 6, 7, 8, 9, 10].map((num) => (
+                <option key={num} value={num}>
+                  {num} Stars
+                </option>
+              ))}
+            </select>
+          </div>
+        );
+
+      case "number":
+        return (
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Min Value
+              </label>
+              <input
+                type="number"
+                value={question.min || 0}
+                onChange={(e) => updateQuestion(qIdx, { min: parseInt(e.target.value) || 0 })}
+                className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Max Value
+              </label>
+              <input
+                type="number"
+                value={question.max || 100}
+                onChange={(e) => updateQuestion(qIdx, { max: parseInt(e.target.value) || 100 })}
+                className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+        );
+
+      case "short_text":
+      case "long_text":
+        return (
+          <div className="mt-3">
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+              Placeholder (optional)
+            </label>
+            <input
+              type="text"
+              value={question.placeholder || ""}
+              onChange={(e) => updateQuestion(qIdx, { placeholder: e.target.value })}
+              placeholder="e.g., Enter your answer here..."
+              className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+        );
+
+      case "multiple_choice":
+      case "checkboxes":
+        return (
+          <div className="mt-3">
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+              Options
+            </label>
+            <div className="space-y-2">
+              {question.options?.map((opt, optIdx) => (
+                <div key={optIdx} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={opt}
+                    onChange={(e) => updateOption(qIdx, optIdx, e.target.value)}
+                    className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <button
+                    onClick={() => removeOption(qIdx, optIdx)}
+                    className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={() => addOption(qIdx)}
+                className="flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
+                <Plus size={14} />
+                Add Option
+              </button>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
     }
   };
 
@@ -341,8 +457,6 @@ export default function SuperAdminTemplateEditor() {
                 />
               </div>
             </div>
-
-            {/* AI Prompt Section REMOVED */}
           </div>
         </div>
 
@@ -410,59 +524,8 @@ export default function SuperAdminTemplateEditor() {
                   </div>
                 </div>
 
-                {/* Rating Max */}
-                {question.type === "rating" && (
-                  <div className="mt-3">
-                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                      Max Rating (1-10)
-                    </label>
-                    <select
-                      value={question.max || 5}
-                      onChange={(e) => updateQuestion(qIdx, { max: parseInt(e.target.value) })}
-                      className="w-32 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    >
-                      {[5, 6, 7, 8, 9, 10].map((num) => (
-                        <option key={num} value={num}>
-                          {num} Stars
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {/* Multiple Choice Options */}
-                {question.type === "multiple_choice" && (
-                  <div className="mt-3">
-                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
-                      Options
-                    </label>
-                    <div className="space-y-2">
-                      {question.options?.map((opt, optIdx) => (
-                        <div key={optIdx} className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={opt}
-                            onChange={(e) => updateOption(qIdx, optIdx, e.target.value)}
-                            className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                          <button
-                            onClick={() => removeOption(qIdx, optIdx)}
-                            className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        onClick={() => addOption(qIdx)}
-                        className="flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
-                      >
-                        <Plus size={14} />
-                        Add Option
-                      </button>
-                    </div>
-                  </div>
-                )}
+                {/* Render type-specific fields */}
+                {renderQuestionTypeFields(question, qIdx)}
               </div>
             ))}
           </div>
