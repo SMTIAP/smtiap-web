@@ -1719,7 +1719,7 @@ export default function AddQuestions() {
         className="h-2"
       />
       {/* Content area with white background for readability */}
-      <div className="p-10 flex-1 bg-white dark:bg-white">
+      <div className="p-10 flex-1">
         {logo && (
           <div className="flex justify-center mb-6">
             <img src={logo} alt="Survey logo" className="max-h-20 object-contain rounded" />
@@ -1786,7 +1786,7 @@ export default function AddQuestions() {
         </div>
       </div>
 
-      <div className="p-8 bg-gray-50 flex justify-between items-center border-t border-gray-200">
+      <div className="p-8 bg-gray-50 dark:bg-slate-800 flex justify-between items-center border-t border-gray-200 dark:border-slate-700">
         <div className="flex gap-2">
           {pages.map((_, i) => (
             <div key={i} className="w-2 h-2 rounded-full transition-colors" style={{ backgroundColor: activePageIndex === i ? primaryColor : "#D1D5DB" }} />
