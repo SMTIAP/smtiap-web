@@ -30,13 +30,15 @@ const colorPresets = [
   "#8B5CF6",
 ];
 
+// Updated to match CreateNewSurvey.tsx - darker, more visible colors
 const bgColorPresets = [
   "#FFFFFF",
-  "#F8FAFC",
-  "#F0FDF4",
-  "#EFF6FF",
-  "#FAF5FF",
-  "#FFF7ED",
+  "#94A3B8",
+  "#93C5FD",
+  "#86EFAC",
+  "#FCA5A5",
+  "#D8B4FE",
+  "#FCD34D",
 ];
 
 export default function SurveySettingsModal({
