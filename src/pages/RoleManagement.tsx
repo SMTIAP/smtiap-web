@@ -271,12 +271,34 @@ const canManageTenantId = (tenantId: string) => {
       toast.error("Only the organization creator can change roles");
       return;
     }
+
+    const newRole = selectedRole[item._id];
+
+    // Check if current user is an admin and being changed to non-admin
+    const changingTenantAdminRole = item.role === "admin" && newRole !== "admin";
+
+    if (changingTenantAdminRole) {
+      const otherAdmins = orgUsers.filter(
+        (u) =>
+          u.tenantId._id === item.tenantId._id &&
+          u._id !== item._id &&
+          u.role === "admin"
+      );
+
+      if (otherAdmins.length === 0) {
+        toast.error(
+          "This organization must have at least one Tenant Admin"
+        );
+        return;
+      }
+    }
+
     const confirmed = await confirmAsync(
       `Update role for "${item.userId.username}"?`,
     );
     if (!confirmed) return;
     try {
-      const newRole = selectedRole[item._id];
+      // const newRole = selectedRole[item._id];
       const response = await fetch(
         `http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}/role`,
         {
