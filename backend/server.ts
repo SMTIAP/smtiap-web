@@ -34,6 +34,7 @@ import auditRoutes from "./routes/auditRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import superAdminRoutes from "./routes/superAdminRoutes.js";
+import { createDefaultSuperAdmin } from "./utils/createDefaultSuperAdmin.js";
 const ensureCollections = async () => {
   await Promise.all([
     Tenant.createCollection(),
@@ -102,6 +103,7 @@ const startServer = async () => {
     initGoogleStrategy();
     await connectDb();
     await ensureCollections();
+    await createDefaultSuperAdmin();
 
     app.listen(env.port, () => {
       console.log(`PayHere backend running at http://localhost:${env.port}`);

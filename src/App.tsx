@@ -34,6 +34,7 @@ import TakeSurvey from "./pages/TakeSurvey";
 import SurveyResults from "./pages/SurveyResults";
 import OrganizationRegistration from "./pages/OrganizationRegistration.tsx";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import SuperAdminLogin from "./pages/SuperAdminLogin.tsx";
 import VoiceAI from "./components/VoiceAI.tsx";
 import { TenantProvider } from "./contexts/TenantContext";
 
@@ -87,6 +88,7 @@ export default function App() {
                 path="/reset-password/:token"
                 element={<ResetPassword />}
               />
+              <Route path="/super-admin-login" element={<SuperAdminLogin />} />
               <Route
                 path="/super-admin-dashboard"
                 element={
