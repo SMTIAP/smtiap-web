@@ -4,7 +4,7 @@ const questionPreviewSchema = new Schema(
   {
     type: { 
       type: String, 
-      enum: ["text", "rating", "multiple_choice"], 
+      enum: ["short_text", "long_text", "multiple_choice", "checkboxes", "rating", "number", "date"], 
       required: true 
     },
     label: { 
@@ -14,8 +14,14 @@ const questionPreviewSchema = new Schema(
     max: { 
       type: Number 
     },
+    min: { 
+      type: Number 
+    },
     options: { 
       type: [String] 
+    },
+    placeholder: { 
+      type: String 
     },
   },
   { _id: false }
@@ -52,7 +58,7 @@ const templateSchema = new Schema(
     },
     aiPrompt: { 
       type: String, 
-      required: true 
+      default: "" 
     },
     previewQuestions: [questionPreviewSchema],
     createdBy: { 
