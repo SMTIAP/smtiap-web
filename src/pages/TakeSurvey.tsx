@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import { Calendar } from "lucide-react";
 
 interface BranchRule {
   value: string;
@@ -72,6 +73,8 @@ export default function TakeSurvey() {
     surveyTitle?: string;
     description?: string;
     _id?: string;
+    scheduledOpen?: string;
+    scheduledClose?: string;
     [key: string]: unknown;
   } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -189,6 +192,56 @@ export default function TakeSurvey() {
         </div>
       </div>
     );
+
+  // ✅ Check for Scheduled status (not yet open)
+  if (surveyData.status === "Scheduled" && surveyData.scheduledOpen) {
+    const now = new Date();
+    const openDate = new Date(surveyData.scheduledOpen);
+    
+    if (now < openDate) {
+      return (
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor }}>
+          <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
+            <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Calendar size={28} className="text-amber-500" />
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 mb-2">Survey Not Started Yet</h2>
+            <p className="text-slate-500 text-sm">
+              This survey will be available on
+            </p>
+            <p className="text-slate-700 font-bold mt-2">
+              {openDate.toLocaleDateString()} at {openDate.toLocaleTimeString()}
+            </p>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // ✅ Check if survey has a close date and is closed (even if status still Running)
+  if (surveyData.scheduledClose) {
+    const now = new Date();
+    const closeDate = new Date(surveyData.scheduledClose);
+    
+    if (now > closeDate) {
+      return (
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor }}>
+          <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
+            <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg width="28" height="28" fill="none" stroke="#F43F5E" strokeWidth="2.5" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M15 9l-6 6M9 9l6 6" strokeLinecap="round" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 mb-2">Survey Closed</h2>
+            <p className="text-slate-500 text-sm">
+              This survey closed on {closeDate.toLocaleDateString()} at {closeDate.toLocaleTimeString()}
+            </p>
+          </div>
+        </div>
+      );
+    }
+  }
 
   if (surveyData.status === "Finished")
     return (
