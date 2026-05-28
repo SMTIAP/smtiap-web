@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useDarkMode } from "../App";
 import {
   getQuestionId,
   normalizeAnswer,
@@ -7,7 +8,7 @@ import {
   type SurveyResponseDoc,
 } from "../utils/analyticsHelpers";
 
-// Types returned by the hook 
+// Types returned by the hook
 
 export interface UseAnalyticsChartsReturn {
   // Filtered question lists used by each chart section
@@ -29,7 +30,7 @@ export interface UseAnalyticsChartsReturn {
   optionChartOptions: OptionChartOptions;
 }
 
-// Chart data/option shapes 
+// Chart data/option shapes
 
 interface RatingChartData {
   labels: string[];
@@ -48,8 +49,18 @@ interface RatingChartOptions {
   maintainAspectRatio: boolean;
   plugins: { legend: { display: boolean }; tooltip: { enabled: boolean } };
   scales: {
-    x: { beginAtZero: boolean; max: number; grid: { display: boolean } };
-    y: { grid: { display: boolean } };
+    x: {
+      beginAtZero: boolean;
+      max: number;
+      grid: { color: string };
+      ticks: { color: string };
+      border: { display: boolean; color: string };
+    };
+    y: {
+      grid: { display: boolean };
+      ticks: { color: string };
+      border: { display: boolean; color: string };
+    };
   };
 }
 
@@ -68,8 +79,17 @@ interface OptionChartOptions {
   maintainAspectRatio: boolean;
   plugins: { legend: { display: boolean } };
   scales: {
-    x: { beginAtZero: boolean; grid: { display: boolean } };
-    y: { grid: { display: boolean } };
+    x: {
+      beginAtZero: boolean;
+      grid: { display: boolean };
+      ticks: { color: string };
+      border: { display: boolean; color: string };
+    };
+    y: {
+      grid: { color: string };
+      ticks: { color: string };
+      border: { display: boolean; color: string };
+    };
   };
 }
 
@@ -78,6 +98,11 @@ export function useAnalyticsCharts(
   surveyQuestions: SurveyQuestion[],
   surveyResponses: SurveyResponseDoc[],
 ): UseAnalyticsChartsReturn {
+  const { darkMode } = useDarkMode();
+  const axisColor = darkMode ? "#94A3B8" : "#64748B";
+  const gridColor = darkMode ? "#334155" : "#E2E8F0";
+  const borderColor = darkMode ? "#475569" : "#CBD5E1";
+
   // Map of questionId -> array of raw answer values; foundation for all chart data
   const questionAnswerMap = useMemo(() => {
     const map = new Map<string, unknown[]>();
@@ -99,7 +124,7 @@ export function useAnalyticsCharts(
     return map;
   }, [surveyQuestions, surveyResponses]);
 
-  // Filtered question lists 
+  // Filtered question lists
 
   const ratingQuestions = useMemo(
     () => surveyQuestions.filter((q) => q.type === "rating"),
@@ -120,7 +145,7 @@ export function useAnalyticsCharts(
     [surveyQuestions],
   );
 
-  //  Summary stats 
+  //  Summary stats
 
   // completionRate = (answered fields / total possible fields) * 100
   const completionRate = useMemo(() => {
@@ -156,7 +181,7 @@ export function useAnalyticsCharts(
     return (values.reduce((sum, v) => sum + v, 0) / values.length).toFixed(1);
   }, [questionAnswerMap, ratingQuestions]);
 
-  // Rating chart data + options 
+  // Rating chart data + options
 
   // Chart.js dataset for the horizontal bar chart showing average rating per question
   const ratingData = useMemo<RatingChartData>(
@@ -194,9 +219,15 @@ export function useAnalyticsCharts(
       x: {
         beginAtZero: true,
         max: Math.max(...ratingQuestions.map((q) => Number(q.max ?? 5)), 5),
-        grid: { display: false },
+        grid: { color: gridColor },
+        ticks: { color: axisColor },
+        border: { display: true, color: borderColor },
       },
-      y: { grid: { display: false } },
+      y: {
+        grid: { display: false },
+        ticks: { color: axisColor },
+        border: { display: true, color: borderColor },
+      },
     },
   };
 
@@ -249,8 +280,17 @@ export function useAnalyticsCharts(
     maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: {
-      x: { beginAtZero: true, grid: { display: false } },
-      y: { grid: { display: false } },
+      x: {
+        beginAtZero: true,
+        grid: { display: false },
+        ticks: { color: axisColor },
+        border: { display: true, color: borderColor },
+      },
+      y: {
+        grid: { color: gridColor },
+        ticks: { color: axisColor },
+        border: { display: true, color: borderColor },
+      },
     },
   };
 
