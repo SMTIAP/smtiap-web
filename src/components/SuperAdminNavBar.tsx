@@ -91,7 +91,7 @@ export default function SuperAdminNavBar() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Dark Mode Toggle - Updated to match regular NavBar style */}
+          {/* Dark Mode Toggle */}
           <button
             onClick={toggleDarkMode}
             className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition-all"
@@ -120,46 +120,83 @@ export default function SuperAdminNavBar() {
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 mt-3 w-80 overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/95 p-4 text-white shadow-2xl shadow-slate-950/40 backdrop-blur-xl">
-                <div className="flex items-center gap-3 rounded-3xl bg-white/10 p-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-lg font-black">
+              <div className={`absolute right-0 mt-3 w-80 overflow-hidden rounded-2xl border-2 shadow-2xl transition-all duration-200 ${
+                darkMode 
+                  ? "border-purple-400 bg-slate-900 text-white shadow-purple-500/30" 
+                  : "border-indigo-400 bg-white text-slate-800 shadow-indigo-200/50"
+              }`}>
+                
+                {/* User Info Section */}
+                <div className={`flex items-center gap-3 p-4 ${
+                  darkMode ? "bg-white/5 border-b border-purple-400/30" : "bg-indigo-50 border-b border-indigo-200"
+                }`}>
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl text-lg font-black ${
+                    darkMode ? "bg-purple-500/30 text-purple-300" : "bg-indigo-200 text-indigo-700"
+                  }`}>
                     {initials}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">{user?.username || "SuperAdmin"}</p>
-                    <p className="text-[13px] text-slate-300">{user?.email || "superadmin@example.com"}</p>
+                    <p className={`text-sm font-semibold ${
+                      darkMode ? "text-white" : "text-slate-800"
+                    }`}>
+                      {user?.username || "SuperAdmin"}
+                    </p>
+                    <p className={`text-xs ${
+                      darkMode ? "text-slate-400" : "text-slate-500"
+                    }`}>
+                      {user?.email || "superadmin@example.com"}
+                    </p>
                   </div>
                 </div>
 
-                <div className="my-4 rounded-3xl bg-slate-900/80 p-4">
-                  <div className="flex items-center justify-between text-sm text-slate-300">
-                    <div className="flex items-center gap-2">
+                {/* Role & Theme Section */}
+                <div className={`p-4 border-b ${
+                  darkMode ? "border-purple-400/30" : "border-indigo-200"
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className={`flex items-center gap-2 text-sm ${
+                      darkMode ? "text-slate-300" : "text-slate-600"
+                    }`}>
                       <User size={16} />
                       <span>Organization Admin</span>
                     </div>
                     <button
                       onClick={toggleDarkMode}
-                      className="rounded-full bg-white/10 px-3 py-1 text-[13px] text-white transition hover:bg-white/15"
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
+                        darkMode 
+                          ? "bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-400" 
+                          : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-300"
+                      }`}
                     >
-                      {darkMode ? "Dark" : "Light"}
+                      {darkMode ? "Light" : "Dark"}
                     </button>
                   </div>
                 </div>
 
+                {/* Dashboard Link */}
                 <button
                   onClick={() => {
                     setDropdownOpen(false);
                     navigate("/super-admin-dashboard");
                   }}
-                  className="flex w-full items-center gap-3 rounded-3xl bg-white/10 px-4 py-3 text-left text-sm font-semibold text-white transition hover:bg-white/15"
+                  className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition-all ${
+                    darkMode 
+                      ? "text-slate-300 hover:bg-white/5 hover:text-white" 
+                      : "text-slate-600 hover:bg-indigo-50 hover:text-indigo-700"
+                  }`}
                 >
                   <LayoutDashboard size={16} />
                   Super Admin Dashboard
                 </button>
 
+                {/* Sign Out Button */}
                 <button
                   onClick={handleSignOut}
-                  className="mt-3 flex w-full items-center gap-3 rounded-3xl bg-red-600 px-4 py-3 text-left text-sm font-semibold text-white transition hover:bg-red-500"
+                  className={`flex w-full items-center gap-3 rounded-b-2xl px-4 py-3 text-left text-sm font-semibold transition-all ${
+                    darkMode 
+                      ? "text-red-400 hover:bg-red-500/10 hover:text-red-300 border-t border-purple-400/30" 
+                      : "text-red-600 hover:bg-red-50 border-t border-indigo-200"
+                  }`}
                 >
                   <LogOut size={16} />
                   Sign Out
