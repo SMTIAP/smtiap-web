@@ -528,13 +528,13 @@ export default function CreatedSurveys() {
 
       <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
 
-      <div className="flex max-w-[1200px] py-12 px-8 flex-col items-start gap-10 w-full">
+      <div className="flex max-w-[1200px] py-12 px-8 flex-col items-start gap-6 w-full">
         <div className="flex justify-between items-center w-full">
           <div>
-            <h1 className="text-[#0F172A] dark:text-white text-5xl font-black tracking-tight mb-2">
+            <h1 className="text-[#0F172A] dark:text-white text-3xl font-black tracking-tight mb-2">
               My Surveys
             </h1>
-            <p className="text-[#64748B] dark:text-slate-400 text-base font-medium">
+            <p className="text-[#64748B] dark:text-slate-400 text-sm font-medium">
               Track performance and draft new insights.
             </p>
           </div>
@@ -550,11 +550,13 @@ export default function CreatedSurveys() {
                 />
               </button>
             )}
+            {/* Circular Back Button - Top Right */}
             <button
               onClick={() => navigate("/admin")}
-              className="cursor-pointer text-nowrap py-2 px-6 flex justify-center items-center gap-2 rounded-md bg-[#1E293B] dark:bg-slate-700 text-white font-inter text-sm font-medium transition-opacity hover:opacity-90"
+              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+              title="Back to Dashboard"
             >
-              <ArrowLeft size={16} /> Back
+              <ArrowLeft size={16} />
             </button>
           </div>
         </div>
