@@ -126,6 +126,9 @@ export default function ReviewAndPublish() {
     );
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+    // Get today's date in YYYY-MM-DD format for min date validation
+    const today = new Date().toISOString().split("T")[0];
+
     const handleSave = () => {
       let openDateTime: string | null = null;
       let closeDateTime: string | null = null;
@@ -133,10 +136,28 @@ export default function ReviewAndPublish() {
       if (enableOpen && openDate) {
         // Create date in local timezone and convert to UTC for storage
         const localDate = new Date(`${openDate}T${openTime}:00`);
+        
+        // Validate that open date is not in the past
+        if (localDate < new Date()) {
+          toast.error("Open date cannot be in the past");
+          return;
+        }
         openDateTime = localDate.toISOString();
       }
       if (enableClose && closeDate) {
         const localDate = new Date(`${closeDate}T${closeTime}:00`);
+        
+        // Validate that close date is not in the past
+        if (localDate < new Date()) {
+          toast.error("Close date cannot be in the past");
+          return;
+        }
+        
+        // Validate that close date is after open date (if both are set)
+        if (enableOpen && openDate && localDate <= new Date(`${openDate}T${openTime}:00`)) {
+          toast.error("Close date must be after open date");
+          return;
+        }
         closeDateTime = localDate.toISOString();
       }
 
@@ -185,6 +206,7 @@ export default function ReviewAndPublish() {
                   <input
                     type="date"
                     value={openDate}
+                    min={today}
                     onChange={(e) => setOpenDate(e.target.value)}
                     className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm"
                   />
@@ -224,6 +246,7 @@ export default function ReviewAndPublish() {
                   <input
                     type="date"
                     value={closeDate}
+                    min={today}
                     onChange={(e) => setCloseDate(e.target.value)}
                     className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm"
                   />
