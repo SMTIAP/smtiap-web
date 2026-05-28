@@ -22,11 +22,16 @@ router.post("/logout", protect, logout);
 router.get("/me", protect, getMe);
 router.get("/me/tenants", protect, getMyTenants);
 router.post("/forgot-password", forgotPassword);
-router.put("/reset-password/:token", resetPassword);
+router.put("/reset-password", resetPassword);
 
-router.get("/superadmin", protect, authorizeRoles("super_admin"), (req, res) => {
-  res.json({ message: "Welcome Admin Dashboard" });
-});
+router.get(
+  "/superadmin",
+  protect,
+  authorizeRoles("super_admin"),
+  (req, res) => {
+    res.json({ message: "Welcome Admin Dashboard" });
+  },
+);
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] }),

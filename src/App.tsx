@@ -89,10 +89,7 @@ export default function App() {
               <Route path="/take-survey/:surveyId" element={<TakeSurvey />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route
-                path="/reset-password/:token"
-                element={<ResetPassword />}
-              />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/super-admin-login" element={<SuperAdminLogin />} />
               <Route
                 path="/super-admin-dashboard"
@@ -102,7 +99,7 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
-              
+
               {/* Super Admin Template Management Routes */}
               <Route
                 path="/super-admin/templates"
@@ -166,8 +163,15 @@ export default function App() {
                       <SearchTemplate />
                     </ProtectedRoute>
                   }
-                /> 
-                <Route path="/template-preview" element={<ProtectedRoute><TemplatePreview /></ProtectedRoute>} />
+                />
+                <Route
+                  path="/template-preview"
+                  element={
+                    <ProtectedRoute>
+                      <TemplatePreview />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/subscription"
                   element={
@@ -225,13 +229,13 @@ export default function App() {
                   }
                 />
                 <Route
-  path="/survey-settings/:surveyId"
-  element={
-    <ProtectedRoute>
-      <SurveySettings />
-    </ProtectedRoute>
-  }
-/>
+                  path="/survey-settings/:surveyId"
+                  element={
+                    <ProtectedRoute>
+                      <SurveySettings />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/survey-results/:surveyId"
                   element={
@@ -241,14 +245,13 @@ export default function App() {
                   }
                 />
                 <Route
-  path="/scheduled-survey-preview"
-  element={
-    <ProtectedRoute>
-      <ScheduledSurveyPreview />
-    </ProtectedRoute>
-  }
-/>
-                 
+                  path="/scheduled-survey-preview"
+                  element={
+                    <ProtectedRoute>
+                      <ScheduledSurveyPreview />
+                    </ProtectedRoute>
+                  }
+                />
 
                 <Route
                   path="/response"
