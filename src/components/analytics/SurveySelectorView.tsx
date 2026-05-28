@@ -1,4 +1,5 @@
-import { BarChart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { BarChart, ArrowLeft } from "lucide-react";
 import SurveyCard from "../SurveyCard";
 
 interface SurveyListItem {
@@ -14,24 +15,42 @@ interface SurveySelectorViewProps {
 }
 
 export default function SurveySelectorView({ surveysLoading, finishedSurveys }: SurveySelectorViewProps) {
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-col min-h-screen bg-[#F7FAFC] dark:bg-[#0F172A] font-inter text-[#0D141C] dark:text-white transition-colors duration-300">
       <div className="sticky top-0 z-20 w-full">
         <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
         <nav className="flex py-3 px-10 border-b border-[#E5E8EB] dark:border-slate-700 bg-white dark:bg-slate-800 w-full transition-colors duration-300">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#E8EDF2] dark:bg-slate-700">
-              <BarChart size={20} className="text-[#0D141C] dark:text-white" />
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#E8EDF2] dark:bg-slate-700">
+                <BarChart size={20} className="text-[#0D141C] dark:text-white" />
+              </div>
+              <h1 className="text-3xl font-black tracking-tight text-[#0F172A] dark:text-white">
+                Survey Analytics
+              </h1>
             </div>
-            <h1 className="text-lg font-bold dark:text-white">Survey Analytics</h1>
+            {/* Circular Back Button - Top Right */}
+            <button
+              onClick={() => navigate("/admin")}
+              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+              title="Back to Dashboard"
+            >
+              <ArrowLeft size={16} />
+            </button>
           </div>
         </nav>
       </div>
 
       <main className="flex-1 max-w-300 mx-auto w-full px-6 py-10">
         <div className="mb-8">
-          <h2 className="text-3xl font-black tracking-tight text-[#0D141C] dark:text-white">Finished Surveys</h2>
-          <p className="text-[#4A739C] dark:text-slate-400 mt-2">Select a finished survey to view analytics and AI insights.</p>
+          <h2 className="text-3xl font-black tracking-tight text-[#0F172A] dark:text-white">
+            Finished Surveys
+          </h2>
+          <p className="text-[#64748B] dark:text-slate-400 text-sm mt-2">
+            Select a finished survey to view analytics and AI insights.
+          </p>
         </div>
 
         {surveysLoading ? (
