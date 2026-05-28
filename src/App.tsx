@@ -18,6 +18,7 @@ import TemplatePreview from "./pages/TemplatePreview";
 import CreateNewSurvey from "./pages/CreateNewSurvey";
 import AddQuestions from "./pages/AddQuestions";
 import ReviewAndPublish from "./pages/ReviewAndPublish";
+import SurveySettings from "./pages/SurveySettings";
 import Response from "./pages/Response";
 import Analytics from "./pages/Analytics";
 import RoleManagement from "./pages/RoleManagement";
@@ -223,6 +224,14 @@ export default function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+  path="/survey-settings/:surveyId"
+  element={
+    <ProtectedRoute>
+      <SurveySettings />
+    </ProtectedRoute>
+  }
+/>
                 <Route
                   path="/survey-results/:surveyId"
                   element={
