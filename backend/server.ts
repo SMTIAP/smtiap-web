@@ -36,6 +36,8 @@ import aiRoutes from "./routes/aiRoutes.js";
 import superAdminRoutes from "./routes/superAdminRoutes.js";
 import templateRoutes from "./routes/templateRoutes";
 import { createDefaultSuperAdmin } from "./utils/createDefaultSuperAdmin.js";
+import { startSurveyStatusJob } from "./jobs/updateSurveyStatus.js";  // ✅ ADD THIS
+
 const ensureCollections = async () => {
   await Promise.all([
     Tenant.createCollection(),
@@ -106,6 +108,10 @@ const startServer = async () => {
     await connectDb();
     await ensureCollections();
     await createDefaultSuperAdmin();
+
+    
+    startSurveyStatusJob();
+    console.log("✅ Survey status scheduler started");
 
     app.listen(env.port, () => {
       console.log(`PayHere backend running at http://localhost:${env.port}`);
