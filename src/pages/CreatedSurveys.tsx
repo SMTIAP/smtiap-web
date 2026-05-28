@@ -15,6 +15,7 @@ import {
   Download,
   Lock,
   CopyPlus,
+  Calendar,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useTenant } from "../contexts/TenantContext";
@@ -22,12 +23,14 @@ import { useTenant } from "../contexts/TenantContext";
 interface SurveyItem {
   _id: string;
   surveyTitle?: string;
-  status: "Draft" | "Running" | "Finished";
+  status: "Draft" | "Running" | "Finished" | "Scheduled";
   createdAt: string;
   updatedAt?: string;
   isPasswordProtected?: boolean;
   password?: string;
   pages?: any[];
+  scheduledOpen?: string;
+  scheduledClose?: string;
 }
 
 const DeleteConfirmModal = ({
@@ -376,7 +379,7 @@ export default function CreatedSurveys() {
         navigate("/add-questions", {
           state: { surveyId: survey._id, readOnly: true },
         });
-    } else if (survey.status === "Running" || survey.status === "Finished")
+    } else if (survey.status === "Running" || survey.status === "Finished" || survey.status === "Scheduled")
       navigate(`/survey-results/${survey._id}`);
   };
 
@@ -561,9 +564,9 @@ export default function CreatedSurveys() {
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - Added "Scheduled" tab */}
         <div className="flex bg-slate-100/80 dark:bg-slate-800 p-1.5 rounded-[1.25rem] self-end backdrop-blur-md border border-slate-200/50 dark:border-slate-700">
-          {["All", "Running", "Draft", "Finished"].map((tab) => (
+          {["All", "Running", "Draft", "Scheduled", "Finished"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -583,8 +586,39 @@ export default function CreatedSurveys() {
           {filteredSurveys.map((survey) => {
             const isRunning = survey.status === "Running";
             const isDraft = survey.status === "Draft";
+            const isScheduled = survey.status === "Scheduled";
+            const isFinished = survey.status === "Finished";
             const isCopying = copyingSurveyId === survey._id;
             const isCopied = copiedSurveyId === survey._id;
+
+            // Get status color
+            const getStatusColor = () => {
+              if (isRunning) return "bg-emerald-400";
+              if (isDraft) return "bg-amber-400";
+              if (isScheduled) return "bg-purple-400";
+              return "bg-rose-400";
+            };
+
+            const getIconBg = () => {
+              if (isRunning) return "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500";
+              if (isDraft) return "bg-amber-50 dark:bg-amber-900/30 text-amber-500";
+              if (isScheduled) return "bg-purple-50 dark:bg-purple-900/30 text-purple-500";
+              return "bg-rose-50 dark:bg-rose-900/30 text-rose-500";
+            };
+
+            const getIcon = () => {
+              if (isRunning) return <Activity size={28} />;
+              if (isDraft) return <Clock size={28} />;
+              if (isScheduled) return <Calendar size={28} />;
+              return <CheckCircle2 size={28} />;
+            };
+
+            const getBadgeClass = () => {
+              if (isRunning) return "text-emerald-600 border-emerald-100 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800 group-hover:bg-emerald-500 group-hover:text-white";
+              if (isDraft) return "text-amber-600 border-amber-100 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 group-hover:bg-amber-500 group-hover:text-white";
+              if (isScheduled) return "text-purple-600 border-purple-100 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800 group-hover:bg-purple-500 group-hover:text-white";
+              return "text-rose-600 border-rose-100 bg-rose-50 dark:bg-rose-900/20 dark:border-rose-800 group-hover:bg-rose-500 group-hover:text-white";
+            };
 
             return (
               <div
@@ -593,7 +627,7 @@ export default function CreatedSurveys() {
                 className="group relative flex flex-col items-center p-8 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-2 cursor-pointer aspect-[3/4] overflow-hidden"
               >
                 <div
-                  className={`absolute top-0 left-0 w-full h-1.5 ${isRunning ? "bg-emerald-400" : isDraft ? "bg-amber-400" : "bg-rose-400"}`}
+                  className={`absolute top-0 left-0 w-full h-1.5 ${getStatusColor()}`}
                 />
 
                 <div className="flex justify-between items-center w-full mb-4">
@@ -646,21 +680,9 @@ export default function CreatedSurveys() {
 
                 <div className="flex flex-col items-center justify-center flex-grow text-center w-full">
                   <div
-                    className={`w-14 h-14 rounded-3xl flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ${
-                      isRunning
-                        ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500"
-                        : isDraft
-                          ? "bg-amber-50 dark:bg-amber-900/30 text-amber-500"
-                          : "bg-rose-50 dark:bg-rose-900/30 text-rose-500"
-                    }`}
+                    className={`w-14 h-14 rounded-3xl flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ${getIconBg()}`}
                   >
-                    {isRunning ? (
-                      <Activity size={28} />
-                    ) : isDraft ? (
-                      <Clock size={28} />
-                    ) : (
-                      <CheckCircle2 size={28} />
-                    )}
+                    {getIcon()}
                   </div>
                   <h3 className="text-slate-800 dark:text-white font-black text-lg leading-tight line-clamp-2 transition-colors duration-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
                     {survey.surveyTitle || "Untitled Survey"}
@@ -668,13 +690,7 @@ export default function CreatedSurveys() {
                 </div>
 
                 <div
-                  className={`mt-6 px-6 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] border-2 transition-all duration-500 ${
-                    isRunning
-                      ? "text-emerald-600 border-emerald-100 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800 group-hover:bg-emerald-500 group-hover:text-white group-hover:border-emerald-500"
-                      : isDraft
-                        ? "text-amber-600 border-amber-100 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 group-hover:bg-amber-500 group-hover:text-white group-hover:border-amber-500"
-                        : "text-rose-600 border-rose-100 bg-rose-50 dark:bg-rose-900/20 dark:border-rose-800 group-hover:bg-rose-500 group-hover:text-white group-hover:border-rose-500"
-                  }`}
+                  className={`mt-6 px-6 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] border-2 transition-all duration-500 ${getBadgeClass()}`}
                 >
                   {survey.status}
                 </div>
