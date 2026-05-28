@@ -166,9 +166,11 @@ export function useAnalyticsData(
               ? latestResult.summary
               : null,
           );
+          const restoreLimit =
+            responseDocs.length < 5 ? Math.min(responseDocs.length, 3) : 5;
           setKeywords(
             Array.isArray(latestResult.topKeywords)
-              ? latestResult.topKeywords.slice(0, 5)
+              ? latestResult.topKeywords.slice(0, restoreLimit)
               : [],
           );
         }
@@ -199,6 +201,9 @@ export function useAnalyticsData(
           "VITE_GEMINI_API_KEY is not set in environment variables.",
         );
 
+      // Determine how many keywords to extract based on response count
+      const keywordLimit = totalResponses < 5 ? Math.min(totalResponses, 3) : 5;
+
       // Initialise Gemini client and select model
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -221,11 +226,11 @@ ${aiInputLines.join("\n")}
 
 Instructions:
 1. Provide a concise summary grounded only in the provided responses.
-2. Identify top 5 recurring keywords/topics with estimated counts.
+2. Identify top ${keywordLimit} recurring keywords/topics with estimated counts.
 3. Align findings with the survey questions and response patterns.
 
 Return a purely JSON object (no markdown formatting, no code fence) with this structure:
-{"summary":"...","top_5_keywords":[{"keyword":"Quality","count":15}]}
+{"summary":"...","top_keywords":[{"keyword":"Quality","count":15}]}
 `;
 
       // Send prompt to Gemini; strip any markdown code fences from the response
@@ -238,13 +243,16 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
 
       const analysis = JSON.parse(text) as {
         summary?: unknown;
+        top_keywords?: unknown;
         top_5_keywords?: unknown;
       };
 
-      // Normalise keyword array with type-safe filtering
-      const rawKeywords = Array.isArray(analysis.top_5_keywords)
-        ? analysis.top_5_keywords
-        : [];
+      // Normalise keyword array with type-safe filtering (support both keys for backward compat)
+      const rawKeywords = Array.isArray(analysis.top_keywords)
+        ? analysis.top_keywords
+        : Array.isArray(analysis.top_5_keywords)
+          ? analysis.top_5_keywords
+          : [];
       const normalizedKeywords = rawKeywords
         .filter(
           (item): item is { keyword?: unknown; count?: unknown } =>
@@ -257,14 +265,12 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
           keyword: String(item.keyword).trim(),
           count: Number(item.count ?? 0),
         }))
-        .slice(0, 5);
+        .slice(0, keywordLimit);
 
       // Persist the AI result to the backend so it loads automatically next visit
       const saveResponse = await fetch(`${apiBaseUrl}/api/analytics`, {
         method: "POST",
-        headers: { "Content-Type": "application/json",
-          ...authHeaders(),
-         },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({
           surveyId,
           summary: String(analysis.summary ?? "").trim(),
