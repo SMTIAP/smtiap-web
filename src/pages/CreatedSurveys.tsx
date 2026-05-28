@@ -635,7 +635,8 @@ export default function CreatedSurveys() {
                     {new Date(survey.createdAt).toLocaleDateString("en-GB")}
                   </span>
                   <div className="flex items-center gap-1">
-                    {isRunning && (
+                    {/* Share button - now shows for Running AND Scheduled */}
+                    {(isRunning || isScheduled) && (
                       <button
                         type="button"
                         onClick={(e) => handleShareClick(e, survey)}
