@@ -63,7 +63,12 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       const res = await api.get("/me");
       if (!mountedRef.current) return;
       const userTenants: TenantInfo[] = res.data.tenants ?? [];
-      setTenants(userTenants);
+      // Deduplicate by tenantId._id — keep only the LAST occurrence (latest role)
+      const seen = new Map<string, TenantInfo>();
+      for (const t of userTenants) {
+        seen.set(t.tenantId._id, t);
+      }
+      setTenants(Array.from(seen.values()));
 
       // Restore saved active tenant from localStorage.
       // A value of "__system__" means "My Account" (system context).
