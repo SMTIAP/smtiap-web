@@ -16,6 +16,7 @@ import {
   Lock,
   CopyPlus,
   Calendar,
+  Settings,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useTenant } from "../contexts/TenantContext";
@@ -639,7 +640,7 @@ export default function CreatedSurveys() {
                     {new Date(survey.createdAt).toLocaleDateString("en-GB")}
                   </span>
                   <div className="flex items-center gap-1">
-                    {/* Share button - now shows for Running AND Scheduled */}
+                    {/* Share button - for Running and Scheduled */}
                     {(isRunning || isScheduled) && (
                       <button
                         type="button"
@@ -648,6 +649,21 @@ export default function CreatedSurveys() {
                         title="Share survey"
                       >
                         <Share2 size={13} />
+                      </button>
+                    )}
+
+                    {/* Settings button - for Scheduled surveys */}
+                    {isScheduled && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/survey-settings/${survey._id}`);
+                        }}
+                        className="w-8 h-8 rounded-full bg-white/95 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all flex items-center justify-center"
+                        title="Survey Settings"
+                      >
+                        <Settings size={13} />
                       </button>
                     )}
 
