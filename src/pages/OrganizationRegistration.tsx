@@ -12,9 +12,47 @@ export default function OrganizationRegistration() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Sonner-based confirmation dialog (returns a promise)
+  const confirmAsync = (message: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      toast.custom(
+        (t) => (
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 w-80">
+            <p className="text-base text-gray-800 dark:text-slate-200 mb-5 leading-relaxed">
+              {message}
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  toast.dismiss(t);
+                  resolve(false);
+                }}
+                className="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  toast.dismiss(t);
+                  resolve(true);
+                }}
+                className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        ),
+        { duration: Infinity, position: "bottom-right" },
+      );
+    });
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+
 
   const handleSubmit = async () => {
     const newErrors: Record<string, string> = {};
@@ -32,6 +70,13 @@ export default function OrganizationRegistration() {
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
+
+    // Confirmation AFTER validation
+    const confirmed = await confirmAsync(
+      `Create Organization "${formData.name}"?`
+    );
+
+  if (!confirmed) return;
 
     try {
       const token = localStorage.getItem("token");
