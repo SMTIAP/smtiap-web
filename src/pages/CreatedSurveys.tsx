@@ -379,8 +379,12 @@ export default function CreatedSurveys() {
         navigate("/add-questions", {
           state: { surveyId: survey._id, readOnly: true },
         });
-    } else if (survey.status === "Running" || survey.status === "Finished" || survey.status === "Scheduled")
+    } else if (survey.status === "Scheduled") {
+      // Navigate to scheduled preview page for scheduled surveys
+      navigate("/scheduled-survey-preview", { state: { survey } });
+    } else if (survey.status === "Running" || survey.status === "Finished") {
       navigate(`/survey-results/${survey._id}`);
+    }
   };
 
   const handleShareClick = (e: React.MouseEvent, survey: SurveyItem) => {

@@ -32,6 +32,7 @@ import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import ShareSurvey from "./pages/ShareSurvey";
 import TakeSurvey from "./pages/TakeSurvey";
 import SurveyResults from "./pages/SurveyResults";
+import ScheduledSurveyPreview from "./pages/ScheduledSurveyPreview";
 import OrganizationRegistration from "./pages/OrganizationRegistration.tsx";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SuperAdminLogin from "./pages/SuperAdminLogin.tsx";
@@ -230,6 +231,16 @@ export default function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+  path="/scheduled-survey-preview"
+  element={
+    <ProtectedRoute>
+      <ScheduledSurveyPreview />
+    </ProtectedRoute>
+  }
+/>
+                 
+
                 <Route
                   path="/response"
                   element={
