@@ -77,23 +77,12 @@ export default function ReviewAndPublish() {
       const data = await res.json();
       const savedSurvey = data.survey;
 
-      if (status === "Running") {
+      if (status === "Running" || status === "Scheduled") {
+        // Both Running and Scheduled go to share page
         navigate("/share-survey", {
           state: {
             surveyId: savedSurvey._id,
             surveyTitle: savedSurvey.surveyTitle,
-          },
-        });
-      } else if (status === "Scheduled") {
-        toast.success("Survey scheduled successfully!");
-        navigate("/created-surveys", {
-          state: {
-            newSurvey: {
-              id: savedSurvey._id,
-              date: new Date().toLocaleDateString("en-GB"),
-              title: savedSurvey.surveyTitle,
-              status: "Scheduled",
-            },
           },
         });
       } else {
