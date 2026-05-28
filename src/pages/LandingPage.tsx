@@ -82,14 +82,14 @@ export default function LandingPage() {
           </motion.div>
 
           {/* Right Visual Dashboard Stack */}
-          <div className="relative min-h-[420px] sm:min-h-[500px] flex items-center justify-center px-2 sm:px-0">
-            <div className="relative w-full h-full max-w-[500px]">
+          <div className="relative min-h-[420px] sm:min-h-[500px] flex items-center justify-center">
+            <div className="relative w-full max-w-[500px]">
               {/* Template Card */}
               <motion.div
                 initial={{ opacity: 0, y: 20, rotate: -10 }}
                 animate={{ opacity: 1, y: 0, rotate: -4 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
-                className="absolute top-[-20px] left-[-20px] sm:left-[-40px] w-[220px] sm:w-[260px] p-4 sm:p-5 rounded-[20px] sm:rounded-[24px] z-10 bg-white/45 dark:bg-slate-800/60 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 shadow-2xl"
+                className="absolute top-[-20px] left-0 sm:left-[-40px] w-[200px] sm:w-[260px] p-4 sm:p-5 rounded-[20px] sm:rounded-[24px] z-10 bg-white/45 dark:bg-slate-800/60 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 shadow-2xl"
               >
                 <div className="text-[11px] font-[800] text-[#5C38E1] dark:text-purple-400 uppercase mb-4 tracking-widest">
                   Featured Templates
@@ -117,12 +117,12 @@ export default function LandingPage() {
                 transition={{ duration: 0.8 }}
                 className="relative w-full p-5 sm:p-8 rounded-[28px] sm:rounded-[40px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] z-20 bg-white/50 dark:bg-slate-800/70 backdrop-blur-2xl border border-white/60 dark:border-slate-700/60 overflow-hidden"
               >
-                <div className="flex justify-between items-start mb-6 sm:mb-8">
+                <div className="flex justify-between items-start mb-6 sm:mb-8 gap-2">
                   <div className="space-y-1">
                     <h3 className="font-[800] text-[#1e1b4b] dark:text-slate-100 text-[16px] sm:text-[18px]">
                       Analyzed Results
                     </h3>
-                    <p className="text-[12px] text-slate-500 dark:text-slate-400">
+                    <p className="text-[11px] sm:text-[12px] text-slate-500 dark:text-slate-400">
                       Auto-generated from 1,240 responses
                     </p>
                   </div>
@@ -141,7 +141,7 @@ export default function LandingPage() {
                   <div className="w-8 h-8 rounded-lg bg-[#5C38E1]/10 dark:bg-purple-500/20 flex items-center justify-center shrink-0">
                     <Sparkles className="w-5 h-5 text-[#5C38E1] dark:text-purple-400" />
                   </div>
-                  <p className="text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">
+                  <p className="text-[12px] sm:text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">
                     <span className="font-bold">AI Observation:</span> 72% of
                     users mentioned "ease of use" as the primary reason for
                     retention.
