@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Search, Plus, Sparkles, Loader2, X,
+  Search, Plus, Sparkles, Loader2, X, ArrowLeft,
   Utensils, Coffee, Heart, GraduationCap, Users,
   Star, Building2, Mic, Zap, ShoppingBag, ChevronRight,
 } from "lucide-react";
@@ -248,7 +248,17 @@ export default function SearchTemplate() {
             <h1 className="text-[#0F172A] dark:text-white text-3xl font-black tracking-tight">
               Explore Templates
             </h1>
-            <span className="text-slate-400 text-sm">{filteredTemplates.length} templates</span>
+            <div className="flex items-center gap-3">
+              <span className="text-slate-400 text-sm">{filteredTemplates.length} templates</span>
+              {/* Circular Back Button - Top Right */}
+              <button
+                onClick={() => navigate("/admin")}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+                title="Back to Dashboard"
+              >
+                <ArrowLeft size={16} />
+              </button>
+            </div>
           </div>
 
           {/* Template Grid */}

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Check, AlertCircle } from "lucide-react";
-import BackButton from "../components/BackButton";
+import { useNavigate } from "react-router-dom";
+import { Check, AlertCircle, ArrowLeft } from "lucide-react";
 import { usePayHere } from "../hooks/usePayHere";
 
 interface PricingPlan {
@@ -48,6 +48,7 @@ const plans: PricingPlan[] = [
 ];
 
 export default function Subscription() {
+  const navigate = useNavigate();
   const [isYearly, setIsYearly] = useState(false);
   const { startPayment, paymentStatus, isLoading } = usePayHere();
 
@@ -89,19 +90,24 @@ export default function Subscription() {
     <div className="flex flex-col min-h-screen bg-white dark:bg-[#0F172A] font-inter text-[#141217] dark:text-white transition-colors duration-300">
       <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
       <main className="flex-1 flex flex-col items-center py-10 px-4 md:px-20">
-        <div className="w-full max-w-[960px] flex justify-start mb-6">
-          <BackButton to="/admin" />
-        </div>
         <div className="max-w-[960px] w-full flex flex-col items-center">
-          <span className="text-[#141217] dark:text-white text-base font-bold tracking-widest uppercase mb-4">
-            Subscription
-          </span>
-          <h1 className="text-4xl md:text-5xl font-black text-center mb-6 dark:text-white">
-            Upgrade to enjoy extra features now
-          </h1>
-          <p className="text-gray-600 dark:text-slate-400 text-lg text-center max-w-2xl mb-12">
-            Choose the plan that's right for you. Pay for a monthly subscription
-            or yearly.
+          {/* Header with back button - title centered */}
+          <div className="w-full relative flex items-center justify-center mb-2">
+            <h1 className="text-[#0F172A] dark:text-white text-3xl font-black tracking-tight">
+              Subscription
+            </h1>
+            {/* Circular Back Button - Top Right Absolute */}
+            <button
+              onClick={() => navigate("/admin")}
+              className="absolute right-0 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+              title="Back to Dashboard"
+            >
+              <ArrowLeft size={16} />
+            </button>
+          </div>
+
+          <p className="text-[#64748B] dark:text-slate-400 text-sm text-center max-w-2xl mb-12 mt-2">
+            Choose the plan that's right for you. Pay for a monthly subscription or yearly.
           </p>
 
           {paymentStatus.status === "success" && (
