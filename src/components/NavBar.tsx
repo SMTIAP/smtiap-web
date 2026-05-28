@@ -15,6 +15,7 @@ import {
   Check,
   Building2,
   User,
+  Loader2,
   type LucideIcon,
 } from "lucide-react";
 import api from "../api/api";
@@ -68,6 +69,10 @@ export default function NavBar() {
   } | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  // Local tenant cache from /me so roles appear immediately after login
+  const [localTenants, setLocalTenants] = useState<any[]>([]);
+  // Loading state — true until /me resolves
+  const [pageLoading, setPageLoading] = useState(true);
 
   const { darkMode, toggleDarkMode } = useDarkMode();
   const {
@@ -90,6 +95,11 @@ export default function NavBar() {
             email: res.data.email,
             role: res.data.role,
           });
+          // Deduplicate by tenantId._id — keep only the last occurrence (latest role)
+          const raw: any[] = res.data.tenants ?? [];
+          const seen = new Map<string, any>();
+          for (const t of raw) seen.set(t.tenantId._id, t);
+          setLocalTenants(Array.from(seen.values()));
         }
       })
       .catch(() => {
@@ -97,6 +107,9 @@ export default function NavBar() {
           setIsAuthenticated(false);
           setUser(null);
         }
+      })
+      .finally(() => {
+        if (mounted) setPageLoading(false);
       });
     return () => {
       mounted = false;
@@ -126,7 +139,7 @@ export default function NavBar() {
     setIsAuthenticated(false);
     setUser(null);
     setDropdownOpen(false);
-    navigate("/auth");
+    window.location.href = "/auth";
   };
 
   const initials = user?.username
@@ -164,6 +177,19 @@ export default function NavBar() {
   };
 
   const links = roleLinks[effectiveRole] ?? roleLinks.admin;
+
+  if (pageLoading) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white dark:bg-[#0F172A]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 size={36} className="animate-spin text-[#5C38E1]" />
+          <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Loading…
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <nav
@@ -338,7 +364,8 @@ export default function NavBar() {
                     </div>
 
                     {/* Context Switcher — always shown when user has tenants */}
-                    {tenants.length > 0 && (
+                    {(localTenants.length > 0 ? localTenants : tenants).length >
+                      0 && (
                       <div className="px-2 pt-2 pb-1 border-b border-slate-100 dark:border-slate-700">
                         <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                           Switch Role
@@ -373,34 +400,39 @@ export default function NavBar() {
                         </button>
 
                         {/* Tenant entries */}
-                        {tenants.map((t) => (
-                          <button
-                            key={t.tenantId._id}
-                            onClick={() => {
-                              setActiveTenant(t);
-                              setDropdownOpen(false);
-                              window.location.href = getDashboardRoute(t.role);
-                            }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150 mb-0.5 ${
-                              !isSystemContext &&
-                              activeTenant?.tenantId._id === t.tenantId._id
-                                ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700"
-                                : "text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-700 dark:hover:text-indigo-300 hover:border-indigo-100 dark:hover:border-indigo-800 border border-transparent hover:scale-[1.01]"
-                            }`}
-                          >
-                            <Building2 className="w-3.5 h-3.5 shrink-0" />
-                            <span className="truncate flex-1 text-left">
-                              {t.tenantId.name}
-                            </span>
-                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase shrink-0">
-                              {roleLabels[t.role] || t.role}
-                            </span>
-                            {!isSystemContext &&
-                              activeTenant?.tenantId._id === t.tenantId._id && (
-                                <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                              )}
-                          </button>
-                        ))}
+                        {(localTenants.length > 0 ? localTenants : tenants).map(
+                          (t) => (
+                            <button
+                              key={t.tenantId._id}
+                              onClick={() => {
+                                setActiveTenant(t);
+                                setDropdownOpen(false);
+                                window.location.href = getDashboardRoute(
+                                  t.role,
+                                );
+                              }}
+                              className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150 mb-0.5 ${
+                                !isSystemContext &&
+                                activeTenant?.tenantId._id === t.tenantId._id
+                                  ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700"
+                                  : "text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-700 dark:hover:text-indigo-300 hover:border-indigo-100 dark:hover:border-indigo-800 border border-transparent hover:scale-[1.01]"
+                              }`}
+                            >
+                              <Building2 className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate flex-1 text-left">
+                                {t.tenantId.name}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase shrink-0">
+                                {roleLabels[t.role] || t.role}
+                              </span>
+                              {!isSystemContext &&
+                                activeTenant?.tenantId._id ===
+                                  t.tenantId._id && (
+                                  <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                                )}
+                            </button>
+                          ),
+                        )}
                       </div>
                     )}
 
