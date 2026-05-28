@@ -349,6 +349,8 @@ export default function NavBar() {
                           onClick={() => {
                             clearActiveTenant();
                             setDropdownOpen(false);
+                            const role = user?.role ?? "admin";
+                            window.location.href = getDashboardRoute(role);
                           }}
                           className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150 mb-0.5 ${
                             isSystemContext
@@ -377,6 +379,7 @@ export default function NavBar() {
                             onClick={() => {
                               setActiveTenant(t);
                               setDropdownOpen(false);
+                              window.location.href = getDashboardRoute(t.role);
                             }}
                             className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150 mb-0.5 ${
                               !isSystemContext &&
