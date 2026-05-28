@@ -6,6 +6,10 @@ const transporter = nodemailer.createTransport({
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
+    
+    tls: {
+        rejectUnauthorized: false
+    }
 });
 
 export const sendEmail = async (
@@ -14,7 +18,7 @@ export const sendEmail = async (
     html: string
 ) => {
     await transporter.sendMail({
-        from: `"SMTIAP System" <${process.env.EMAIL_USER}>`,
+        from: `"MTSP System" <${process.env.EMAIL_USER}>`,
         to,
         subject,
         html,
