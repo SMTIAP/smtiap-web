@@ -4,38 +4,92 @@ import {
   FileChartColumnIncreasing,
   LogOut,
   LayoutDashboard,
+  LayoutGrid,
+  ClipboardList,
+  FileText,
+  BarChart3,
+  CreditCard,
+  Users,
+  Sun,
+  Moon,
+  Check,
+  Building2,
+  User,
+  type LucideIcon,
 } from "lucide-react";
 import api from "../api/api";
+import { useDarkMode } from "../App";
+import { useTenant } from "../contexts/TenantContext";
 
-const links = [
-  { to: "/admin", label: "Dashboard" },
-  { to: "/created-surveys", label: "Surveys" },
-  { to: "/templates", label: "Templates" },
-  { to: "/analytics", label: "Analytics" },
-  { to: "/subscription", label: "Subscription" },
-  { to: "/role-management", label: "Employees" },
-];
+const roleLinks: Record<
+  string,
+  { to: string; label: string; icon: LucideIcon }[]
+> = {
+  super_admin: [
+    { to: "/admin", label: "Dashboard", icon: LayoutGrid },
+    { to: "/created-surveys", label: "Surveys", icon: ClipboardList },
+    { to: "/templates", label: "Templates", icon: FileText },
+    { to: "/analytics", label: "Analytics", icon: BarChart3 },
+    { to: "/subscription", label: "Subscription", icon: CreditCard },
+    { to: "/role-management", label: "Employees", icon: Users },
+  ],
+  admin: [
+    { to: "/admin", label: "Dashboard", icon: LayoutGrid },
+    { to: "/created-surveys", label: "Surveys", icon: ClipboardList },
+    { to: "/templates", label: "Templates", icon: FileText },
+    { to: "/analytics", label: "Analytics", icon: BarChart3 },
+    { to: "/subscription", label: "Subscription", icon: CreditCard },
+    { to: "/role-management", label: "Employees", icon: Users },
+  ],
+  creator: [
+    { to: "/admin", label: "Dashboard", icon: LayoutGrid },
+    { to: "/created-surveys", label: "Surveys", icon: ClipboardList },
+    { to: "/templates", label: "Templates", icon: FileText },
+    { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  ],
+  billing_manager: [
+    { to: "/subscription", label: "Billing", icon: CreditCard },
+  ],
+  viewer: [
+    { to: "/admin", label: "Dashboard", icon: LayoutGrid },
+    { to: "/created-surveys", label: "Surveys", icon: ClipboardList },
+  ],
+};
 
 export default function NavBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const isLanding = location.pathname === "/";
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<{ username: string; email: string } | null>(
-    null,
-  );
+  const [user, setUser] = useState<{
+    username: string;
+    email: string;
+    role?: string;
+  } | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const { darkMode, toggleDarkMode } = useDarkMode();
+  const {
+    tenants,
+    activeTenant,
+    setActiveTenant,
+    clearActiveTenant,
+    isSystemContext,
+  } = useTenant();
+
   useEffect(() => {
     let mounted = true;
-
     api
       .get("/me")
       .then((res) => {
         if (mounted) {
           setIsAuthenticated(true);
-          setUser({ username: res.data.username, email: res.data.email });
+          setUser({
+            username: res.data.username,
+            email: res.data.email,
+            role: res.data.role,
+          });
         }
       })
       .catch(() => {
@@ -44,13 +98,11 @@ export default function NavBar() {
           setUser(null);
         }
       });
-
     return () => {
       mounted = false;
     };
   }, [location.pathname]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
@@ -81,12 +133,47 @@ export default function NavBar() {
     ? user.username.slice(0, 2).toUpperCase()
     : "?";
 
+  const roleLabels: Record<string, string> = {
+    super_admin: "Super Admin",
+    admin: "Admin",
+    viewer: "Viewer",
+    creator: "Creator",
+    billing_manager: "Billing Manager",
+  };
+
+  // Resolve effective role:
+  // - System context (no tenant) → user.role from the User model
+  // - Tenant context → activeTenant.role from UserTenantRole
+  const effectiveRole = isSystemContext
+    ? (user?.role ?? "admin")
+    : (activeTenant?.role ?? user?.role ?? "admin");
+
+  const getDashboardRoute = (role?: string) => {
+    switch (role) {
+      case "creator":
+      case "creater":
+        return "/admin";
+      case "billing_manager":
+        return "/subscription";
+      case "super_admin":
+        return "/super-admin-dashboard";
+      case "admin":
+      default:
+        return "/admin";
+    }
+  };
+
+  const links = roleLinks[effectiveRole] ?? roleLinks.admin;
+
   return (
-    <nav className="sticky top-0 z-[100] bg-[#F4F6FA]/80 backdrop-blur-xl border-b border-white/30 h-[70px]">
+    <nav
+      className={`sticky top-0 z-100 w-full h-17.5 transition-colors duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.08)] ${isLanding ? "bg-white dark:bg-[#0F172A]" : "bg-white dark:bg-[#0F172A] dark:shadow-[0_1px_3px_rgba(0,0,0,0.4)]"}`}
+    >
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+        {/* Logo */}
         <Link
           to={isAuthenticated ? "/admin" : "/"}
-          className="flex items-center gap-2 text-[20px] font-[900] tracking-tighter font-manrope"
+          className="flex items-center gap-2 text-[20px] font-black tracking-tighter font-manrope text-[#0F172A] dark:text-white"
         >
           <span className="w-8 h-8 bg-[#5C38E1] rounded-lg rotate-12 flex items-center justify-center shadow-lg shadow-[#5C38E1]/20">
             <FileChartColumnIncreasing className="w-5 h-5 text-white" />
@@ -94,20 +181,22 @@ export default function NavBar() {
           MTSP
         </Link>
 
+        {/* Nav Links */}
         {isAuthenticated && !isLanding && (
-          <div className="hidden md:flex items-center gap-5">
+          <div className="hidden md:flex items-center gap-1">
             {links.map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}
                 className={({ isActive }) =>
-                  `text-[14px] font-[700] transition-colors ${
+                  `flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-bold transition-all ${
                     isActive
-                      ? "text-[#5C38E1]"
-                      : "text-[#475569] hover:text-[#5C38E1]"
+                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 shadow-sm"
+                      : "text-[#64748B] dark:text-slate-400 hover:text-[#334155] dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-800"
                   }`
                 }
               >
+                <link.icon size={18} />
                 {link.label}
               </NavLink>
             ))}
@@ -115,29 +204,44 @@ export default function NavBar() {
         )}
 
         <div className="flex items-center gap-3">
+          {/* Dark Mode Toggle */}
+          <button
+            onClick={toggleDarkMode}
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+            title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {darkMode ? (
+              <Sun size={16} className="text-yellow-400" />
+            ) : (
+              <Moon size={16} className="text-slate-500" />
+            )}
+          </button>
+
+          {/* Landing page auth buttons */}
           {isLanding && !isAuthenticated && (
             <>
               <Link
                 to="/auth"
-                className="text-[14px] font-[700] text-[#475569] hover:text-[#5C38E1] transition-colors"
+                className="text-[14px] font-bold text-[#475569] dark:text-slate-300 hover:text-[#5C38E1] dark:hover:text-purple-400 transition-colors"
               >
                 Sign In
               </Link>
               <Link
                 to="/auth"
-                className="bg-gradient-to-br from-[#5C38E1] to-[#8E6BFF] text-white px-5 py-2 rounded-full font-[700] text-[13px] shadow-xl shadow-purple-500/20 hover:scale-105 transition-transform"
+                className="bg-linear-to-br from-[#5C38E1] to-[#8E6BFF] text-white px-5 py-2 rounded-full font-bold text-[13px] shadow-xl shadow-purple-500/20 hover:scale-105 transition-transform"
               >
                 Free Register
               </Link>
             </>
           )}
 
+          {/* Authenticated user */}
           {isAuthenticated && user && (
             <div className="flex items-center gap-3">
               {isLanding && (
                 <Link
                   to="/admin"
-                  className="p-2 rounded-full hover:bg-slate-100 transition-colors"
+                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                   title="Go to Dashboard"
                 >
                   <LayoutDashboard className="w-5 h-5 text-[#5C38E1]" />
@@ -148,23 +252,30 @@ export default function NavBar() {
                   onClick={() => setDropdownOpen((prev) => !prev)}
                   className="flex items-center gap-2 focus:outline-none"
                 >
-                  <span className="w-9 h-9 rounded-full bg-gradient-to-br from-[#5C38E1] to-[#8E6BFF] flex items-center justify-center text-white text-[13px] font-[800] shadow-md select-none">
+                  <span className="w-9 h-9 rounded-full bg-linear-to-br from-[#5C38E1] to-[#8E6BFF] flex items-center justify-center text-white text-[13px] font-extrabold shadow-md select-none">
                     {initials}
                   </span>
-                  <span className="hidden md:block text-[14px] font-[700] text-[#1e1b4b] max-w-[120px] truncate">
-                    {user.username}
+                  <span className="hidden md:flex flex-col items-start">
+                    <span className="text-[14px] font-bold text-[#1e1b4b] dark:text-white max-w-30 truncate leading-tight">
+                      {user.username}
+                    </span>
+                    <span className="text-[10px] font-semibold text-indigo-500 dark:text-indigo-400 truncate max-w-30 leading-tight">
+                      {isSystemContext
+                        ? roleLabels[user?.role ?? ""] || user?.role || "Admin"
+                        : `${roleLabels[activeTenant?.role ?? ""] || activeTenant?.role || ""} · ${activeTenant?.tenantId.name || ""}`}
+                    </span>
                   </span>
                 </button>
 
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50">
-                    <div className="px-4 py-3 border-b border-slate-100">
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 z-50">
+                    <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
                       <div className="flex items-center gap-3">
-                        <span className="w-10 h-10 rounded-full bg-gradient-to-br from-[#5C38E1] to-[#8E6BFF] flex items-center justify-center text-white text-[14px] font-[800] shrink-0">
+                        <span className="w-10 h-10 rounded-full bg-linear-to-br from-[#5C38E1] to-[#8E6BFF] flex items-center justify-center text-white text-[14px] font-extrabold shrink-0">
                           {initials}
                         </span>
                         <div className="overflow-hidden">
-                          <p className="text-[13px] font-[700] text-[#1e1b4b] truncate">
+                          <p className="text-[13px] font-bold text-[#1e1b4b] dark:text-white truncate">
                             {user.username}
                           </p>
                           <p className="text-[11px] text-slate-400 truncate">
@@ -172,11 +283,142 @@ export default function NavBar() {
                           </p>
                         </div>
                       </div>
+
+                      {/* Active Context Badge */}
+                      <div className="mt-2 flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
+                        {isSystemContext ? (
+                          <>
+                            <User className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                            <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 truncate">
+                              My Account
+                            </span>
+                            <span className="ml-auto text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase">
+                              {roleLabels[user?.role ?? ""] ||
+                                user?.role ||
+                                "Admin"}
+                            </span>
+                          </>
+                        ) : activeTenant ? (
+                          <>
+                            <Building2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                            <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 truncate">
+                              {activeTenant.tenantId.name}
+                            </span>
+                            <span className="ml-auto text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase">
+                              {roleLabels[activeTenant.role] ||
+                                activeTenant.role}
+                            </span>
+                          </>
+                        ) : null}
+                      </div>
                     </div>
+
+                    {/* Dark mode toggle inside dropdown */}
+                    <div className="px-2 pt-2 pb-1 border-b border-slate-100 dark:border-slate-700">
+                      <button
+                        onClick={toggleDarkMode}
+                        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          {darkMode ? (
+                            <Sun className="w-4 h-4 text-yellow-400" />
+                          ) : (
+                            <Moon className="w-4 h-4 text-slate-400" />
+                          )}
+                          {darkMode ? "Light Mode" : "Dark Mode"}
+                        </span>
+                        <span
+                          className={`w-8 h-4 rounded-full relative transition-all duration-200 ${darkMode ? "bg-indigo-600" : "bg-slate-200"}`}
+                        >
+                          <span
+                            className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-200 shadow-sm ${darkMode ? "left-4" : "left-0.5"}`}
+                          />
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Context Switcher — always shown when user has tenants */}
+                    {tenants.length > 0 && (
+                      <div className="px-2 pt-2 pb-1 border-b border-slate-100 dark:border-slate-700">
+                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                          Switch Role
+                        </div>
+
+                        {/* "My Account" — system-level context */}
+                        <button
+                          onClick={() => {
+                            clearActiveTenant();
+                            setDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150 mb-0.5 ${
+                            isSystemContext
+                              ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700"
+                              : "text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-700 dark:hover:text-indigo-300 hover:border-indigo-100 dark:hover:border-indigo-800 border border-transparent hover:scale-[1.01]"
+                          }`}
+                        >
+                          <User className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate flex-1 text-left">
+                            My Account
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase shrink-0">
+                            {roleLabels[user?.role ?? ""] ||
+                              user?.role ||
+                              "Admin"}
+                          </span>
+                          {isSystemContext && (
+                            <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                          )}
+                        </button>
+
+                        {/* Tenant entries */}
+                        {tenants.map((t) => (
+                          <button
+                            key={t.tenantId._id}
+                            onClick={() => {
+                              setActiveTenant(t);
+                              setDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150 mb-0.5 ${
+                              !isSystemContext &&
+                              activeTenant?.tenantId._id === t.tenantId._id
+                                ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700"
+                                : "text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-700 dark:hover:text-indigo-300 hover:border-indigo-100 dark:hover:border-indigo-800 border border-transparent hover:scale-[1.01]"
+                            }`}
+                          >
+                            <Building2 className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate flex-1 text-left">
+                              {t.tenantId.name}
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase shrink-0">
+                              {roleLabels[t.role] || t.role}
+                            </span>
+                            {!isSystemContext &&
+                              activeTenant?.tenantId._id === t.tenantId._id && (
+                                <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                              )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Dashboard link */}
+                    <div className="px-2 pt-2 pb-1 border-b border-slate-100 dark:border-slate-700">
+                      <button
+                        onClick={() => {
+                          setDropdownOpen(false);
+                          navigate(getDashboardRoute(effectiveRole));
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors border-2 border-transparent hover:border-indigo-100 dark:hover:border-indigo-800"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        {roleLabels[effectiveRole] || "User"} Dashboard
+                      </button>
+                    </div>
+
                     <div className="px-2 pt-1">
                       <button
                         onClick={handleSignOut}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-[600] text-red-500 hover:bg-red-50 transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
                         Sign Out

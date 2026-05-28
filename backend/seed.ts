@@ -1,289 +1,220 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
 import mongoose from "mongoose";
-import crypto from "crypto";
-import bcrypt from "bcryptjs";
-import { env } from "./config/env.js";
+import { connectDb } from "./config/db.js";
+import { createDefaultSuperAdmin } from "./utils/createDefaultSuperAdmin.js";
+import Category from "./models/Category.js";
+import Template from "./models/Template.js";
 import User from "./models/User.js";
-import Survey from "./models/Survey.js";
-import SurveyResponse from "./models/SurveyResponse.js";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
-const pickN = <T>(arr: T[], n: number): T[] =>
-  [...arr].sort(() => Math.random() - 0.5).slice(0, n);
-const randInt = (min: number, max: number) =>
-  Math.floor(Math.random() * (max - min + 1)) + min;
-const randDate = (daysAgo: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() - randInt(0, daysAgo));
-  d.setHours(randInt(7, 22), randInt(0, 59), randInt(0, 59));
-  return d;
-};
-
-// ─── Question IDs ─────────────────────────────────────────────────────────────
-const q1Id = new mongoose.Types.ObjectId().toHexString();
-const q2Id = new mongoose.Types.ObjectId().toHexString();
-const q3Id = new mongoose.Types.ObjectId().toHexString();
-const q4Id = new mongoose.Types.ObjectId().toHexString();
-const q5Id = new mongoose.Types.ObjectId().toHexString();
-const q6Id = new mongoose.Types.ObjectId().toHexString();
-const q7Id = new mongoose.Types.ObjectId().toHexString();
-
-// ─── Survey Definition ────────────────────────────────────────────────────────
-const surveyDef = {
-  surveyTitle: "Customer Satisfaction Survey",
-  description:
-    "Help us improve our products and services by sharing your experience.",
-  themeColor: "#6366F1",
-  primaryColor: "#6366F1",
-  status: "Finished",
-  isAnonymous: true,
-  tenantId: "default",
-  pages: [
-    {
-      id: "page1",
-      title: "Your Experience",
-      questions: [
-        {
-          _id: q1Id,
-          id: q1Id,
-          type: "multiple_choice",
-          label: "How did you hear about us?",
-          required: true,
-          options: [
-            "Social Media",
-            "Search Engine",
-            "Friend / Referral",
-            "Advertisement",
-            "Other",
-          ],
-        },
-        {
-          _id: q2Id,
-          id: q2Id,
-          type: "rating",
-          label: "How would you rate your overall experience?",
-          required: true,
-          max: 5,
-        },
-        {
-          _id: q3Id,
-          id: q3Id,
-          type: "multiple_choice",
-          label: "Which product category did you purchase?",
-          required: true,
-          options: [
-            "Electronics",
-            "Clothing",
-            "Home & Garden",
-            "Sports & Outdoors",
-            "Books",
-          ],
-        },
-        {
-          _id: q4Id,
-          id: q4Id,
-          type: "checkboxes",
-          label:
-            "What aspects did you find most valuable? (Select all that apply)",
-          required: false,
-          options: [
-            "Product Quality",
-            "Pricing",
-            "Delivery Speed",
-            "Customer Support",
-            "Website Usability",
-            "Return Policy",
-          ],
-        },
-      ],
-    },
-    {
-      id: "page2",
-      title: "Details",
-      questions: [
-        {
-          _id: q5Id,
-          id: q5Id,
-          type: "rating",
-          label: "How likely are you to recommend us to a friend? (NPS)",
-          required: true,
-          max: 10,
-        },
-        {
-          _id: q6Id,
-          id: q6Id,
-          type: "short_text",
-          label: "What is the one thing we could improve?",
-          required: false,
-          placeholder: "Your honest feedback...",
-        },
-        {
-          _id: q7Id,
-          id: q7Id,
-          type: "multiple_choice",
-          label: "Would you shop with us again?",
-          required: true,
-          options: [
-            "Definitely yes",
-            "Probably yes",
-            "Not sure",
-            "Probably not",
-            "Definitely not",
-          ],
-        },
-      ],
-    },
-  ],
-};
-
-// ─── Response Generator ───────────────────────────────────────────────────────
-const improvements = [
-  "Faster delivery would be great",
-  "Lower shipping costs",
-  "More product variety",
-  "Better mobile experience",
-  "Easier return process",
-  "More detailed product descriptions",
-  "Live chat support",
-  "Loyalty rewards program",
-  "Clearer pricing with no hidden fees",
-  "Email notifications for order status",
-  "Better packaging to avoid damage",
-  "More payment options",
-  "Improved search filters",
-  null,
-  null,
-  null, // ~20% skip the optional question
-];
-
-const ipPool = Array.from(
-  { length: 30 },
-  (_, i) => `192.168.${randInt(0, 5)}.${i + 10}`,
-);
-const uaPool = [
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15",
-  "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
-  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1",
-  "Mozilla/5.0 (Android 14; Mobile; rv:125.0) Gecko/125.0 Firefox/125.0",
-];
-
-function generateResponse(surveyId: string, index: number) {
-  const rating = randInt(1, 5);
-  const nps =
-    rating >= 4 ? randInt(7, 10) : rating === 3 ? randInt(5, 7) : randInt(1, 5);
-  const returnIntention =
-    nps >= 8
-      ? pick(["Definitely yes", "Probably yes"])
-      : nps >= 5
-        ? pick(["Probably yes", "Not sure"])
-        : pick(["Not sure", "Probably not", "Definitely not"]);
-
-  const responses: Record<string, unknown> = {
-    [q1Id]: pick([
-      "Social Media",
-      "Search Engine",
-      "Friend / Referral",
-      "Advertisement",
-      "Other",
-    ]),
-    [q2Id]: String(rating),
-    [q3Id]: pick([
-      "Electronics",
-      "Clothing",
-      "Home & Garden",
-      "Sports & Outdoors",
-      "Books",
-    ]),
-    [q4Id]: pickN(
-      [
-        "Product Quality",
-        "Pricing",
-        "Delivery Speed",
-        "Customer Support",
-        "Website Usability",
-        "Return Policy",
-      ],
-      randInt(1, 4),
-    ),
-    [q5Id]: String(nps),
-    [q7Id]: returnIntention,
-  };
-
-  const improvement = pick(improvements);
-  if (improvement) responses[q6Id] = improvement;
-
-  // unique respondentToken per response (required by SurveyResponse model)
-  const respondentToken =
-    crypto.randomBytes(16).toString("hex") + "_seed_" + index;
-  const ipAddress = ipPool[index % ipPool.length];
-  const userAgent = pick(uaPool);
-  const deviceHash = crypto
-    .createHash("sha256")
-    .update(userAgent + ipAddress)
-    .digest("hex");
-
-  return {
-    surveyId,
-    respondentToken,
-    ipAddress,
-    userAgent,
-    deviceHash,
-    responses,
-    submittedAt: randDate(30),
-  };
-}
-
-// ─── Main ─────────────────────────────────────────────────────────────────────
-async function seed() {
-  await mongoose.connect(env.mongoUri);
-  console.log("MongoDB connected.");
-
-  // Admin user
-  const existingAdmin = await User.findOne({ email: "admin@smtiap.com" });
-  if (existingAdmin) {
-    console.log("Admin user already exists, skipping.");
-  } else {
-    const hash = await bcrypt.hash("Admin@12345", 10);
-    await User.create({ email: "admin@smtiap.com", username: "Admin", password: hash, role: "admin" });
-    console.log("Admin user created.  admin@smtiap.com / Admin@12345");
-  }
-
-  // Survey
-  const existing = await Survey.findOne({
-    surveyTitle: "Customer Satisfaction Survey",
-  });
-  let surveyId: string;
-  if (existing) {
-    console.log(`Survey already exists (id: ${existing._id}), skipping.`);
-    surveyId = String(existing._id);
-  } else {
-    const survey = await Survey.create(surveyDef);
-    surveyId = String(survey._id);
-    console.log(`Survey created.  id: ${surveyId}`);
-  }
-
-  // Responses
-  const existingCount = await SurveyResponse.countDocuments({ surveyId });
-  if (existingCount >= 35) {
-    console.log(`Already ${existingCount} responses, skipping.`);
-  } else {
-    const needed = 35 - existingCount;
-    await SurveyResponse.insertMany(
-      Array.from({ length: needed }, (_, i) =>
-        generateResponse(surveyId, existingCount + i),
-      ),
-    );
-    console.log(`${needed} responses inserted.  (total: ${existingCount + needed})`);
-  }
-
-  await mongoose.disconnect();
-  console.log("\nSeeding complete.");
-  console.log("  Login → admin@smtiap.com / Admin@12345");
-}
-
-seed().catch((err) => {
-  console.error("Seed failed:", err);
-  process.exit(1);
+dotenv.config({
+  path: path.resolve(process.cwd(), "../.env"),
 });
+dotenv.config({
+  path: path.resolve(process.cwd(), ".env"),
+});
+
+const seedCategoriesAndTemplates = async (superAdminId: any) => {
+  console.log("\n📁 Seeding categories...");
+  
+  const categoryNames = [
+    "Most Popular", "Restaurant", "HR", "Education", "Healthcare",
+    "Events", "Corporate", "Product", "Retail",
+  ];
+
+  let createdCount = 0;
+  for (const name of categoryNames) {
+    const existing = await Category.findOne({ name });
+    if (!existing) {
+      await Category.create({ name, createdBy: superAdminId, isActive: true });
+      console.log(`  ✓ Created category: ${name}`);
+      createdCount++;
+    } else {
+      console.log(`  ⏭️ Category already exists: ${name}`);
+    }
+  }
+  console.log(`✅ Categories: ${createdCount} new, ${categoryNames.length - createdCount} existing`);
+
+  console.log("\n📄 Seeding templates...");
+
+  const templatesData = [
+    {
+      title: "Customer Satisfaction Survey",
+      description: "Keep your customers happy and turn them into advocates. Measure satisfaction across all touchpoints.",
+      category: "Most Popular",
+      usedCount: "388,600+",
+      gradient: "from-orange-400 to-rose-500",
+      icon: "Star",
+      aiPrompt: "Create a detailed customer satisfaction survey covering overall experience, product/service quality, staff friendliness, value for money, likelihood to recommend (NPS), and open feedback.",
+      previewQuestions: [
+        { type: "rating", label: "How satisfied are you with our product/service overall?", max: 5 },
+        { type: "multiple_choice", label: "How did you hear about us?", options: ["Friend/Family", "Social Media", "Google", "Advertisement", "Other"] },
+        { type: "rating", label: "How likely are you to recommend us to a friend?", max: 10 },
+        { type: "text", label: "What did you enjoy most about your experience?" },
+        { type: "text", label: "What could we improve?" },
+      ],
+    },
+    {
+      title: "Employee Engagement Survey",
+      description: "Learn about your employees' experience and workplace happiness. Build a better culture.",
+      category: "HR",
+      usedCount: "345,600+",
+      gradient: "from-pink-400 to-rose-500",
+      icon: "Users",
+      aiPrompt: "Create an employee engagement survey covering job satisfaction, team culture, manager support, work-life balance, recognition, career growth, and NPS for recommending the company.",
+      previewQuestions: [
+        { type: "rating", label: "How satisfied are you with your current role?", max: 5 },
+        { type: "rating", label: "How would you rate the team culture and collaboration?", max: 5 },
+        { type: "multiple_choice", label: "How would you describe your work-life balance?", options: ["Excellent", "Good", "Fair", "Poor"] },
+        { type: "rating", label: "How likely are you to recommend this company as a great place to work?", max: 10 },
+        { type: "text", label: "What do you enjoy most about working here?" },
+        { type: "text", label: "What would make your work experience better?" },
+      ],
+    },
+    {
+      title: "Net Promoter Score (NPS)",
+      description: "Measure customer loyalty and identify your promoters, passives, and detractors.",
+      category: "Most Popular",
+      usedCount: "280,000+",
+      gradient: "from-blue-400 to-indigo-500",
+      icon: "Zap",
+      aiPrompt: "Create an NPS survey with the standard NPS question (0-10 scale), follow-up reason question, and open-ended feedback for improvement.",
+      previewQuestions: [
+        { type: "rating", label: "How likely are you to recommend us to a friend or colleague?", max: 10 },
+        { type: "multiple_choice", label: "What is the primary reason for your score?", options: ["Product quality", "Customer service", "Value for money", "Ease of use", "Other"] },
+        { type: "text", label: "What could we do to improve your experience?" },
+      ],
+    },
+    {
+      title: "Food Satisfaction Survey",
+      description: "Rate food quality, service speed, and overall dining experience at your restaurant.",
+      category: "Restaurant",
+      usedCount: "120,000+",
+      gradient: "from-orange-400 to-amber-500",
+      icon: "Utensils",
+      aiPrompt: "Create a food satisfaction survey for a restaurant covering food quality, service speed, staff friendliness, ambiance, value for money, and overall experience.",
+      previewQuestions: [
+        { type: "rating", label: "How would you rate the overall food quality?", max: 5 },
+        { type: "rating", label: "How satisfied are you with the service?", max: 5 },
+        { type: "rating", label: "How would you rate the ambiance and atmosphere?", max: 5 },
+        { type: "multiple_choice", label: "Would you recommend us to a friend?", options: ["Definitely yes", "Probably yes", "Not sure", "Probably not", "Definitely not"] },
+        { type: "text", label: "Any suggestions to improve our food or service?" },
+      ],
+    },
+    {
+      title: "Daily Cafe Feedback",
+      description: "Get daily feedback on coffee quality, service speed, and cafe atmosphere.",
+      category: "Restaurant",
+      usedCount: "85,000+",
+      gradient: "from-amber-400 to-orange-500",
+      icon: "Coffee",
+      aiPrompt: "Create a daily cafe feedback survey covering coffee and drink quality, service speed, seating comfort, cleanliness, visit frequency, and suggestions for improvement.",
+      previewQuestions: [
+        { type: "rating", label: "How would you rate the quality of your coffee/drink?", max: 5 },
+        { type: "rating", label: "How satisfied are you with the speed of service?", max: 5 },
+        { type: "multiple_choice", label: "What did you order today?", options: ["Coffee", "Tea", "Smoothie", "Pastry", "Full meal", "Other"] },
+        { type: "text", label: "What would make your cafe experience better?" },
+      ],
+    },
+    {
+      title: "Patient Experience Survey",
+      description: "Measure healthcare quality, staff communication, and patient satisfaction scores.",
+      category: "Healthcare",
+      usedCount: "95,000+",
+      gradient: "from-emerald-400 to-teal-500",
+      icon: "Heart",
+      aiPrompt: "Create a healthcare patient experience survey covering quality of care, wait times, staff communication, facility cleanliness, likelihood to return, and improvement suggestions.",
+      previewQuestions: [
+        { type: "rating", label: "How would you rate the overall quality of care you received?", max: 5 },
+        { type: "rating", label: "How satisfied were you with the wait time?", max: 5 },
+        { type: "rating", label: "How well did the staff communicate with you?", max: 5 },
+        { type: "multiple_choice", label: "Would you return to this facility?", options: ["Definitely yes", "Probably yes", "Not sure", "Probably not"] },
+        { type: "text", label: "Is there anything specific we could do to improve your experience?" },
+      ],
+    },
+    {
+      title: "Course Evaluation Survey",
+      description: "Collect detailed feedback on instructor effectiveness and course content quality.",
+      category: "Education",
+      usedCount: "110,000+",
+      gradient: "from-indigo-400 to-violet-500",
+      icon: "GraduationCap",
+      aiPrompt: "Create a university course evaluation survey covering instructor effectiveness, course content quality, pace, difficulty level, learning outcomes, and improvement suggestions.",
+      previewQuestions: [
+        { type: "rating", label: "How would you rate the overall quality of this course?", max: 5 },
+        { type: "rating", label: "How effective was the instructor at explaining concepts?", max: 5 },
+        { type: "multiple_choice", label: "How was the pace of the course?", options: ["Too fast", "Slightly fast", "Just right", "Slightly slow", "Too slow"] },
+        { type: "multiple_choice", label: "Would you recommend this course to others?", options: ["Definitely yes", "Probably yes", "Not sure", "Probably not"] },
+        { type: "text", label: "What improvements would you suggest for this course?" },
+      ],
+    },
+    {
+      title: "Event Feedback Survey",
+      description: "Measure attendee satisfaction, speaker quality, and improve your future events.",
+      category: "Events",
+      usedCount: "75,000+",
+      gradient: "from-yellow-400 to-amber-500",
+      icon: "Star",
+      aiPrompt: "Create a post-event feedback survey covering overall experience, organization, speaker or content quality, venue, networking value, likelihood to attend future events, and suggestions.",
+      previewQuestions: [
+        { type: "rating", label: "How would you rate the overall event experience?", max: 5 },
+        { type: "rating", label: "How satisfied were you with the event organisation and logistics?", max: 5 },
+        { type: "rating", label: "How would you rate the quality of speakers/content?", max: 5 },
+        { type: "multiple_choice", label: "Would you attend future events by us?", options: ["Definitely yes", "Probably yes", "Not sure", "Probably not"] },
+        { type: "text", label: "What could we improve for next time?" },
+      ],
+    },
+  ];
+
+  let templatesCreated = 0;
+  for (const templateData of templatesData) {
+    const existing = await Template.findOne({ title: templateData.title });
+    if (!existing) {
+      await Template.create({ ...templateData, createdBy: superAdminId });
+      console.log(`  ✓ Created template: ${templateData.title}`);
+      templatesCreated++;
+    } else {
+      console.log(`  ⏭️ Template already exists: ${templateData.title}`);
+    }
+  }
+  console.log(`✅ Templates: ${templatesCreated} new, ${templatesData.length - templatesCreated} existing`);
+};
+
+const runSeed = async (): Promise<void> => {
+  try {
+    await connectDb();
+    
+    // Find super admin directly from database
+    const superAdmin = await User.findOne({ role: "super_admin" });
+    
+    if (!superAdmin) {
+      console.log("No super admin found. Creating one...");
+      const bcrypt = await import("bcryptjs");
+      const hashedPassword = await bcrypt.hash("Admin123!", 10);
+      
+      const newSuperAdmin = await User.create({
+        email: "superadmin@smtiap.com",
+        username: "SuperAdmin",
+        password: hashedPassword,
+        role: "super_admin",
+      });
+      console.log("Super admin created:", newSuperAdmin.email);
+      
+      await seedCategoriesAndTemplates(newSuperAdmin._id);
+    } else {
+      console.log("Super admin found:", superAdmin.email);
+      await seedCategoriesAndTemplates(superAdmin._id);
+    }
+  } catch (error: unknown) {
+    console.error(
+      "Error while seeding:",
+      error instanceof Error ? error.message : error,
+    );
+    process.exit(1);
+  } finally {
+    await mongoose.disconnect();
+    process.exit(0);
+  }
+};
+
+runSeed();

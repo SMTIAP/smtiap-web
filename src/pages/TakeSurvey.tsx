@@ -66,6 +66,7 @@ export default function TakeSurvey() {
     pages: Page[];
     primaryColor?: string;
     themeColor?: string;
+    backgroundColor?: string;
     status?: string;
     isPasswordProtected?: boolean;
     surveyTitle?: string;
@@ -98,7 +99,9 @@ export default function TakeSurvey() {
   useEffect(() => {
     const fetchSurvey = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/surveys/${surveyId}`);
+        const response = await fetch(
+          `http://localhost:5000/api/surveys/${surveyId}`,
+        );
         if (!response.ok) throw new Error("Not found");
         const data = await response.json();
         setSurveyData(data);
@@ -113,6 +116,7 @@ export default function TakeSurvey() {
   }, [surveyId]);
 
   const primaryColor = surveyData?.primaryColor || surveyData?.themeColor || "#6366F1";
+  const backgroundColor = surveyData?.backgroundColor || "#F8FAFC";
 
   // Flattens all questions across all pages into a single ordered list for navigation
   const flattenedQuestions = useMemo<FlattenedQuestion[]>(() => {
@@ -123,7 +127,7 @@ export default function TakeSurvey() {
         pageIndex,
         questionIndex,
         question,
-      }))
+      })),
     );
   }, [surveyData?.pages]);
 
@@ -146,7 +150,7 @@ export default function TakeSurvey() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ password: passwordInput }),
-        }
+        },
       );
       const data = await res.json();
       if (data.success) {
@@ -162,88 +166,142 @@ export default function TakeSurvey() {
     }
   };
 
-  if (loading) return (
-    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-slate-500 text-sm">Loading survey...</p>
-      </div>
-    </div>
-  );
-
-  if (error || !surveyData) return (
-    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-      <div className="text-center p-10">
-        <p className="text-2xl font-bold text-slate-800 mb-2">Survey not found</p>
-        <p className="text-slate-500 text-sm">This survey may have been removed or the link is invalid.</p>
-      </div>
-    </div>
-  );
-
-  if (surveyData.status === "Finished") return (
-    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-      <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
-        <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg width="28" height="28" fill="none" stroke="#F43F5E" strokeWidth="2.5" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M15 9l-6 6M9 9l6 6" strokeLinecap="round" />
-          </svg>
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor }}>
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-500 text-sm">Loading survey...</p>
         </div>
-        <h2 className="text-2xl font-black text-slate-900 mb-2">Survey Closed</h2>
-        <p className="text-slate-500 text-sm">This survey is no longer accepting responses.</p>
       </div>
-    </div>
-  );
+    );
+
+  if (error || !surveyData)
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor }}>
+        <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
+          <p className="text-2xl font-bold text-slate-800 mb-2">
+            Survey not found
+          </p>
+          <p className="text-slate-500 text-sm">
+            This survey may have been removed or the link is invalid.
+          </p>
+        </div>
+      </div>
+    );
+
+  if (surveyData.status === "Finished")
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor }}>
+        <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
+          <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              width="28"
+              height="28"
+              fill="none"
+              stroke="#F43F5E"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M15 9l-6 6M9 9l6 6" strokeLinecap="round" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 mb-2">
+            Survey Closed
+          </h2>
+          <p className="text-slate-500 text-sm">
+            This survey is no longer accepting responses.
+          </p>
+        </div>
+      </div>
+    );
 
   // Password gate — blocks access until correct password is entered
-  if (surveyData.isPasswordProtected && !passwordVerified) return (
-    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-6">
-      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 w-full max-w-sm text-center">
-        <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <svg width="24" height="24" fill="none" stroke="#6366F1" strokeWidth="2.5" viewBox="0 0 24 24">
-            <rect x="3" y="11" width="18" height="11" rx="2" />
-            <path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round" />
-          </svg>
+  if (surveyData.isPasswordProtected && !passwordVerified)
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6" style={{ backgroundColor }}>
+        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 w-full max-w-sm text-center">
+          <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg
+              width="24"
+              height="24"
+              fill="none"
+              stroke="#6366F1"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-black text-slate-900 mb-1">
+            Password Required
+          </h3>
+          <p className="text-slate-400 text-xs mb-6">
+            This survey is password protected
+          </p>
+          <input
+            type="password"
+            placeholder="Enter password"
+            value={passwordInput}
+            onChange={(e) => {
+              setPasswordInput(e.target.value);
+              setPasswordError(false);
+            }}
+            onKeyDown={(e) => e.key === "Enter" && handlePasswordSubmit()}
+            className={`w-full text-center text-sm font-semibold bg-slate-50 border-2 rounded-2xl px-4 py-3 outline-none transition-all mb-3 ${
+              passwordError
+                ? "border-red-300 bg-red-50"
+                : "border-slate-200 focus:border-indigo-400"
+            }`}
+          />
+          {passwordError && (
+            <p className="text-red-400 text-xs mb-3 font-semibold">
+              Incorrect password, try again!
+            </p>
+          )}
+          <button
+            onClick={handlePasswordSubmit}
+            disabled={!passwordInput || checkingPassword}
+            className="w-full py-3 text-white rounded-2xl text-sm font-bold hover:opacity-90 disabled:opacity-40 transition-all"
+            style={{ backgroundColor: primaryColor }}
+          >
+            {checkingPassword ? "Checking..." : "Enter Survey →"}
+          </button>
         </div>
-        <h3 className="text-xl font-black text-slate-900 mb-1">Password Required</h3>
-        <p className="text-slate-400 text-xs mb-6">This survey is password protected</p>
-        <input
-          type="password"
-          placeholder="Enter password"
-          value={passwordInput}
-          onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
-          onKeyDown={(e) => e.key === "Enter" && handlePasswordSubmit()}
-          className={`w-full text-center text-sm font-semibold bg-slate-50 border-2 rounded-2xl px-4 py-3 outline-none transition-all mb-3 ${
-            passwordError ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-indigo-400"
-          }`}
-        />
-        {passwordError && (
-          <p className="text-red-400 text-xs mb-3 font-semibold">Incorrect password, try again!</p>
-        )}
-        <button
-          onClick={handlePasswordSubmit}
-          disabled={!passwordInput || checkingPassword}
-          className="w-full py-3 bg-indigo-600 text-white rounded-2xl text-sm font-bold hover:bg-indigo-700 disabled:opacity-40 transition-all"
-        >
-          {checkingPassword ? "Checking..." : "Enter Survey →"}
-        </button>
       </div>
-    </div>
-  );
+    );
 
-  if (submitted) return (
-    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-      <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
-        <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg width="28" height="28" fill="none" stroke="#22C55E" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+  if (submitted)
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor }}>
+        <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
+          <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              width="28"
+              height="28"
+              fill="none"
+              stroke="#22C55E"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M20 6L9 17l-5-5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 mb-2">
+            Thank you!
+          </h2>
+          <p className="text-slate-500 text-sm">
+            Your response has been submitted successfully.
+          </p>
         </div>
-        <h2 className="text-2xl font-black text-slate-900 mb-2">Thank you!</h2>
-        <p className="text-slate-500 text-sm">Your response has been submitted successfully.</p>
       </div>
-    </div>
-  );
+    );
 
   const totalQuestions = flattenedQuestions.length;
   const currentFlowItem = flattenedQuestions[activeQuestionIndex];
@@ -270,7 +328,10 @@ export default function TakeSurvey() {
       (question.type === "multiple_choice" || question.type === "checkboxes") &&
       question.options?.length
     ) {
-      const selectedValues = answerValue.split(",").map((part) => part.trim()).filter(Boolean);
+      const selectedValues = answerValue
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean);
 
       for (const option of question.options) {
         if (!selectedValues.includes(option)) continue;
@@ -290,7 +351,7 @@ export default function TakeSurvey() {
     if (targetQuestionId === "__END__") return -1;
 
     const targetIndex = flattenedQuestions.findIndex(
-      (item) => getQuestionStableId(item.question) === targetQuestionId
+      (item) => getQuestionStableId(item.question) === targetQuestionId,
     );
     return targetIndex >= 0 ? targetIndex : null;
   };
@@ -331,7 +392,8 @@ export default function TakeSurvey() {
       return;
     }
 
-    const nextIndex = branchTargetIndex !== null ? branchTargetIndex : activeQuestionIndex + 1;
+    const nextIndex =
+      branchTargetIndex !== null ? branchTargetIndex : activeQuestionIndex + 1;
 
     if (nextIndex >= totalQuestions) {
       handleSubmitClick();
@@ -372,42 +434,63 @@ export default function TakeSurvey() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ responses, respondentToken }),
-        }
+        },
       );
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         throw new Error(
           data?.error ||
-          (response.status === 409
-            ? "You have already submitted this survey."
-            : "Failed to submit response.")
+            (response.status === 409
+              ? "You have already submitted this survey."
+              : "Failed to submit response."),
         );
       }
 
       setSubmitted(true);
     } catch (err) {
       console.error("Submit error:", err);
-      setSubmitError(err instanceof Error ? err.message : "Failed to submit response.");
+      setSubmitError(
+        err instanceof Error ? err.message : "Failed to submit response.",
+      );
     }
   };
 
-  const currentResolvedTarget = currentQuestion ? resolveBranchTargetIndex(currentQuestion) : null;
+  const currentResolvedTarget = currentQuestion
+    ? resolveBranchTargetIndex(currentQuestion)
+    : null;
 
   return (
-    <div className="min-h-screen py-12 px-6" style={{ backgroundColor: "#F8FAFC" }}>
-
+    <div
+      className="min-h-screen py-12 px-6 transition-colors duration-300"
+      style={{ backgroundColor: backgroundColor }}
+    >
       {/* Math captcha modal shown before final form submission */}
       {showCaptcha && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 w-full max-w-sm mx-4 text-center">
             <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg width="22" height="22" fill="none" stroke="#6366F1" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round" />
+              <svg
+                width="22"
+                height="22"
+                fill="none"
+                stroke="#6366F1"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </div>
-            <h3 className="text-lg font-black text-slate-900 mb-1">Quick Check</h3>
-            <p className="text-slate-400 text-xs mb-6">Solve to verify you're human</p>
+            <h3 className="text-lg font-black text-slate-900 mb-1">
+              Quick Check
+            </h3>
+            <p className="text-slate-400 text-xs mb-6">
+              Solve to verify you're human
+            </p>
 
             <div className="bg-slate-50 rounded-2xl px-6 py-4 mb-4 inline-block w-full">
               <p className="text-3xl font-black text-slate-800 tracking-wide">
@@ -418,23 +501,37 @@ export default function TakeSurvey() {
             <input
               type="number"
               value={captchaInput}
-              onChange={(e) => { setCaptchaInput(e.target.value); setCaptchaError(false); }}
+              onChange={(e) => {
+                setCaptchaInput(e.target.value);
+                setCaptchaError(false);
+              }}
               onKeyDown={(e) => e.key === "Enter" && handleCaptchaConfirm()}
               placeholder="Your answer"
               className={`w-full text-center text-lg font-bold bg-slate-50 border-2 rounded-2xl px-4 py-3 outline-none transition-all mb-4 ${
-                captchaError ? "border-red-300 bg-red-50" : "border-slate-200 focus:border-indigo-400"
+                captchaError
+                  ? "border-red-300 bg-red-50"
+                  : "border-slate-200 focus:border-indigo-400"
               }`}
             />
 
             {captchaError && (
-              <p className="text-red-400 text-xs mb-4 font-semibold">Wrong answer, try again!</p>
+              <p className="text-red-400 text-xs mb-4 font-semibold">
+                Wrong answer, try again!
+              </p>
             )}
 
             <div className="flex gap-3">
-              <button onClick={() => setShowCaptcha(false)} className="flex-1 px-4 py-3 border border-slate-200 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all">
+              <button
+                onClick={() => setShowCaptcha(false)}
+                className="flex-1 px-4 py-3 border border-slate-200 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all"
+              >
                 Cancel
               </button>
-              <button onClick={handleCaptchaConfirm} className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-bold hover:bg-indigo-700 transition-all">
+              <button
+                onClick={handleCaptchaConfirm}
+                className="flex-1 px-4 py-3 text-white rounded-2xl text-sm font-bold hover:opacity-90 transition-all"
+                style={{ backgroundColor: primaryColor }}
+              >
                 Submit ✓
               </button>
             </div>
@@ -443,30 +540,57 @@ export default function TakeSurvey() {
       )}
 
       <div className="max-w-2xl mx-auto">
-        {/* Survey header with title, description and question progress indicator */}
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-          <div className="h-2 w-full" style={{ backgroundColor: primaryColor }} />
+        {/* Survey header - white card with theme color top bar */}
+        <div className="bg-white rounded-3xl shadow-md border border-gray-200 overflow-hidden mb-6">
+          <div
+            className="h-2 w-full transition-colors duration-300"
+            style={{ backgroundColor: primaryColor }}
+          />
           <div className="p-8">
+            {Boolean(surveyData?.logo) && (
+              <div className="flex justify-center mb-4">
+                <img
+                  src={surveyData!.logo as string}
+                  alt="Survey logo"
+                  className="max-h-20 object-contain rounded"
+                />
+              </div>
+            )}
             <h1 className="text-2xl font-black text-slate-900 mb-1">
               {surveyData.surveyTitle || "Untitled Survey"}
             </h1>
             {surveyData.description && (
-              <p className="text-slate-500 text-sm">{surveyData.description}</p>
+              <p className="text-slate-500 text-sm mb-1">
+                {surveyData.description}
+              </p>
             )}
+            {(surveyData?.customizeBranding as unknown as boolean) &&
+              (surveyData?.websiteUrl as string) && (
+                <a
+                  href={surveyData?.websiteUrl as string}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-xs text-blue-500 hover:text-blue-700 underline mb-2"
+                >
+                  {surveyData?.websiteUrl as string}
+                </a>
+              )}
             {totalQuestions > 0 && (
               <div className="flex items-center gap-2 mt-4">
                 {flattenedQuestions.map((_, i: number) => (
                   <div
                     key={i}
-                    className="h-1.5 rounded-full transition-all"
+                    className="h-1.5 rounded-full transition-all duration-300"
                     style={{
                       width: i === activeQuestionIndex ? "24px" : "8px",
-                      backgroundColor: i === activeQuestionIndex ? primaryColor : "#E2E8F0",
+                      backgroundColor:
+                        i === activeQuestionIndex ? primaryColor : "#E2E8F0",
                     }}
                   />
                 ))}
                 <span className="text-xs text-slate-400 ml-2">
-                  Question {Math.min(activeQuestionIndex + 1, totalQuestions)} of {totalQuestions}
+                  Question {Math.min(activeQuestionIndex + 1, totalQuestions)}{" "}
+                  of {totalQuestions}
                 </span>
               </div>
             )}
@@ -493,43 +617,71 @@ export default function TakeSurvey() {
               </p>
             )}
 
-            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
+            {/* Question card - white background */}
+            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-md">
               <p className="text-base text-slate-800 font-semibold mb-4">
-                {activeQuestionIndex + 1}. {currentQuestion.label || "Untitled Question"}
-                {currentQuestion.required && <span className="text-red-500 ml-1">*</span>}
+                {activeQuestionIndex + 1}.{" "}
+                {currentQuestion.label || "Untitled Question"}
+                {currentQuestion.required && (
+                  <span className="text-red-500 ml-1">*</span>
+                )}
               </p>
 
               {currentQuestion.type === "short_text" && (
                 <input
                   type="text"
-                  placeholder={currentQuestion.placeholder || "Your answer here..."}
+                  placeholder={
+                    currentQuestion.placeholder || "Your answer here..."
+                  }
                   value={responses[getResponseKey(currentQuestion)] || ""}
-                  onChange={(e) => handleResponse(getResponseKey(currentQuestion), e.target.value)}
+                  onChange={(e) =>
+                    handleResponse(
+                      getResponseKey(currentQuestion),
+                      e.target.value,
+                    )
+                  }
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
+                  style={{ caretColor: primaryColor }}
                 />
               )}
 
               {currentQuestion.type === "long_text" && (
                 <textarea
-                  placeholder={currentQuestion.placeholder || "Your answer here..."}
+                  placeholder={
+                    currentQuestion.placeholder || "Your answer here..."
+                  }
                   value={responses[getResponseKey(currentQuestion)] || ""}
-                  onChange={(e) => handleResponse(getResponseKey(currentQuestion), e.target.value)}
+                  onChange={(e) =>
+                    handleResponse(
+                      getResponseKey(currentQuestion),
+                      e.target.value,
+                    )
+                  }
                   rows={4}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm resize-none"
+                  style={{ caretColor: primaryColor }}
                 />
               )}
 
               {currentQuestion.type === "multiple_choice" && (
                 <div className="space-y-2">
                   {currentQuestion.options?.map((opt: string, i: number) => (
-                    <label key={i} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-indigo-200 cursor-pointer transition-all">
+                    <label
+                      key={i}
+                      className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-indigo-200 cursor-pointer transition-all"
+                    >
                       <input
                         type="radio"
                         name={getResponseKey(currentQuestion)}
                         value={opt}
-                        checked={responses[getResponseKey(currentQuestion)] === opt}
-                        onChange={() => handleResponse(getResponseKey(currentQuestion), opt)}
-                        className="w-4 h-4"
+                        checked={
+                          responses[getResponseKey(currentQuestion)] === opt
+                        }
+                        onChange={() =>
+                          handleResponse(getResponseKey(currentQuestion), opt)
+                        }
+                        className="w-4 h-4 transition-colors"
+                        style={{ accentColor: primaryColor }}
                       />
                       <span className="text-sm text-slate-700">{opt}</span>
                     </label>
@@ -540,21 +692,36 @@ export default function TakeSurvey() {
               {currentQuestion.type === "checkboxes" && (
                 <div className="space-y-2">
                   {currentQuestion.options?.map((opt: string, i: number) => (
-                    <label key={i} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-indigo-200 cursor-pointer transition-all">
+                    <label
+                      key={i}
+                      className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-indigo-200 cursor-pointer transition-all"
+                    >
                       <input
                         type="checkbox"
                         value={opt}
-                        checked={(responses[getResponseKey(currentQuestion)] || "").split(",").includes(opt)}
+                        checked={(
+                          responses[getResponseKey(currentQuestion)] || ""
+                        )
+                          .split(",")
+                          .includes(opt)}
                         onChange={(e) => {
-                          const current = responses[getResponseKey(currentQuestion)]
-                            ? responses[getResponseKey(currentQuestion)].split(",")
+                          const current = responses[
+                            getResponseKey(currentQuestion)
+                          ]
+                            ? responses[getResponseKey(currentQuestion)].split(
+                                ",",
+                              )
                             : [];
                           const updated = e.target.checked
                             ? [...current, opt]
                             : current.filter((v) => v !== opt);
-                          handleResponse(getResponseKey(currentQuestion), updated.join(","));
+                          handleResponse(
+                            getResponseKey(currentQuestion),
+                            updated.join(","),
+                          );
                         }}
-                        className="w-4 h-4 rounded"
+                        className="w-4 h-4 rounded transition-colors"
+                        style={{ accentColor: primaryColor }}
                       />
                       <span className="text-sm text-slate-700">{opt}</span>
                     </label>
@@ -563,16 +730,30 @@ export default function TakeSurvey() {
               )}
 
               {currentQuestion.type === "rating" && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {Array.from({ length: currentQuestion.max || 5 }, (_, i) => (
                     <button
                       key={i}
-                      onClick={() => handleResponse(getResponseKey(currentQuestion), String(i + 1))}
-                      className="w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all"
+                      onClick={() =>
+                        handleResponse(
+                          getResponseKey(currentQuestion),
+                          String(i + 1),
+                        )
+                      }
+                      className="w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all duration-200"
                       style={{
-                        borderColor: Number(responses[getResponseKey(currentQuestion)]) > i ? primaryColor : "#E2E8F0",
-                        backgroundColor: Number(responses[getResponseKey(currentQuestion)]) > i ? primaryColor : "white",
-                        color: Number(responses[getResponseKey(currentQuestion)]) > i ? "white" : "#94A3B8",
+                        borderColor:
+                          Number(responses[getResponseKey(currentQuestion)]) > i
+                            ? primaryColor
+                            : "#E2E8F0",
+                        backgroundColor:
+                          Number(responses[getResponseKey(currentQuestion)]) > i
+                            ? primaryColor
+                            : "white",
+                        color:
+                          Number(responses[getResponseKey(currentQuestion)]) > i
+                            ? "white"
+                            : "#94A3B8",
                       }}
                     >
                       {i + 1}
@@ -585,8 +766,14 @@ export default function TakeSurvey() {
                 <input
                   type="number"
                   value={responses[getResponseKey(currentQuestion)] || ""}
-                  onChange={(e) => handleResponse(getResponseKey(currentQuestion), e.target.value)}
+                  onChange={(e) =>
+                    handleResponse(
+                      getResponseKey(currentQuestion),
+                      e.target.value,
+                    )
+                  }
                   className="w-32 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
+                  style={{ caretColor: primaryColor }}
                 />
               )}
 
@@ -594,43 +781,53 @@ export default function TakeSurvey() {
                 <input
                   type="date"
                   value={responses[getResponseKey(currentQuestion)] || ""}
-                  onChange={(e) => handleResponse(getResponseKey(currentQuestion), e.target.value)}
+                  onChange={(e) =>
+                    handleResponse(
+                      getResponseKey(currentQuestion),
+                      e.target.value,
+                    )
+                  }
                   className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
+                  style={{ accentColor: primaryColor }}
                 />
               )}
             </div>
 
-            {/* Navigation buttons — Back uses history stack, Next resolves branching */}
+            {/* Navigation buttons */}
             <div className="flex justify-between items-center pt-4">
               {questionHistory.length > 0 ? (
                 <button
                   onClick={handleBack}
-                  className="px-6 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-gray-50 transition-all"
+                  className="px-6 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-gray-50 transition-all bg-white"
                 >
                   ← Back
                 </button>
-              ) : <div />}
+              ) : (
+                <div />
+              )}
 
               <button
                 onClick={handleNext}
                 style={{
                   backgroundColor:
                     currentResolvedTarget === -1 ||
-                    (currentResolvedTarget === null && activeQuestionIndex >= totalQuestions - 1)
+                    (currentResolvedTarget === null &&
+                      activeQuestionIndex >= totalQuestions - 1)
                       ? "#16A34A"
                       : primaryColor,
                 }}
-                className="px-8 py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg transition-all"
+                className="px-8 py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 shadow-lg transition-all duration-200"
               >
                 {currentResolvedTarget === -1 ||
-                (currentResolvedTarget === null && activeQuestionIndex >= totalQuestions - 1)
+                (currentResolvedTarget === null &&
+                  activeQuestionIndex >= totalQuestions - 1)
                   ? "Submit Response ✓"
                   : "Next →"}
               </button>
             </div>
           </div>
         ) : (
-          <div className="p-10 text-center text-slate-400 italic">
+          <div className="p-10 text-center text-slate-400 italic bg-white/80 backdrop-blur-sm rounded-2xl shadow-md">
             No questions found in this survey.
           </div>
         )}

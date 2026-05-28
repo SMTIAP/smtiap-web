@@ -204,7 +204,7 @@ function CreatorDashboard() {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC]">
-      <div className="flex max-w-[1200px] py-10 px-6 flex-col items-start gap-8 w-full">
+      <div className="flex max-w-300 py-10 px-6 flex-col items-start gap-8 w-full">
         {/* Header Section */}
         <div className="flex justify-between items-center w-full">
           <div className="flex flex-col">

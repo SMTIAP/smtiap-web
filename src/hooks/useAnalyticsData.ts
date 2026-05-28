@@ -55,7 +55,17 @@ export function useAnalyticsData(
   const [finishedSurveys, setFinishedSurveys] = useState<SurveyListItem[]>([]);
   const [surveysLoading, setSurveysLoading] = useState(true);
 
-  // Effect: load finished surveys (selector view) 
+  // Helper: auth headers for fetch calls
+  const authHeaders = (): Record<string, string> => {
+    const token = localStorage.getItem("token");
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const id = localStorage.getItem("activeTenantId");
+    if (id && id !== "__system__") headers["x-tenant-id"] = id;
+    return headers;
+  };
+
+  // Effect: load finished surveys (selector view)
   // Only runs when there is no surveyId in the URL.
   useEffect(() => {
     const fetchFinishedSurveys = async () => {
@@ -65,7 +75,10 @@ export function useAnalyticsData(
       }
       setSurveysLoading(true);
       try {
-        const response = await fetch(`${apiBaseUrl}/api/surveys`);
+        const response = await fetch(`${apiBaseUrl}/api/surveys`, {
+          headers: authHeaders(),
+          credentials: "include",
+        });
         const data = await response.json();
         const surveyList = Array.isArray(data)
           ? (data as SurveyListItem[])
@@ -153,9 +166,11 @@ export function useAnalyticsData(
               ? latestResult.summary
               : null,
           );
+          const restoreLimit =
+            responseDocs.length < 5 ? Math.min(responseDocs.length, 3) : 5;
           setKeywords(
             Array.isArray(latestResult.topKeywords)
-              ? latestResult.topKeywords.slice(0, 5)
+              ? latestResult.topKeywords.slice(0, restoreLimit)
               : [],
           );
         }
@@ -167,7 +182,7 @@ export function useAnalyticsData(
     void fetchSurveyContext();
   }, [apiBaseUrl, surveyId]);
 
-  //  runAnalysis: send responses to Gemini and persist the result 
+  //  runAnalysis: send responses to Gemini and persist the result
   const runAnalysis = async () => {
     if (isAnalyzing) return;
     setIsAnalyzing(true);
@@ -185,6 +200,9 @@ export function useAnalyticsData(
         throw new Error(
           "VITE_GEMINI_API_KEY is not set in environment variables.",
         );
+
+      // Determine how many keywords to extract based on response count
+      const keywordLimit = totalResponses < 5 ? Math.min(totalResponses, 3) : 5;
 
       // Initialise Gemini client and select model
       const genAI = new GoogleGenerativeAI(apiKey);
@@ -208,11 +226,11 @@ ${aiInputLines.join("\n")}
 
 Instructions:
 1. Provide a concise summary grounded only in the provided responses.
-2. Identify top 5 recurring keywords/topics with estimated counts.
+2. Identify top ${keywordLimit} recurring keywords/topics with estimated counts.
 3. Align findings with the survey questions and response patterns.
 
 Return a purely JSON object (no markdown formatting, no code fence) with this structure:
-{"summary":"...","top_5_keywords":[{"keyword":"Quality","count":15}]}
+{"summary":"...","top_keywords":[{"keyword":"Quality","count":15}]}
 `;
 
       // Send prompt to Gemini; strip any markdown code fences from the response
@@ -225,13 +243,16 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
 
       const analysis = JSON.parse(text) as {
         summary?: unknown;
+        top_keywords?: unknown;
         top_5_keywords?: unknown;
       };
 
-      // Normalise keyword array with type-safe filtering
-      const rawKeywords = Array.isArray(analysis.top_5_keywords)
-        ? analysis.top_5_keywords
-        : [];
+      // Normalise keyword array with type-safe filtering (support both keys for backward compat)
+      const rawKeywords = Array.isArray(analysis.top_keywords)
+        ? analysis.top_keywords
+        : Array.isArray(analysis.top_5_keywords)
+          ? analysis.top_5_keywords
+          : [];
       const normalizedKeywords = rawKeywords
         .filter(
           (item): item is { keyword?: unknown; count?: unknown } =>
@@ -244,12 +265,12 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
           keyword: String(item.keyword).trim(),
           count: Number(item.count ?? 0),
         }))
-        .slice(0, 5);
+        .slice(0, keywordLimit);
 
       // Persist the AI result to the backend so it loads automatically next visit
       const saveResponse = await fetch(`${apiBaseUrl}/api/analytics`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({
           surveyId,
           summary: String(analysis.summary ?? "").trim(),
@@ -268,11 +289,25 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
       setKeywords(normalizedKeywords);
     } catch (err: unknown) {
       console.error("Analysis failed:", err);
-      setAiError(
-        err instanceof Error
-          ? err.message
-          : "An unexpected error occurred during analysis.",
-      );
+      const errorStr = String(
+        err instanceof Error ? err.message : err,
+      ).toLowerCase();
+      if (
+        errorStr.includes("429") ||
+        errorStr.includes("quota") ||
+        errorStr.includes("rate limit") ||
+        errorStr.includes("too many requests")
+      ) {
+        setAiError(
+          "AI analysis is temporarily unavailable due to high demand. Please wait a moment and try again.",
+        );
+      } else {
+        setAiError(
+          err instanceof Error
+            ? err.message
+            : "An unexpected error occurred during analysis.",
+        );
+      }
     } finally {
       setIsAnalyzing(false);
     }

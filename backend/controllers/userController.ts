@@ -1,5 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import User from "../models/User.js";
+import Tenant from "../models/Tenant.js";
+import UserTenantRole from "../models/UserTenantRole.js";
 import AuditLog from "../models/AuditLog.js";
 import sendToken from "../utils/sendToken.js";
 import crypto from "crypto";
@@ -45,6 +47,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       action: "login",
       entity: "User",
       entity_id: user._id,
+      description: "Logged In"
     }).catch(() => {});
 
     sendToken(user, res);
@@ -61,6 +64,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
       action: "logout",
       entity: "User",
       entity_id: user._id,
+      description: "Logged Out"
     }).catch(() => {});
   }
 
@@ -73,7 +77,53 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const getMe = async (req: Request, res: Response): Promise<void> => {
-  res.json((req as any).user);
+  const user = (req as any).user;
+  if (!user) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  // Fetch tenant memberships
+  const memberships = await UserTenantRole.find({ userId: user._id })
+    .populate("tenantId", "name domain plan status")
+    .lean()
+    .catch(() => []);
+
+  const tenants = memberships.map((m: any) => ({
+    tenantId: m.tenantId,
+    role: m.role,
+  }));
+
+  res.json({
+    ...user.toObject(),
+    tenants,
+  });
+};
+
+export const getMyTenants = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const user = (req as any).user;
+    if (!user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const memberships = await UserTenantRole.find({ userId: user._id })
+      .populate("tenantId", "name domain plan status")
+      .lean();
+
+    const tenants = memberships.map((m) => ({
+      tenantId: m.tenantId,
+      role: m.role,
+    }));
+
+    res.json(tenants);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const forgotPassword = async (

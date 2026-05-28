@@ -6,6 +6,9 @@ import dotenv from "dotenv";
 dotenv.config({
   path: path.resolve(process.cwd(), "../.env"),
 });
+dotenv.config({
+  path: path.resolve(process.cwd(), ".env"),
+});
 import cors from "cors";
 import payhereRoutes from "./routes/payhereRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -30,6 +33,9 @@ import organizationRegistrationRoutes from "./routes/organizationRegistrationRou
 import auditRoutes from "./routes/auditRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import superAdminRoutes from "./routes/superAdminRoutes.js";
+import templateRoutes from "./routes/templateRoutes";
+import { createDefaultSuperAdmin } from "./utils/createDefaultSuperAdmin.js";
 const ensureCollections = async () => {
   await Promise.all([
     Tenant.createCollection(),
@@ -76,8 +82,10 @@ app.use("/api/users", userRoutes);
 app.use("/api/surveys", surveyRoutes);
 app.use("/api/role-management", roleManagementRoutes);
 app.use("/api/organization-registration", organizationRegistrationRoutes);
+app.use("/api/super-admin", superAdminRoutes);
 app.use("/api/audit-logs", auditRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/templates", templateRoutes);
 app.use("/api/ai", aiRoutes);
 app.use(analyticsRoutes);
 app.use(errorHandler);
@@ -97,6 +105,7 @@ const startServer = async () => {
     initGoogleStrategy();
     await connectDb();
     await ensureCollections();
+    await createDefaultSuperAdmin();
 
     app.listen(env.port, () => {
       console.log(`PayHere backend running at http://localhost:${env.port}`);

@@ -4,6 +4,7 @@ import {
   login,
   logout,
   getMe,
+  getMyTenants,
   forgotPassword,
   resetPassword,
 } from "../controllers/userController.js";
@@ -19,10 +20,11 @@ router.post("/register", register);
 router.post("/login", login);
 router.post("/logout", protect, logout);
 router.get("/me", protect, getMe);
+router.get("/me/tenants", protect, getMyTenants);
 router.post("/forgot-password", forgotPassword);
 router.put("/reset-password/:token", resetPassword);
 
-router.get("/superadmin", protect, authorizeRoles("superadmin"), (req, res) => {
+router.get("/superadmin", protect, authorizeRoles("super_admin"), (req, res) => {
   res.json({ message: "Welcome Admin Dashboard" });
 });
 router.get(
