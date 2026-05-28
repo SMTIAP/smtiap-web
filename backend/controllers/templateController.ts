@@ -150,6 +150,49 @@ export const deleteTemplate = async (req: Request, res: Response) => {
   }
 };
 
+// ============ USAGE COUNT CONTROLLER ============
+
+// Increment template usage count (called when template is used)
+export const incrementUsageCount = async (req: Request, res: Response) => {
+  try {
+    const template = await Template.findById(req.params.id);
+    
+    if (!template) {
+      return res.status(404).json({
+        success: false,
+        message: "Template not found",
+      });
+    }
+    
+    // Parse current count (e.g., "95,000+" -> 95000, "0+" -> 0)
+    let currentCount = 0;
+    if (template.usedCount) {
+      const match = template.usedCount.match(/\d+/);
+      if (match) {
+        currentCount = parseInt(match[0]);
+      }
+    }
+    
+    // Increment count
+    const newCount = currentCount + 1;
+    template.usedCount = newCount.toLocaleString() + "+";
+    
+    await template.save();
+    
+    res.status(200).json({
+      success: true,
+      data: { usedCount: template.usedCount },
+      message: "Usage count updated successfully",
+    });
+  } catch (error) {
+    console.error("Error incrementing usage count:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update usage count",
+    });
+  }
+};
+
 // ============ CATEGORY CONTROLLERS ============
 
 // Get all categories

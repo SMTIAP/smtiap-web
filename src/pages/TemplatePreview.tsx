@@ -179,73 +179,81 @@ export default function TemplatePreview() {
   const primaryColor = "#6366F1";
   const isMobile = device === "mobile";
 
-  const handleUseTemplate = async () => {
-    setIsCreating(true);
-    try {
-      const surveyPages = [{
-        id: `page-${Date.now()}`,
-        title: "Page 1",
-        questions: (template.previewQuestions || []).map((q: any, idx: number) => ({
-          id: `q-${Date.now()}-${idx}`,
-          type: q.type,
-          label: q.label,
-          required: true,
-          placeholder: q.placeholder,
-          options: q.options,
-          max: q.max,
-          min: q.min,
-          branching: undefined,
-        }))
-      }];
+const handleUseTemplate = async () => {
+  setIsCreating(true);
+  try {
+    const surveyPages = [{
+      id: `page-${Date.now()}`,
+      title: "Page 1",
+      questions: (template.previewQuestions || []).map((q: any, idx: number) => ({
+        id: `q-${Date.now()}-${idx}`,
+        type: q.type,
+        label: q.label,
+        required: true,
+        placeholder: q.placeholder,
+        options: q.options,
+        max: q.max,
+        min: q.min,
+        branching: undefined,
+      }))
+    }];
 
-      const createRes = await fetch("http://localhost:5000/api/surveys", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          surveyTitle: template.title,
-          description: template.description,
-          status: "Draft",
-          pages: surveyPages,
-          primaryColor: "#6366F1",
-          themeColor: "#6366F1",
-          customizeBranding: false,
-        }),
-      });
-      
-      if (!createRes.ok) {
-        throw new Error(`HTTP ${createRes.status}: ${createRes.statusText}`);
-      }
-      
-      const data = await createRes.json();
-      const newSurveyId = data._id || data.survey?._id;
-      
-      if (newSurveyId) {
-        navigate("/add-questions", { 
-          state: { 
-            surveyId: newSurveyId,
-            formData: {
-              surveyTitle: template.title,
-              description: template.description,
-              customizeBranding: false,
-              themeColor: "#6366F1",
-            }
-          } 
-        });
-      } else {
-        throw new Error("No survey ID returned");
-      }
-    } catch (err) {
-      console.error("Failed to create survey from template:", err);
-      alert("Failed to create survey. Please try again.");
-    } finally {
-      setIsCreating(false);
+    const createRes = await fetch("http://localhost:5000/api/surveys", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        surveyTitle: template.title,
+        description: template.description,
+        status: "Draft",
+        pages: surveyPages,
+        primaryColor: "#6366F1",
+        themeColor: "#6366F1",
+        customizeBranding: false,
+      }),
+    });
+    
+    if (!createRes.ok) {
+      throw new Error(`HTTP ${createRes.status}: ${createRes.statusText}`);
     }
-  };
-
+    
+    const data = await createRes.json();
+    const newSurveyId = data._id || data.survey?._id;
+    
+    if (newSurveyId) {
+      // ✅ Increment the template usage count
+      try {
+        await templateApi.incrementUsageCount(template._id);
+        console.log("Usage count incremented for template:", template.title);
+      } catch (err) {
+        console.error("Failed to increment usage count:", err);
+        // Don't block the user - survey was already created
+      }
+      
+      navigate("/add-questions", { 
+        state: { 
+          surveyId: newSurveyId,
+          formData: {
+            surveyTitle: template.title,
+            description: template.description,
+            customizeBranding: false,
+            themeColor: "#6366F1",
+          }
+        } 
+      });
+    } else {
+      throw new Error("No survey ID returned");
+    }
+  } catch (err) {
+    console.error("Failed to create survey from template:", err);
+    alert("Failed to create survey. Please try again.");
+  } finally {
+    setIsCreating(false);
+  }
+};
   return (
     <div className="flex h-screen bg-[#F8FAFC] dark:bg-[#0F172A] overflow-hidden transition-colors duration-300">
 

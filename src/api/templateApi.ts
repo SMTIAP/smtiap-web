@@ -19,10 +19,12 @@ templateApiClient.interceptors.request.use((config) => {
 });
 
 export interface TemplateQuestion {
-  type: "text" | "rating" | "multiple_choice";
+  type: "short_text" | "long_text" | "multiple_choice" | "checkboxes" | "rating" | "number" | "date";
   label: string;
   max?: number;
+  min?: number;
   options?: string[];
+  placeholder?: string;
 }
 
 export interface Template {
@@ -82,5 +84,10 @@ export const templateApi = {
 
   deleteCategory: async (id: string): Promise<void> => {
     await templateApiClient.delete(`/templates/categories/${id}`);
+  },
+
+  incrementUsageCount: async (id: string): Promise<{ usedCount: string }> => {
+    const response = await templateApiClient.post(`/templates/${id}/increment-usage`);
+    return response.data.data;
   },
 };

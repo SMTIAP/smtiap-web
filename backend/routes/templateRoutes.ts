@@ -8,6 +8,7 @@ import {
   getCategories,
   createCategory,
   deleteCategory,
+  incrementUsageCount,
 } from "../controllers/templateController";
 import { protect } from "../middleware/auth.js";
 import { authorizeRoles } from "../middleware/role.js";
@@ -18,6 +19,9 @@ const router = express.Router();
 router.get("/", protect, getTemplates);
 router.get("/:id", protect, getTemplateById);
 router.get("/categories/all", protect, getCategories);
+
+// Increment usage count (any authenticated user can call this)
+router.post("/:id/increment-usage", protect, incrementUsageCount);
 
 // Super Admin only routes
 router.post("/", protect, authorizeRoles("super_admin"), createTemplate);
