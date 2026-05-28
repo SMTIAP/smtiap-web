@@ -43,12 +43,15 @@ const surveySchema = new mongoose.Schema(
     pages: [pageSchema],
     status: {
       type: String,
-      enum: ["Draft", "Running", "Finished"],
+      enum: ["Draft", "Running", "Finished", "Scheduled"],
       default: "Draft",
     },
-    // ✅ Password protection fields
+    //  Password protection fields
     isPasswordProtected: { type: Boolean, default: false },
     password: { type: String, default: "" },
+    //  Scheduling fields
+    scheduledOpen: { type: Date, default: null },
+    scheduledClose: { type: Date, default: null },
     tenantId: { type: String, default: null },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
