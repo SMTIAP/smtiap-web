@@ -1,11 +1,14 @@
 import cron from "node-cron";
-import Survey from "../models/Survey";
+import Survey from "../models/Survey.js";  
 
 export const startSurveyStatusJob = () => {
+  console.log("⏰ Cron job registered - will check every minute");
+  
   // Run every minute
   cron.schedule("* * * * *", async () => {
     try {
       const now = new Date();
+      console.log(`[${now.toLocaleString()}] Checking scheduled surveys...`);
       
       // Start scheduled surveys (Scheduled → Running)
       const startedSurveys = await Survey.updateMany(
@@ -13,7 +16,7 @@ export const startSurveyStatusJob = () => {
           scheduledOpen: { $lte: now },
           status: "Scheduled",
         },
-        { status: "Running" }
+        { $set: { status: "Running" } }
       );
       
       // Close expired surveys (Running → Finished)
@@ -22,14 +25,14 @@ export const startSurveyStatusJob = () => {
           scheduledClose: { $lte: now },
           status: "Running",
         },
-        { status: "Finished" }
+        { $set: { status: "Finished" } }
       );
       
       if (startedSurveys.modifiedCount > 0 || closedSurveys.modifiedCount > 0) {
-        console.log(`[${now.toISOString()}] Survey statuses updated: ${startedSurveys.modifiedCount} started, ${closedSurveys.modifiedCount} closed`);
+        console.log(`✅ Updated: ${startedSurveys.modifiedCount} started, ${closedSurveys.modifiedCount} closed`);
       }
     } catch (error) {
-      console.error("Failed to update survey statuses:", error);
+      console.error("❌ Cron error:", error);
     }
   });
 };

@@ -142,10 +142,13 @@ export default function ReviewAndPublish() {
       let closeDateTime: string | null = null;
 
       if (enableOpen && openDate) {
-        openDateTime = `${openDate}T${openTime}:00.000Z`;
+        // Create date in local timezone and convert to UTC for storage
+        const localDate = new Date(`${openDate}T${openTime}:00`);
+        openDateTime = localDate.toISOString();
       }
       if (enableClose && closeDate) {
-        closeDateTime = `${closeDate}T${closeTime}:00.000Z`;
+        const localDate = new Date(`${closeDate}T${closeTime}:00`);
+        closeDateTime = localDate.toISOString();
       }
 
       setScheduledOpen(openDateTime);
