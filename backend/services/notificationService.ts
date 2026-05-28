@@ -1,5 +1,6 @@
 import { sendEmail } from "./emailService.js";
 import User, { IUser } from "../models/User.js";
+import Notification from "../models/Notification.js";
 
 
 interface TenantType {
@@ -400,3 +401,25 @@ export const notifyTenantRemoved = async ({
     console.error("Tenant removal email error:", error);
   }
 }
+
+interface CreateNotificationPayload {
+  tenant_id: string;
+  user_id: string;
+  message: string;
+  type?: "in_app" | "email" | "sms" | "push";
+}
+
+export const createAppNotification = async ({
+  tenant_id,
+  user_id,
+  message,
+  type,
+}: CreateNotificationPayload) => {
+  return Notification.create({
+    tenant_id,
+    user_id,
+    message,
+    type,
+    status: "sent",
+  });
+};

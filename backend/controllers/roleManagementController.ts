@@ -4,7 +4,7 @@ import Tenant from "../models/Tenant.js";
 import UserTenantRole from "../models/UserTenantRole.js";
 import AuditLog from "../models/AuditLog.js";
 import { toast } from "sonner";
-import { notifyRoleChanged, notifyUserAddedToOrganization, notifyUserRemove, notifyTenantRemoved } from "../services/notificationService.js";
+import { notifyRoleChanged, notifyUserAddedToOrganization, notifyUserRemove, notifyTenantRemoved, createAppNotification } from "../services/notificationService.js";
 
 export const formatRole = (role: string) => {
   return role
@@ -237,6 +237,13 @@ export const updateOrgRole = async (req: Request, res: Response) => {
       entity: "User",
       entity_id: userId,
       description: `Role changed from ${formatRole(oldRole)} to ${formatRole(newRole)} for ${user?.username} in Organization ${tenant?.name}`,
+    });
+
+    await createAppNotification({
+      tenant_id: tenantId,
+      user_id: userId,
+      message: `Your role was changed to ${formatRole(newRole)} in ${tenant?.name}`,
+      type: "email",
     });
 
     return res.status(200).json({
