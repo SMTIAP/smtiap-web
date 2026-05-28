@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Tenant from "../models/Tenant.js";
 import UserTenantRole from "../models/UserTenantRole.js";
 import AuditLog from "../models/AuditLog.js";
+import { notifyOrganizationCreated } from "../services/notificationService.js";
 
 interface AuthenticatedRequest extends Request {
   user?: { _id: string };
@@ -66,6 +67,17 @@ export const createOrganization = async (req: Request, res: Response) => {
       entity: "Tenant",
       entity_id: tenant._id,
       description: `Created Organization ${tenant.name}`,
+    });
+
+    const cleanTenant = tenant.toObject();
+
+    await notifyOrganizationCreated({
+      _id: cleanTenant._id.toString(),
+      name: cleanTenant.name,
+      country: cleanTenant.country,
+      domain: cleanTenant.domain,
+      orgType: cleanTenant.orgType,
+      createdBy: cleanTenant.createdBy.toString(),
     });
 
     return res.status(201).json({

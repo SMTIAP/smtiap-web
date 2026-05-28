@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
-import User from "../models/User.js";
+import User, { IUser } from "../models/User.js";
 import Tenant from "../models/Tenant.js";
 import UserTenantRole from "../models/UserTenantRole.js";
 import AuditLog from "../models/AuditLog.js";
 import { toast } from "sonner";
+import { notifyUserAddedToOrganization } from "../services/notificationService.js";
 
 export const formatRole = (role: string) => {
   return role
@@ -122,8 +123,17 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
     });
 
     //Fetch user details
-    const user = await User.findById(userId);
-    const tenant = await Tenant.findById(tenantId);
+    const user = await User.findById(userId).lean<IUser>();
+    const tenant = await Tenant.findById(tenantId).lean();
+
+    if (user && tenant) {
+      await notifyUserAddedToOrganization({
+        email: user.email,
+        username: user.username,
+        organizationName: tenant.name,
+        role,
+      });
+    }
 
     await AuditLog.create({
       tenant_id: tenantId,
