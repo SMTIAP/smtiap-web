@@ -24,6 +24,7 @@ interface UserTenantRole {
   role: string;
   userId: { _id: string; username: string; email: string };
   tenantId: { _id: string; name: string };
+  status: "active" | "inactive";
 }
 
 export default function RoleManagement() {
@@ -183,13 +184,21 @@ const canManageTenant = (tenantId: string) => {
   const tenant = tenants.find(t => t._id === tenantId);
   if (!tenant || !currentUserId) return false;
 
-  const isCreator = tenant.createdBy === currentUserId;
+  const isActiveMember = orgUsers.some(
+    u =>
+      u.tenantId._id === tenantId &&
+      u.userId._id === currentUserId &&
+      u.status === "active"
+  );
+
+  const isCreator = tenant.createdBy === currentUserId && isActiveMember;
 
   const isTenantAdmin = orgUsers.some(
     u =>
       u.tenantId._id === tenantId &&
       u.userId._id === currentUserId &&
-      u.role === "admin"
+      u.role === "admin" &&
+      u.status === "active"
   );
 
   return isCreator || isTenantAdmin;
@@ -199,17 +208,34 @@ const canManageTenantId = (tenantId: string) => {
   const tenant = tenants.find((t) => t._id === tenantId);
   if (!tenant || !currentUserId) return false;
 
-  const isCreator = tenant.createdBy === currentUserId;
+  const isActiveMember = orgUsers.some(
+    (u) =>
+      u.tenantId._id === tenantId &&
+      u.userId._id === currentUserId &&
+      u.status === "active"
+  );
+
+  const isCreator = tenant.createdBy === currentUserId && isActiveMember;
 
   const isTenantAdmin = orgUsers.some(
     (u) =>
       u.tenantId._id === tenantId &&
       u.userId._id === currentUserId &&
-      u.role === "admin"
+      u.role === "admin" &&
+      u.status === "active"
   );
 
   return isCreator || isTenantAdmin;
 };
+
+const isActiveTenantAdmin = (tenantId: string) =>
+  orgUsers.some(
+    (u) =>
+      u.tenantId._id === tenantId &&
+      u.userId._id === currentUserId &&
+      u.role === "admin" &&
+      u.status === "active"
+  );
 
   const filteredUsers = searchTerm.trim()
     ? users.filter((user) =>
@@ -225,7 +251,14 @@ const canManageTenantId = (tenantId: string) => {
   console.log("DEBUG tenants length:", tenants.length);
 
   // Use all tenants the user belongs to (loadTenant middleware already filters by membership)
-  const filteredOrganizations = tenants;
+  const filteredOrganizations = tenants.filter((tenant) =>
+  orgUsers.some(
+    (u) =>
+      u.tenantId._id === tenant._id &&
+      u.userId._id === currentUserId &&
+      u.status === "active"
+  )
+);
 
   const handleAddUser = async (user: User, tenant: Tenant) => {
     if (!canManageTenant(tenant._id)) {
@@ -267,16 +300,38 @@ const canManageTenantId = (tenantId: string) => {
   };
 
   const handleUpdateOrgRole = async (item: UserTenantRole) => {
-    if (!canManageTenant(item.tenantId._id)){
+    if (!isActiveTenantAdmin(item.tenantId._id)){
       toast.error("Only the organization creator can change roles");
       return;
     }
+
+    const newRole = selectedRole[item._id];
+
+    // Check if current user is an admin and being changed to non-admin
+    const changingTenantAdminRole = item.role === "admin" && newRole !== "admin";
+
+    if (changingTenantAdminRole) {
+      const otherAdmins = orgUsers.filter(
+        (u) =>
+          u.tenantId._id === item.tenantId._id &&
+          u._id !== item._id &&
+          u.role === "admin"
+      );
+
+      if (otherAdmins.length === 0) {
+        toast.error(
+          "This organization must have at least one Tenant Admin"
+        );
+        return;
+      }
+    }
+
     const confirmed = await confirmAsync(
       `Update role for "${item.userId.username}"?`,
     );
     if (!confirmed) return;
     try {
-      const newRole = selectedRole[item._id];
+      // const newRole = selectedRole[item._id];
       const response = await fetch(
         `http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}/role`,
         {
@@ -313,6 +368,25 @@ const canManageTenantId = (tenantId: string) => {
       toast.error("Only the organization creator can remove users");
       return;
     }
+
+      // 🚫 Prevent removing last Tenant Admin
+  if (item.role === "admin") {
+    const otherAdmins = orgUsers.filter(
+      (u) =>
+        u.tenantId._id === item.tenantId._id &&
+        u.userId._id !== item.userId._id &&
+        u.role === "admin"
+    );
+
+    if (otherAdmins.length === 0) {
+      toast.error(
+        "You cannot remove the last Tenant Admin in this organization"
+      );
+      return;
+    }
+  }
+
+
     const confirmed = await confirmAsync(
       `Remove "${item.userId.username}" from "${item.tenantId.name}"? They can be re-added later.`,
     );
@@ -410,7 +484,12 @@ const groupedUsers = (): GroupedTenant[] => {
 
   const map = new Map<string, GroupedTenant>();
 
-  orgUsers.forEach((item) => {
+  orgUsers    
+    .filter((item) => {
+      // 🚫 REMOVE inactive memberships
+      return item.status !== "inactive";
+    })
+    .forEach((item) => {
     const tenantId = item.tenantId._id;
 
     if (!map.has(tenantId)) {
@@ -493,7 +572,7 @@ const groupedUsers = (): GroupedTenant[] => {
             className="w-full md:w-72 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200"
           >
             <option value="">Select Organization</option>
-            {filteredOrganizations.filter((tenant) => tenant.status === "active" && canManageTenantId(tenant._id)).map((tenant) => (
+            {filteredOrganizations.filter((tenant) => tenant.status === "active" && isActiveTenantAdmin(tenant._id)).map((tenant) => (
               <option key={tenant._id} value={tenant._id}>
                 {tenant.name}
               </option>
@@ -629,18 +708,20 @@ const groupedUsers = (): GroupedTenant[] => {
           </h3>
         </div>
 
-        <div className="relative w-full max-w-md">
+        <div className="flex flex-col md:flex-row gap-4 w-full items-center">
+          <div className="relative w-full md:max-w-md">
           <input
             type="text"
             placeholder="Search organization..."
             value={searchOrganization}
             onChange={(e) => setSearchOrganization(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm bg-white dark:bg-slate-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200 placeholder:text-slate-400"
           />
           <Search
             size={16}
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
           />
+        </div>
         </div>
 
         {/* Org Members Table */}
@@ -711,7 +792,7 @@ const groupedUsers = (): GroupedTenant[] => {
                           [item._id]: e.target.value,
                         }))
                       }
-                      disabled={!canManageTenant(group.tenant._id)}
+                      disabled={!isActiveTenantAdmin(group.tenant._id)}
                       className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                     >
                       {Object.entries(roleLabels).map(([key, label]) => (
@@ -727,7 +808,7 @@ const groupedUsers = (): GroupedTenant[] => {
                   </td>
 
                   <td className="px-6 py-2">
-                    {canManageTenant(group.tenant._id) && (
+                    {isActiveTenantAdmin(group.tenant._id) && (
                       <div className="flex gap-2 opacity-90 group-hover:opacity-100">
                         <button
                           onClick={() => handleUpdateOrgRole(item)}
