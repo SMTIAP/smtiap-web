@@ -18,11 +18,13 @@ import {
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useTenant } from "../contexts/TenantContext";
+
 interface SurveyItem {
   _id: string;
   surveyTitle?: string;
   status: "Draft" | "Running" | "Finished";
   createdAt: string;
+  updatedAt?: string;
   isPasswordProtected?: boolean;
   password?: string;
   pages?: any[];
@@ -307,10 +309,10 @@ export default function CreatedSurveys() {
   const navigate = useNavigate();
   const { activeTenant, isSystemContext } = useTenant();
   const effectiveRole =
-    !isSystemContext && activeTenant ? activeTenant.role : null; // system context — check user.role from API
+    !isSystemContext && activeTenant ? activeTenant.role : null;
   const canCreate = effectiveRole
     ? ["super_admin", "admin", "creator"].includes(effectiveRole)
-    : true; // system context: assume can create
+    : true;
   const [activeTab, setActiveTab] = useState("All");
   const [surveys, setSurveys] = useState<SurveyItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -322,34 +324,52 @@ export default function CreatedSurveys() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [surveyToShare, setSurveyToShare] = useState<SurveyItem | null>(null);
 
+  const fetchSurveys = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const activeTenantId = localStorage.getItem("activeTenantId");
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      if (activeTenantId && activeTenantId !== "__system__")
+        headers["x-tenant-id"] = activeTenantId;
+      const response = await fetch("http://localhost:5000/api/surveys", {
+        headers,
+        credentials: "include",
+      });
+      const data = await response.json();
+      // Sort by updatedAt or createdAt (newest first)
+      const sortedData = (Array.isArray(data) ? data : []).sort((a, b) => {
+        const dateA = a.updatedAt ? new Date(a.updatedAt) : new Date(a.createdAt);
+        const dateB = b.updatedAt ? new Date(b.updatedAt) : new Date(b.createdAt);
+        return dateB.getTime() - dateA.getTime();
+      });
+      setSurveys(sortedData);
+    } catch (err) {
+      console.error("Failed to fetch surveys:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchSurveys = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem("token");
-        const activeTenantId = localStorage.getItem("activeTenantId");
-        const headers: Record<string, string> = {};
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-        if (activeTenantId && activeTenantId !== "__system__")
-          headers["x-tenant-id"] = activeTenantId;
-        const response = await fetch("http://localhost:5000/api/surveys", {
-          headers,
-          credentials: "include",
-        });
-        const data = await response.json();
-        setSurveys(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Failed to fetch surveys:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchSurveys();
   }, [activeTenant]);
 
+  // Listen for survey updates from localStorage (when user edits a draft)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "surveyUpdated") {
+        fetchSurveys();
+        localStorage.removeItem("surveyUpdated");
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
   const handleCardClick = (survey: SurveyItem) => {
     if (survey.status === "Draft") {
-      // Viewers cannot edit — open in read-only mode
       if (canCreate)
         navigate("/add-questions", { state: { surveyId: survey._id } });
       else
@@ -364,6 +384,7 @@ export default function CreatedSurveys() {
     e.stopPropagation();
     setSurveyToShare(survey);
   };
+
   const handleDeleteClick = (event: React.MouseEvent, survey: SurveyItem) => {
     event.stopPropagation();
     setSurveyToDelete(survey);
@@ -383,12 +404,10 @@ export default function CreatedSurveys() {
     })(),
   });
 
-  // Copy survey — duplicates form structure only, no responses
   const handleCopyClick = async (e: React.MouseEvent, survey: SurveyItem) => {
     e.stopPropagation();
     setCopyingSurveyId(survey._id);
     try {
-      // Fetch full survey to get pages/questions
       const res = await fetch(
         `http://localhost:5000/api/surveys/${survey._id}`,
         {
@@ -416,7 +435,7 @@ export default function CreatedSurveys() {
       const newSurvey = await response.json();
       const created = newSurvey?.survey || newSurvey;
       if (created?._id) {
-        setSurveys((prev) => [created, ...prev]);
+        await fetchSurveys(); // Refresh the entire list
         setCopiedSurveyId(survey._id);
         setTimeout(() => setCopiedSurveyId(null), 2000);
       }
@@ -458,9 +477,7 @@ export default function CreatedSurveys() {
         setDeleteError(msg);
         return;
       }
-      setSurveys((prev) =>
-        prev.filter((item) => item._id !== surveyToDelete._id),
-      );
+      await fetchSurveys(); // Refresh the list after delete
       setShowDeleteModal(false);
       setSurveyToDelete(null);
     } catch (err) {
@@ -582,7 +599,6 @@ export default function CreatedSurveys() {
                     {new Date(survey.createdAt).toLocaleDateString("en-GB")}
                   </span>
                   <div className="flex items-center gap-1">
-                    {/* Share — running surveys only */}
                     {isRunning && (
                       <button
                         type="button"
@@ -594,7 +610,6 @@ export default function CreatedSurveys() {
                       </button>
                     )}
 
-                    {/* Copy button — all surveys (hidden for viewers) */}
                     {canCreate && (
                       <button
                         type="button"
@@ -613,7 +628,6 @@ export default function CreatedSurveys() {
                       </button>
                     )}
 
-                    {/* Delete — hidden for viewers */}
                     {canCreate && (
                       <button
                         type="button"
