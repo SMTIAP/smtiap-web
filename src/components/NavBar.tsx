@@ -371,30 +371,6 @@ export default function NavBar() {
                         </div>
                       </div>
 
-                      {/* Dark mode toggle inside dropdown */}
-                      <div className="px-2 pt-2 pb-1 border-b border-slate-100 dark:border-slate-700">
-                        <button
-                          onClick={toggleDarkMode}
-                          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                        >
-                          <span className="flex items-center gap-2">
-                            {darkMode ? (
-                              <Sun className="w-4 h-4 text-yellow-400" />
-                            ) : (
-                              <Moon className="w-4 h-4 text-slate-400" />
-                            )}
-                            {darkMode ? "Light Mode" : "Dark Mode"}
-                          </span>
-                          <span
-                            className={`w-8 h-4 rounded-full relative transition-all duration-200 ${darkMode ? "bg-indigo-600" : "bg-slate-200"}`}
-                          >
-                            <span
-                              className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-200 shadow-sm ${darkMode ? "left-4" : "left-0.5"}`}
-                            />
-                          </span>
-                        </button>
-                      </div>
-
                       {/* Context Switcher — always shown when user has tenants */}
                       {(localTenants.length > 0 ? localTenants : tenants)
                         .length > 0 && (
