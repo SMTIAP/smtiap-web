@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Sun, Moon } from "lucide-react";
 import PasswordInput from "../components/PasswordInput";
 import axios from "axios";
+import { useDarkMode } from "../App";
 
 export default function SuperAdminLogin() {
+  const { darkMode, toggleDarkMode } = useDarkMode();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,13 +43,27 @@ export default function SuperAdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 relative">
+      {/* Dark Mode Toggle */}
+      <button
+        onClick={toggleDarkMode}
+        className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+        title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+      >
+        {darkMode ? (
+          <Sun size={16} className="text-yellow-400" />
+        ) : (
+          <Moon size={16} className="text-slate-500" />
+        )}
+      </button>
+
       <div className="w-full max-w-md rounded-3xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 p-8">
         <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-4">
           Super Admin Login
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-          Use your super admin credentials. Registration is disabled for this route.
+          Use your super admin credentials. Registration is disabled for this
+          route.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -83,7 +100,14 @@ export default function SuperAdminLogin() {
         )}
 
         <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">
-          Want regular access instead? <a href="/auth" className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Use the normal login page</a>.
+          Want regular access instead?{" "}
+          <a
+            href="/auth"
+            className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+          >
+            Use the normal login page
+          </a>
+          .
         </p>
       </div>
     </div>
