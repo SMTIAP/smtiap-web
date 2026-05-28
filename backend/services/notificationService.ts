@@ -11,6 +11,21 @@ interface TenantType {
   createdBy: string;
 }
 
+interface UserAddedPayload {
+  email: string;
+  username: string;
+  organizationName: string;
+  role: string;
+}
+
+export const formatRole = (role: string) => {
+  return role
+    .split("_")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
+
 export const notifyOrganizationCreated = async (
   org: TenantType
 ): Promise<void> => {
@@ -78,6 +93,89 @@ export const notifyOrganizationCreated = async (
             </div>
         </div>
         `
+    );
+  } catch (error) {
+    console.error("Notification error:", error);
+  }
+};
+
+
+export const notifyUserAddedToOrganization = async ({
+  email,
+  username,
+  organizationName,
+  role,
+}: UserAddedPayload): Promise<void> => {
+  try {
+    await sendEmail(
+      email,
+      `You've been added to ${organizationName}`,
+      `
+      <div style="font-family: Arial, sans-serif; background:#f4f6f8; padding:40px 0;">
+
+        <div style="max-width:640px; margin:0 auto; background:#ffffff; border-radius:14px; overflow:hidden; border:1px solid #e5e7eb;">
+
+          <!-- Header -->
+          <div style="background:linear-gradient(135deg,#2563eb,#4f46e5); padding:24px; text-align:center;">
+            <h1 style="margin:0; color:#ffffff; font-size:20px; letter-spacing:0.5px;">
+              SMTIAP
+            </h1>
+          </div>
+
+          <!-- Body -->
+          <div style="padding:32px; color:#111827;">
+
+            <h2 style="margin-top:0; color:#1f2937;">
+              Welcome to ${organizationName}
+            </h2>
+
+            <p style="font-size:15px; line-height:1.6; color:#374151;">
+              Hello <b>${username}</b>,
+            </p>
+
+            <p style="font-size:15px; line-height:1.6; color:#374151;">
+              You have been successfully added to an organization in the
+              <b>SMTIAP platform</b>. You can now collaborate and access assigned resources based on your role.
+            </p>
+
+            <!-- Info Card -->
+            <div style="margin:24px 0; padding:16px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px;">
+
+              <p style="margin:8px 0; font-size:14px;">
+                <span style="color:#6b7280;">Organization:</span>
+                <b style="color:#111827;">${organizationName}</b>
+              </p>
+
+              <p style="margin:8px 0; font-size:14px;">
+                <span style="color:#6b7280;">Assigned Role:</span>
+                <b style="color:#111827;">${formatRole(role)}</b>
+              </p>
+
+            </div>
+
+            <!-- CTA -->
+            <div style="text-align:center; margin-top:28px;">
+              <a href="http://localhost:3000/dashboard"
+                style="display:inline-block; padding:12px 22px; background:#2563eb; color:#ffffff; text-decoration:none; border-radius:8px; font-weight:600; font-size:14px;">
+                Open Dashboard
+              </a>
+            </div>
+
+            <p style="margin-top:24px; font-size:12px; color:#6b7280; line-height:1.5;">
+              If you were not expecting this invitation, you can safely ignore this email or contact your organization administrator.
+            </p>
+
+          </div>
+
+          <!-- Footer -->
+          <div style="background:#f9fafb; padding:16px; text-align:center; font-size:12px; color:#9ca3af;">
+            © ${new Date().getFullYear()} SMTIAP. All rights reserved.
+          </div>
+
+        </div>
+
+      </div>
+      `
     );
   } catch (error) {
     console.error("Notification error:", error);
