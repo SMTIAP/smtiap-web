@@ -44,7 +44,7 @@ export const notifyOrganizationCreated = async (
 
             <!-- Header -->
             <div style="background:#2563eb; padding:20px; text-align:center;">
-                <h1 style="color:white; margin:0;">SMTIAP System</h1>
+                <h1 style="color:white; margin:0;">MTSP System</h1>
             </div>
 
             <!-- Body -->
@@ -57,7 +57,7 @@ export const notifyOrganizationCreated = async (
                 </p>
 
                 <p style="font-size:15px; line-height:1.6;">
-                Your organization has been successfully created in the SMTIAP platform.
+                Your organization has been successfully created in the MTSP platform.
                 </p>
 
                 <!-- Info Box -->
@@ -87,7 +87,7 @@ export const notifyOrganizationCreated = async (
 
             <!-- Footer -->
             <div style="background:#f9fafb; text-align:center; padding:15px; font-size:12px; color:#888;">
-                © ${new Date().getFullYear()} SMTIAP System. All rights reserved.
+                © ${new Date().getFullYear()} MTSP System. All rights reserved.
             </div>
 
             </div>
@@ -118,7 +118,7 @@ export const notifyUserAddedToOrganization = async ({
           <!-- Header -->
           <div style="background:linear-gradient(135deg,#2563eb,#4f46e5); padding:24px; text-align:center;">
             <h1 style="margin:0; color:#ffffff; font-size:20px; letter-spacing:0.5px;">
-              SMTIAP
+              MTSP
             </h1>
           </div>
 
@@ -135,7 +135,7 @@ export const notifyUserAddedToOrganization = async ({
 
             <p style="font-size:15px; line-height:1.6; color:#374151;">
               You have been successfully added to an organization in the
-              <b>SMTIAP platform</b>. You can now collaborate and access assigned resources based on your role.
+              <b>MTSP platform</b>. You can now collaborate and access assigned resources based on your role.
             </p>
 
             <!-- Info Card -->
@@ -169,7 +169,7 @@ export const notifyUserAddedToOrganization = async ({
 
           <!-- Footer -->
           <div style="background:#f9fafb; padding:16px; text-align:center; font-size:12px; color:#9ca3af;">
-            © ${new Date().getFullYear()} SMTIAP. All rights reserved.
+            © ${new Date().getFullYear()} MTSP. All rights reserved.
           </div>
 
         </div>
