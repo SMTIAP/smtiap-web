@@ -8,7 +8,7 @@ export const startSurveyStatusJob = () => {
   cron.schedule("* * * * *", async () => {
     try {
       const now = new Date();
-      console.log(`[${now.toLocaleString()}] Checking scheduled surveys...`);
+      //console.log(`[${now.toLocaleString()}] Checking scheduled surveys...`);
       
       // Start scheduled surveys (Scheduled → Running)
       const startedSurveys = await Survey.updateMany(
