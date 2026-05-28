@@ -165,6 +165,29 @@ const previewDeviceWidths: Record<PreviewDeviceType, string> = {
   mobile: "w-[375px]",
 };
 
+// Helper function to get appropriate text color based on background
+function getTextColor(backgroundColor: string, opacity: number = 1): string {
+  if (!backgroundColor || backgroundColor === "#F8FAFC") {
+    return `rgba(30, 41, 59, ${opacity})`;
+  }
+  
+  let hex = backgroundColor.replace("#", "");
+  if (hex.length === 3) {
+    hex = hex.split('').map(c => c + c).join('');
+  }
+  
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  
+  if (brightness < 128) {
+    return `rgba(255, 255, 255, ${opacity})`;
+  } else {
+    return `rgba(30, 41, 59, ${opacity})`;
+  }
+}
+
 const PreviewDeviceIcon = ({ device, current, onClick }: { device: PreviewDeviceType; current: PreviewDeviceType; onClick: () => void }) => {
   const icons = { desktop: Monitor, tablet: Tablet, mobile: Smartphone };
   const Icon = icons[device];
@@ -1513,141 +1536,141 @@ export default function AddQuestions() {
       )}
 
       <main className={`flex-1 flex flex-col h-full overflow-hidden ${readOnly ? "pt-12" : ""}`}>
-<header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 transition-colors duration-300">
-  {/* Button bar - top row */}
-  <div className="flex items-center justify-end gap-2 px-4 py-2">
-    {!readOnly && (
-      <button
-        onClick={() => setShowAiModifier(true)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all"
-      >
-        <Wand2 size={14} />
-        AI Modify
-      </button>
-    )}
-    
-    {/* Preview button */}
-    <button
-      onClick={() => {
-        if (readOnly) {
-          navigate("/created-surveys");
-          return;
-        }
-        setIsPreviewMode(!isPreviewMode);
-      }}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-        isPreviewMode
-          ? "bg-indigo-600 text-white"
-          : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
-      }`}
-    >
-      <Eye size={14} />
-      {isPreviewMode ? "Exit Preview" : "Preview"}
-    </button>
-    
-    {/* Device Switcher - only show in preview mode */}
-    {isPreviewMode && (
-      <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-slate-700 rounded-lg px-1.5 py-1">
-        <button
-          onClick={() => setPreviewDevice("desktop")}
-          className={`p-1 rounded-md transition-all ${previewDevice === "desktop" ? "bg-indigo-600 text-white" : "text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
-          title="Desktop"
-        >
-          <Monitor size={14} />
-        </button>
-        <button
-          onClick={() => setPreviewDevice("tablet")}
-          className={`p-1 rounded-md transition-all ${previewDevice === "tablet" ? "bg-indigo-600 text-white" : "text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
-          title="Tablet"
-        >
-          <Tablet size={14} />
-        </button>
-        <button
-          onClick={() => setPreviewDevice("mobile")}
-          className={`p-1 rounded-md transition-all ${previewDevice === "mobile" ? "bg-indigo-600 text-white" : "text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
-          title="Mobile"
-        >
-          <Smartphone size={14} />
-        </button>
-      </div>
-    )}
-    
-    {!readOnly && (
-      <button
-        onClick={async () => {
-          const url = surveyId
-            ? `http://localhost:5000/api/surveys/${surveyId}`
-            : "http://localhost:5000/api/surveys";
-          const method = surveyId ? "PUT" : "POST";
-          let finalId = surveyId;
-          try {
-            const token = localStorage.getItem("token");
-            const tenantId_hdr = localStorage.getItem("activeTenantId");
-            const res = await fetch(url, {
-              method,
-              credentials: "include",
-              headers: {
-                "Content-Type": "application/json",
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                ...(tenantId_hdr && tenantId_hdr !== "__system__"
-                  ? { "x-tenant-id": tenantId_hdr }
-                  : {}),
-              },
-              body: JSON.stringify({
-                surveyTitle,
-                description: description,
-                logo: logo,
-                websiteUrl: websiteUrl,
-                customizeBranding: customizeBranding,
-                primaryColor,
-                themeColor: primaryColor,
-                backgroundColor,
-                pages,
-                status: "Draft",
-                tenantId: tenantId ?? undefined,
-              }),
-            });
-            const data = await res.json();
-            finalId = surveyId || data.survey._id;
-          } catch {
-            alert("Could not save draft. Is the backend running?");
-            return;
-          }
-          navigate("/review-publish", {
-            state: {
-              surveyId: finalId,
-              surveyTitle,
-              description: description,
-              logo,
-              websiteUrl: websiteUrl,
-              customizeBranding: customizeBranding,
-              primaryColor,
-              backgroundColor,
-              pages,
-            },
-          });
-        }}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all bg-indigo-600 text-white hover:bg-indigo-700"
-      >
-        Review & Publish
-      </button>
-    )}
-  </div>
-  
-  {/* Title bar - bottom row */}
-  <div className="px-6 pb-4">
-    <input
-      type="text"
-      value={surveyTitle}
-      onChange={(e) => setSurveyTitle(e.target.value)}
-      readOnly={readOnly}
-      className={`text-xl font-bold bg-transparent border-none focus:outline-none focus:ring-0 w-full dark:text-white ${
-        readOnly ? "text-gray-500 cursor-default" : ""
-      }`}
-      placeholder="Survey Title"
-    />
-  </div>
-</header>
+        <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 transition-colors duration-300">
+          {/* Button bar - top row */}
+          <div className="flex items-center justify-end gap-2 px-4 py-2">
+            {!readOnly && (
+              <button
+                onClick={() => setShowAiModifier(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all"
+              >
+                <Wand2 size={14} />
+                AI Modify
+              </button>
+            )}
+            
+            {/* Preview button */}
+            <button
+              onClick={() => {
+                if (readOnly) {
+                  navigate("/created-surveys");
+                  return;
+                }
+                setIsPreviewMode(!isPreviewMode);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                isPreviewMode
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+              }`}
+            >
+              <Eye size={14} />
+              {isPreviewMode ? "Exit Preview" : "Preview"}
+            </button>
+            
+            {/* Device Switcher - only show in preview mode */}
+            {isPreviewMode && (
+              <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-slate-700 rounded-lg px-1.5 py-1">
+                <button
+                  onClick={() => setPreviewDevice("desktop")}
+                  className={`p-1 rounded-md transition-all ${previewDevice === "desktop" ? "bg-indigo-600 text-white" : "text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
+                  title="Desktop"
+                >
+                  <Monitor size={14} />
+                </button>
+                <button
+                  onClick={() => setPreviewDevice("tablet")}
+                  className={`p-1 rounded-md transition-all ${previewDevice === "tablet" ? "bg-indigo-600 text-white" : "text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
+                  title="Tablet"
+                >
+                  <Tablet size={14} />
+                </button>
+                <button
+                  onClick={() => setPreviewDevice("mobile")}
+                  className={`p-1 rounded-md transition-all ${previewDevice === "mobile" ? "bg-indigo-600 text-white" : "text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"}`}
+                  title="Mobile"
+                >
+                  <Smartphone size={14} />
+                </button>
+              </div>
+            )}
+            
+            {!readOnly && (
+              <button
+                onClick={async () => {
+                  const url = surveyId
+                    ? `http://localhost:5000/api/surveys/${surveyId}`
+                    : "http://localhost:5000/api/surveys";
+                  const method = surveyId ? "PUT" : "POST";
+                  let finalId = surveyId;
+                  try {
+                    const token = localStorage.getItem("token");
+                    const tenantId_hdr = localStorage.getItem("activeTenantId");
+                    const res = await fetch(url, {
+                      method,
+                      credentials: "include",
+                      headers: {
+                        "Content-Type": "application/json",
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                        ...(tenantId_hdr && tenantId_hdr !== "__system__"
+                          ? { "x-tenant-id": tenantId_hdr }
+                          : {}),
+                      },
+                      body: JSON.stringify({
+                        surveyTitle,
+                        description: description,
+                        logo: logo,
+                        websiteUrl: websiteUrl,
+                        customizeBranding: customizeBranding,
+                        primaryColor,
+                        themeColor: primaryColor,
+                        backgroundColor,
+                        pages,
+                        status: "Draft",
+                        tenantId: tenantId ?? undefined,
+                      }),
+                    });
+                    const data = await res.json();
+                    finalId = surveyId || data.survey._id;
+                  } catch {
+                    alert("Could not save draft. Is the backend running?");
+                    return;
+                  }
+                  navigate("/review-publish", {
+                    state: {
+                      surveyId: finalId,
+                      surveyTitle,
+                      description: description,
+                      logo,
+                      websiteUrl: websiteUrl,
+                      customizeBranding: customizeBranding,
+                      primaryColor,
+                      backgroundColor,
+                      pages,
+                    },
+                  });
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                Review & Publish
+              </button>
+            )}
+          </div>
+          
+          {/* Title bar - bottom row */}
+          <div className="px-6 pb-4">
+            <input
+              type="text"
+              value={surveyTitle}
+              onChange={(e) => setSurveyTitle(e.target.value)}
+              readOnly={readOnly}
+              className={`text-xl font-bold bg-transparent border-none focus:outline-none focus:ring-0 w-full dark:text-white ${
+                readOnly ? "text-gray-500 cursor-default" : ""
+              }`}
+              placeholder="Survey Title"
+            />
+          </div>
+        </header>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           <div className="max-w-3xl mx-auto py-12 px-6">
@@ -1706,109 +1729,146 @@ export default function AddQuestions() {
                 </div>
               </div>
             ) : (
-              // PREVIEW MODE with device switcher
+              // PREVIEW MODE with fixed background color visibility
+              <div className="relative">
+                <div className={`transition-all duration-300 mx-auto ${previewDeviceWidths[previewDevice]}`}>
+                  <div 
+                    className="rounded-3xl shadow-xl border border-gray-200 dark:border-slate-700 overflow-hidden min-h-150 flex flex-col transition-colors duration-300"
+                    style={{ backgroundColor: backgroundColor || "#FFFFFF" }}
+                  >
+                    <div
+                      style={{ backgroundColor: primaryColor }}
+                      className="h-2"
+                    />
+                    {/* Content area - no white background, shows the bg color */}
+                    <div className="p-10 flex-1">
+                      {logo && (
+                        <div className="flex justify-center mb-6">
+                          <img src={logo} alt="Survey logo" className="max-h-20 object-contain rounded" />
+                        </div>
+                      )}
+                      <h1 className="text-2xl font-bold mb-2" style={{ color: getTextColor(backgroundColor) }}>
+                        {surveyTitle}
+                      </h1>
+                      {description && (
+                        <p className="text-sm mb-1" style={{ color: getTextColor(backgroundColor, 0.7) }}>
+                          {description}
+                        </p>
+                      )}
+                      {customizeBranding && websiteUrl && (
+                        <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-xs text-blue-500 hover:text-blue-700 underline mb-6">
+                          {websiteUrl}
+                        </a>
+                      )}
+                      <p className="mb-8" style={{ color: getTextColor(backgroundColor, 0.6) }}>
+                        {activePage.title}
+                      </p>
 
-<div className="relative">
-  <div className={`transition-all duration-300 mx-auto ${previewDeviceWidths[previewDevice]}`}>
-    <div 
-      className="rounded-3xl shadow-xl border border-gray-200 dark:border-slate-700 overflow-hidden min-h-150 flex flex-col transition-colors duration-300"
-      style={{ backgroundColor: backgroundColor || "#FFFFFF" }}
-    >
-      <div
-        style={{ backgroundColor: primaryColor }}
-        className="h-2"
-      />
-      {/* Content area with white background for readability */}
-      <div className="p-10 flex-1">
-        {logo && (
-          <div className="flex justify-center mb-6">
-            <img src={logo} alt="Survey logo" className="max-h-20 object-contain rounded" />
-          </div>
-        )}
-        <h1 className="text-2xl font-bold mb-2 text-gray-900">{surveyTitle}</h1>
-        {description && <p className="text-gray-500 text-sm mb-1">{description}</p>}
-        {customizeBranding && websiteUrl && (
-          <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-xs text-blue-500 hover:text-blue-700 underline mb-6">
-            {websiteUrl}
-          </a>
-        )}
-        <p className="text-gray-500 mb-8">{activePage.title}</p>
+                      <div className="space-y-8">
+                        {activePage.questions.map((q, idx) => (
+                          <div key={q.id}>
+                            <div className="flex gap-2 mb-3">
+                              <span className="font-bold" style={{ color: getTextColor(backgroundColor) }}>
+                                {idx + 1}.
+                              </span>
+                              <h3 className="font-semibold" style={{ color: getTextColor(backgroundColor) }}>
+                                {q.label} {q.required && <span className="text-red-500">*</span>}
+                              </h3>
+                            </div>
+                            <div className="pl-6">
+                              {q.type === "short_text" && (
+                                <input 
+                                  type="text" 
+                                  className="w-full border-b-2 border-gray-300 focus:border-gray-500 outline-none pb-2 transition-colors" 
+                                  style={{ backgroundColor: "transparent", color: getTextColor(backgroundColor) }}
+                                  placeholder={q.placeholder || "Enter text here..."}
+                                />
+                              )}
+                              {q.type === "long_text" && (
+                                <textarea 
+                                  className="w-full border-2 border-gray-300 rounded-xl p-3 outline-none min-h-25 transition-colors focus:border-gray-500" 
+                                  style={{ backgroundColor: "transparent", color: getTextColor(backgroundColor) }}
+                                  placeholder={q.placeholder || "Enter detailed response..."}
+                                  rows={4}
+                                />
+                              )}
+                              {(q.type === "multiple_choice" || q.type === "checkboxes") && (
+                                <div className="space-y-3">
+                                  {q.options?.map((opt: string, i: number) => (
+                                    <label key={i} className="flex items-center gap-3 cursor-pointer group">
+                                      <input 
+                                        type={q.type === "multiple_choice" ? "radio" : "checkbox"} 
+                                        name={q.id} 
+                                        className="w-5 h-5 border-gray-400 rounded-full focus:ring-0" 
+                                      />
+                                      <span className="transition-colors" style={{ color: getTextColor(backgroundColor) }}>
+                                        {opt}
+                                      </span>
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                              {q.type === "rating" && (
+                                <div className="flex gap-2 flex-wrap">
+                                  {[...Array(q.max || 5)].map((_, i) => (
+                                    <button 
+                                      key={i} 
+                                      className="w-10 h-10 rounded-lg border-2 border-gray-300 transition-all hover:border-yellow-400"
+                                      style={{ color: getTextColor(backgroundColor, 0.5) }}
+                                    >
+                                      <Star size={20} />
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              {q.type === "number" && (
+                                <input 
+                                  type="number" 
+                                  className="border-2 border-gray-300 rounded-lg p-2 outline-none w-32 focus:border-gray-500" 
+                                  style={{ backgroundColor: "transparent", color: getTextColor(backgroundColor) }}
+                                  placeholder="Enter a number"
+                                />
+                              )}
+                              {q.type === "date" && (
+                                <DatePickerCalendar value={responses[q.id] || ""} onChange={(date) => setResponses((prev) => ({ ...prev, [q.id]: date }))} />
+                              )}
+                              {q.branching?.enabled && (
+                                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-semibold text-indigo-700">
+                                  Conditional flow mapped
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-        <div className="space-y-8">
-          {activePage.questions.map((q, idx) => (
-            <div key={q.id}>
-              <div className="flex gap-2 mb-3">
-                <span className="font-bold text-gray-700">{idx + 1}.</span>
-                <h3 className="font-semibold text-gray-800">
-                  {q.label} {q.required && <span className="text-red-500">*</span>}
-                </h3>
+                    <div className="p-8 bg-gray-50/80 dark:bg-slate-800/80 flex justify-between items-center border-t border-gray-200 dark:border-slate-700">
+                      <div className="flex gap-2">
+                        {pages.map((_, i) => (
+                          <div key={i} className="w-2 h-2 rounded-full transition-colors" style={{ backgroundColor: activePageIndex === i ? primaryColor : "#D1D5DB" }} />
+                        ))}
+                      </div>
+                      <div className="flex gap-4">
+                        {activePageIndex > 0 && (
+                          <button onClick={() => setActivePageIndex(activePageIndex - 1)} className="px-6 py-2 border border-gray-300 rounded-xl font-semibold hover:bg-gray-100 transition-all text-gray-700">
+                            Back
+                          </button>
+                        )}
+                        {activePageIndex < pages.length - 1 ? (
+                          <button onClick={() => setActivePageIndex(activePageIndex + 1)} style={{ backgroundColor: primaryColor }} className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all flex items-center gap-2">
+                            Next <ChevronRight size={18} />
+                          </button>
+                        ) : (
+                          <button style={{ backgroundColor: primaryColor }} className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all">
+                            Submit Survey
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="pl-6">
-                {q.type === "short_text" && (
-                  <input type="text" className="w-full border-b-2 border-gray-200 focus:border-gray-400 outline-none pb-2 transition-colors bg-transparent text-gray-800" placeholder={q.placeholder} />
-                )}
-                {q.type === "long_text" && (
-                  <textarea className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none min-h-25 transition-colors focus:border-gray-400 bg-transparent text-gray-800" placeholder={q.placeholder} />
-                )}
-                {(q.type === "multiple_choice" || q.type === "checkboxes") && (
-                  <div className="space-y-3">
-                    {q.options?.map((opt: string, i: number) => (
-                      <label key={i} className="flex items-center gap-3 cursor-pointer group">
-                        <input type={q.type === "multiple_choice" ? "radio" : "checkbox"} name={q.id} className="w-5 h-5 border-gray-300 rounded-full focus:ring-0" />
-                        <span className="text-gray-700 transition-colors">{opt}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-                {q.type === "rating" && (
-                  <div className="flex gap-2 flex-wrap">
-                    {[...Array(q.max || 5)].map((_, i) => (
-                      <button key={i} className="w-10 h-10 rounded-lg border-2 border-gray-200 text-gray-400 hover:text-yellow-400 transition-all">
-                        <Star size={20} />
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {q.type === "number" && (
-                  <input type="number" className="border-2 border-gray-200 rounded-lg p-2 outline-none w-32 focus:border-gray-400 bg-transparent text-gray-800" />
-                )}
-                {q.type === "date" && (
-                  <DatePickerCalendar value={responses[q.id] || ""} onChange={(date) => setResponses((prev) => ({ ...prev, [q.id]: date }))} />
-                )}
-                {q.branching?.enabled && (
-                  <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-semibold text-indigo-700">
-                    Conditional flow mapped
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="p-8 bg-gray-50 dark:bg-slate-800 flex justify-between items-center border-t border-gray-200 dark:border-slate-700">
-        <div className="flex gap-2">
-          {pages.map((_, i) => (
-            <div key={i} className="w-2 h-2 rounded-full transition-colors" style={{ backgroundColor: activePageIndex === i ? primaryColor : "#D1D5DB" }} />
-          ))}
-        </div>
-        <div className="flex gap-4">
-          {activePageIndex > 0 && (
-            <button onClick={() => setActivePageIndex(activePageIndex - 1)} className="px-6 py-2 border border-gray-300 rounded-xl font-semibold hover:bg-gray-100 transition-all text-gray-700">Back</button>
-          )}
-          {activePageIndex < pages.length - 1 ? (
-            <button onClick={() => setActivePageIndex(activePageIndex + 1)} style={{ backgroundColor: primaryColor }} className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all flex items-center gap-2">Next <ChevronRight size={18} /></button>
-          ) : (
-            <button style={{ backgroundColor: primaryColor }} className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all">Submit Survey</button>
-          )}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-             
             )}
           </div>
         </div>
