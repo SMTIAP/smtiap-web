@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 import Survey from "../models/Survey.js";
 import AuditLog from "../models/AuditLog.js";
 
@@ -163,6 +164,8 @@ export const createSurvey = async (req: Request, res: Response) => {
       isAnonymous,
       pages,
       status,
+      isPasswordProtected,
+      password,
     } = req.body;
 
     if (!surveyTitle) {
@@ -189,6 +192,13 @@ export const createSurvey = async (req: Request, res: Response) => {
       return;
     }
 
+    // Hash password if password protection is enabled
+    let hashedPassword = "";
+    if (isPasswordProtected && password) {
+      const saltRounds = 10;
+      hashedPassword = await bcrypt.hash(password, saltRounds);
+    }
+
     const survey = new Survey({
       surveyTitle,
       description,
@@ -200,6 +210,8 @@ export const createSurvey = async (req: Request, res: Response) => {
       isAnonymous,
       pages,
       status,
+      isPasswordProtected: isPasswordProtected || false,
+      password: hashedPassword,
       // Auto-assign tenantId from user's active tenant membership
       tenantId: activeTenantId ?? null,
       createdBy: user?._id ?? null,
@@ -329,7 +341,21 @@ export const updateSurvey = async (req: Request, res: Response) => {
 
     // Never allow overwriting tenantId or createdBy via the request body
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { tenantId: _tid, createdBy: _cb, ...safeBody } = req.body;
+    const { tenantId: _tid, createdBy: _cb, password, isPasswordProtected, ...safeBody } = req.body;
+
+    // Handle password hashing if password protection is being updated
+    if (isPasswordProtected !== undefined) {
+      safeBody.isPasswordProtected = isPasswordProtected;
+      
+      if (isPasswordProtected && password) {
+        // Hash the new password
+        const saltRounds = 10;
+        safeBody.password = await bcrypt.hash(password, saltRounds);
+      } else if (!isPasswordProtected) {
+        // Clear the password if protection is disabled
+        safeBody.password = "";
+      }
+    }
 
     const updated = await Survey.findByIdAndUpdate(req.params.id, safeBody, {
       new: true,
@@ -351,7 +377,7 @@ export const updateSurvey = async (req: Request, res: Response) => {
 export const updateStatus = async (req: Request, res: Response) => {
   try {
     const { status } = req.body;
-    if (!["Draft", "Running", "Finished"].includes(status)) {
+    if (!["Draft", "Running", "Finished", "Scheduled"].includes(status)) {
       res.status(400).json({ message: "Invalid status" });
       return;
     }
@@ -403,5 +429,34 @@ export const deleteSurvey = async (req: Request, res: Response) => {
     res.json({ message: "Survey deleted" });
   } catch (err) {
     res.status(500).json({ message: String(err) });
+  }
+};
+
+// POST /api/surveys/:id/verify-password — Verifies survey password
+export const verifySurveyPassword = async (req: Request, res: Response) => {
+  try {
+    const { password } = req.body;
+    const survey = await Survey.findById(req.params.id);
+    
+    if (!survey) {
+      res.status(404).json({ success: false, message: "Survey not found" });
+      return;
+    }
+    
+    if (!survey.isPasswordProtected) {
+      res.status(400).json({ success: false, message: "Survey is not password protected" });
+      return;
+    }
+    
+    // Compare the provided password with the stored hash
+    const isValid = await bcrypt.compare(password, survey.password);
+    
+    if (isValid) {
+      res.json({ success: true, message: "Password verified" });
+    } else {
+      res.status(401).json({ success: false, message: "Invalid password" });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: String(err) });
   }
 };
