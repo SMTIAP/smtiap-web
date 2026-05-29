@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 import fogotPasswordImg from "../assets/fogotpasswprd.png";
+import BackButton from "../components/BackButton";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -54,6 +55,9 @@ export default function ForgotPassword() {
 
         {/* ── RIGHT PANEL ── */}
         <div className="flex-1 flex flex-col justify-center px-10 py-10 bg-white">
+          {/* Back Button */}
+          <BackButton to="/auth" className="mb-4 w-fit" />
+
           {/* Logo */}
           <div className="flex items-center gap-2 mb-9">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center  bg-indigo-600">
