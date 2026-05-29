@@ -27,6 +27,12 @@ export default function ReviewAndPublish() {
   const [scheduledOpen, setScheduledOpen] = useState<string | null>(null);
   const [scheduledClose, setScheduledClose] = useState<string | null>(null);
 
+  // Helper function to get AM/PM
+  const getAmPm = (time: string) => {
+    const hour = parseInt(time.split(":")[0]);
+    return hour >= 12 ? "PM" : "AM";
+  };
+
   // Block viewers from publishing
   if (isViewer) {
     toast.error("You do not have permission to publish or edit surveys");
@@ -132,28 +138,22 @@ export default function ReviewAndPublish() {
     const handleSave = () => {
       let openDateTime: string | null = null;
       let closeDateTime: string | null = null;
+      const now = new Date();
 
       if (enableOpen && openDate) {
-        // Create date in local timezone and convert to UTC for storage
         const localDate = new Date(`${openDate}T${openTime}:00`);
-        
-        // Validate that open date is not in the past
-        if (localDate < new Date()) {
-          toast.error("Open date cannot be in the past");
+        if (localDate < now) {
+          toast.error("Please select a future time for opening");
           return;
         }
         openDateTime = localDate.toISOString();
       }
       if (enableClose && closeDate) {
         const localDate = new Date(`${closeDate}T${closeTime}:00`);
-        
-        // Validate that close date is not in the past
-        if (localDate < new Date()) {
-          toast.error("Close date cannot be in the past");
+        if (localDate < now) {
+          toast.error("Please select a future time for closing");
           return;
         }
-        
-        // Validate that close date is after open date (if both are set)
         if (enableOpen && openDate && localDate <= new Date(`${openDate}T${openTime}:00`)) {
           toast.error("Close date must be after open date");
           return;
@@ -211,14 +211,19 @@ export default function ReviewAndPublish() {
                     className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm"
                   />
                 </div>
-                <div className="w-28 relative">
-                  <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="time"
-                    value={openTime}
-                    onChange={(e) => setOpenTime(e.target.value)}
-                    className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm"
-                  />
+                <div className="flex items-center gap-1">
+                  <div className="relative w-28">
+                    <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="time"
+                      value={openTime}
+                      onChange={(e) => setOpenTime(e.target.value)}
+                      className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm"
+                    />
+                  </div>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 w-9">
+                    {getAmPm(openTime)}
+                  </span>
                 </div>
               </div>
             )}
@@ -251,14 +256,19 @@ export default function ReviewAndPublish() {
                     className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm"
                   />
                 </div>
-                <div className="w-28 relative">
-                  <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="time"
-                    value={closeTime}
-                    onChange={(e) => setCloseTime(e.target.value)}
-                    className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm"
-                  />
+                <div className="flex items-center gap-1">
+                  <div className="relative w-28">
+                    <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="time"
+                      value={closeTime}
+                      onChange={(e) => setCloseTime(e.target.value)}
+                      className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm"
+                    />
+                  </div>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 w-9">
+                    {getAmPm(closeTime)}
+                  </span>
                 </div>
               </div>
             )}
