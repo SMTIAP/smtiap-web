@@ -360,15 +360,15 @@ export default function SurveySettings() {
               </label>
 
               {enableOpen && (
-                <div className="flex gap-2 mt-2">
+                <div className="flex flex-col gap-2 mt-2">
                   <input
                     type="date"
                     value={openDate}
                     min={today}
                     onChange={(e) => setOpenDate(e.target.value)}
-                    className="flex-1 px-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500"
                   />
-                  <div className="flex gap-1">
+                  <div className="flex items-center gap-1">
                     <input
                       type="number"
                       value={openTime.split(":")[0]}
@@ -376,11 +376,15 @@ export default function SurveySettings() {
                       max="12"
                       onChange={(e) => {
                         const minutes = openTime.split(":")[1];
-                        setOpenTime(`${e.target.value.padStart(2, "0")}:${minutes}`);
+                        let val = parseInt(e.target.value);
+                        if (isNaN(val)) val = 1;
+                        if (val < 1) val = 1;
+                        if (val > 12) val = 12;
+                        setOpenTime(`${val.toString().padStart(2, "0")}:${minutes}`);
                       }}
-                      className="w-14 px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-center focus:ring-1 focus:ring-indigo-500"
+                      className="w-16 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white text-center focus:ring-1 focus:ring-indigo-500"
                     />
-                    <span className="text-slate-500 self-center">:</span>
+                    <span className="text-slate-500 dark:text-slate-400">:</span>
                     <input
                       type="number"
                       value={openTime.split(":")[1]}
@@ -388,14 +392,18 @@ export default function SurveySettings() {
                       max="59"
                       onChange={(e) => {
                         const hours = openTime.split(":")[0];
-                        setOpenTime(`${hours}:${e.target.value.padStart(2, "0")}`);
+                        let val = parseInt(e.target.value);
+                        if (isNaN(val)) val = 0;
+                        if (val < 0) val = 0;
+                        if (val > 59) val = 59;
+                        setOpenTime(`${hours}:${val.toString().padStart(2, "0")}`);
                       }}
-                      className="w-14 px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-center focus:ring-1 focus:ring-indigo-500"
+                      className="w-16 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white text-center focus:ring-1 focus:ring-indigo-500"
                     />
                     <select
                       value={openAmPm}
                       onChange={(e) => setOpenAmPm(e.target.value)}
-                      className="px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-1 focus:ring-indigo-500"
+                      className="px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500"
                     >
                       <option value="AM">AM</option>
                       <option value="PM">PM</option>
@@ -418,15 +426,15 @@ export default function SurveySettings() {
               </label>
 
               {enableClose && (
-                <div className="flex gap-2 mt-2">
+                <div className="flex flex-col gap-2 mt-2">
                   <input
                     type="date"
                     value={closeDate}
                     min={today}
                     onChange={(e) => setCloseDate(e.target.value)}
-                    className="flex-1 px-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-1 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500"
                   />
-                  <div className="flex gap-1">
+                  <div className="flex items-center gap-1">
                     <input
                       type="number"
                       value={closeTime.split(":")[0]}
@@ -434,11 +442,15 @@ export default function SurveySettings() {
                       max="12"
                       onChange={(e) => {
                         const minutes = closeTime.split(":")[1];
-                        setCloseTime(`${e.target.value.padStart(2, "0")}:${minutes}`);
+                        let val = parseInt(e.target.value);
+                        if (isNaN(val)) val = 1;
+                        if (val < 1) val = 1;
+                        if (val > 12) val = 12;
+                        setCloseTime(`${val.toString().padStart(2, "0")}:${minutes}`);
                       }}
-                      className="w-14 px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-center focus:ring-1 focus:ring-indigo-500"
+                      className="w-16 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white text-center focus:ring-1 focus:ring-indigo-500"
                     />
-                    <span className="text-slate-500 self-center">:</span>
+                    <span className="text-slate-500 dark:text-slate-400">:</span>
                     <input
                       type="number"
                       value={closeTime.split(":")[1]}
@@ -446,14 +458,18 @@ export default function SurveySettings() {
                       max="59"
                       onChange={(e) => {
                         const hours = closeTime.split(":")[0];
-                        setCloseTime(`${hours}:${e.target.value.padStart(2, "0")}`);
+                        let val = parseInt(e.target.value);
+                        if (isNaN(val)) val = 0;
+                        if (val < 0) val = 0;
+                        if (val > 59) val = 59;
+                        setCloseTime(`${hours}:${val.toString().padStart(2, "0")}`);
                       }}
-                      className="w-14 px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-center focus:ring-1 focus:ring-indigo-500"
+                      className="w-16 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white text-center focus:ring-1 focus:ring-indigo-500"
                     />
                     <select
                       value={closeAmPm}
                       onChange={(e) => setCloseAmPm(e.target.value)}
-                      className="px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-1 focus:ring-indigo-500"
+                      className="px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-1 focus:ring-indigo-500"
                     >
                       <option value="AM">AM</option>
                       <option value="PM">PM</option>
