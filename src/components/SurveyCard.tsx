@@ -1,5 +1,4 @@
 import { Check } from "lucide-react";
-import { Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface SurveyCardProps {
@@ -18,30 +17,45 @@ const SurveyCard: React.FC<SurveyCardProps> = ({
 
   if (variant === "finished") {
     const finishedCard = (
-      <div className="group relative w-full h-full min-h-80 rounded-[28px] bg-white dark:bg-slate-800 border border-[#E5EAF2] dark:border-slate-700 shadow-[0_8px_22px_rgba(15,23,42,0.08)] dark:shadow-[0_8px_22px_rgba(0,0,0,0.3)] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(15,23,42,0.14)]">
-        <div className="h-1.5 w-full bg-[#FF5B8A]" />
-        <div className="p-6 pt-7 h-[calc(100%-6px)] flex flex-col items-center">
-          {date && (
-            <span className="self-end inline-flex items-center px-3 py-1 rounded-full bg-[#F2F4F8] dark:bg-slate-700 text-[#7D93B5] dark:text-slate-400 text-[11px] font-semibold tracking-wide">
+      <div className="group relative flex flex-col items-center p-8 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-2xl shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden aspect-[3/4]">
+        {/* Animated gradient border */}
+        <div className="absolute inset-0 bg-gradient-to-r from-rose-400 via-rose-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl -z-10"></div>
+        <div className="absolute inset-[1px] bg-white/90 dark:bg-slate-800/90 rounded-2xl -z-5"></div>
+        
+        {/* Status bar */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-rose-500 to-rose-600" />
+
+        {/* Date */}
+        {date && (
+          <div className="flex justify-between items-center w-full mb-6">
+            <span className="text-slate-500 text-[10px] font-extrabold bg-white/80 dark:bg-slate-700/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm border border-slate-100 dark:border-slate-600">
               {date}
             </span>
-          )}
-          <div className="mt-12 w-16 h-16 rounded-full bg-[#FBEFF3] dark:bg-rose-900/30 flex items-center justify-center">
-            <span className="w-8 h-8 rounded-full border-4 border-[#FF3C6A] flex items-center justify-center">
-              <Check size={14} className="text-[#FF3C6A] stroke-[3.2]" />
-            </span>
+            <div className="w-8 h-8 rounded-full bg-white/95 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center shadow-sm">
+              <Check size={13} />
+            </div>
           </div>
-          <h3 className="mt-8 text-[22px] leading-tight text-[#112C56] dark:text-white font-black tracking-tight text-center line-clamp-2">
+        )}
+
+        {/* Check circle icon */}
+        <div className="flex flex-col items-center justify-center flex-grow text-center w-full">
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-4 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 shadow-lg bg-gradient-to-br from-rose-100 to-rose-200 dark:from-rose-900/40 dark:to-rose-800/40 text-rose-600">
+            <div className="w-12 h-12 rounded-full border-4 border-rose-500 flex items-center justify-center">
+              <Check size={20} className="text-rose-500 stroke-[3]" />
+            </div>
+          </div>
+          
+          <h3 className="text-slate-800 dark:text-white font-bold text-base leading-tight line-clamp-2 transition-colors duration-300 group-hover:text-rose-600 dark:group-hover:text-rose-400 mb-2">
             {title}
           </h3>
-          {category && (
-            <div className="mt-auto w-full flex justify-center pb-1">
-              <span className="inline-flex items-center justify-center px-6 py-2 rounded-full bg-[#FFF2F5] dark:bg-rose-900/20 border border-[#FFD6DF] dark:border-rose-800 text-[#F3124F] dark:text-rose-400 text-xs font-black tracking-[0.14em] uppercase">
-                {normalizedCategory}
-              </span>
-            </div>
-          )}
         </div>
+
+        {/* Category badge */}
+        {category && (
+          <div className="mt-4 px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-md">
+            {normalizedCategory}
+          </div>
+        )}
       </div>
     );
 
