@@ -132,28 +132,22 @@ export default function ReviewAndPublish() {
     const handleSave = () => {
       let openDateTime: string | null = null;
       let closeDateTime: string | null = null;
+      const now = new Date();
 
       if (enableOpen && openDate) {
-        // Create date in local timezone and convert to UTC for storage
         const localDate = new Date(`${openDate}T${openTime}:00`);
-        
-        // Validate that open date is not in the past
-        if (localDate < new Date()) {
-          toast.error("Open date cannot be in the past");
+        if (localDate < now) {
+          toast.error("Please select a future time for opening");
           return;
         }
         openDateTime = localDate.toISOString();
       }
       if (enableClose && closeDate) {
         const localDate = new Date(`${closeDate}T${closeTime}:00`);
-        
-        // Validate that close date is not in the past
-        if (localDate < new Date()) {
-          toast.error("Close date cannot be in the past");
+        if (localDate < now) {
+          toast.error("Please select a future time for closing");
           return;
         }
-        
-        // Validate that close date is after open date (if both are set)
         if (enableOpen && openDate && localDate <= new Date(`${openDate}T${openTime}:00`)) {
           toast.error("Close date must be after open date");
           return;
