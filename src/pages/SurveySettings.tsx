@@ -237,18 +237,19 @@ export default function SurveySettings() {
       <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
       
       <div className="max-w-4xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-          >
-            <ArrowLeft size={16} className="text-slate-600 dark:text-slate-400" />
-          </button>
+        {/* Header - Title on left, back button on right */}
+        <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-black text-slate-900 dark:text-white">Survey Settings</h1>
             <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{survey?.surveyTitle}</p>
           </div>
+          <button
+            onClick={() => navigate(-1)}
+            className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+            title="Back"
+          >
+            <ArrowLeft size={16} />
+          </button>
         </div>
 
         <div className="grid gap-6">
