@@ -91,6 +91,7 @@ export default function ReviewAndPublish() {
           state: {
             surveyId: savedSurvey._id,
             surveyTitle: savedSurvey.surveyTitle,
+            scheduledOpen: status === "Scheduled" ? savedSurvey.scheduledOpen : null,
           },
         });
       } else {
