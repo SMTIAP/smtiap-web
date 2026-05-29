@@ -344,8 +344,12 @@ export default function CreatedSurveys() {
       const data = await response.json();
       // Sort by updatedAt or createdAt (newest first)
       const sortedData = (Array.isArray(data) ? data : []).sort((a, b) => {
-        const dateA = a.updatedAt ? new Date(a.updatedAt) : new Date(a.createdAt);
-        const dateB = b.updatedAt ? new Date(b.updatedAt) : new Date(b.createdAt);
+        const dateA = a.updatedAt
+          ? new Date(a.updatedAt)
+          : new Date(a.createdAt);
+        const dateB = b.updatedAt
+          ? new Date(b.updatedAt)
+          : new Date(b.createdAt);
         return dateB.getTime() - dateA.getTime();
       });
       setSurveys(sortedData);
@@ -536,13 +540,13 @@ export default function CreatedSurveys() {
 
       <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
 
-      <div className="flex max-w-[1200px] py-12 px-8 flex-col items-start gap-6 w-full">
-        <div className="flex justify-between items-center w-full">
+      <div className="flex max-w-[1200px] py-8 sm:py-12 px-4 sm:px-8 flex-col items-start gap-5 sm:gap-6 w-full">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full gap-3 sm:gap-0">
           <div>
-            <h1 className="text-[#0F172A] dark:text-white text-3xl font-black tracking-tight mb-2">
+            <h1 className="text-[#0F172A] dark:text-white text-2xl sm:text-3xl font-black tracking-tight mb-1 sm:mb-2">
               My Surveys
             </h1>
-            <p className="text-[#64748B] dark:text-slate-400 text-sm font-medium">
+            <p className="text-[#64748B] dark:text-slate-400 text-xs sm:text-sm font-medium">
               Track performance and draft new insights.
             </p>
           </div>
@@ -569,13 +573,13 @@ export default function CreatedSurveys() {
           </div>
         </div>
 
-        {/* Tabs - Added "Scheduled" tab */}
-        <div className="flex bg-slate-100/80 dark:bg-slate-800 p-1.5 rounded-[1.25rem] self-end backdrop-blur-md border border-slate-200/50 dark:border-slate-700">
+        {/* Tabs */}
+        <div className="flex bg-slate-100/80 dark:bg-slate-800 p-1.5 rounded-[1.25rem] self-end backdrop-blur-md border border-slate-200/50 dark:border-slate-700 overflow-x-auto w-full sm:w-auto">
           {["All", "Running", "Draft", "Scheduled", "Finished"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-6 py-2 text-xs font-black uppercase tracking-wider rounded-[0.85rem] transition-all duration-300 ${
+              className={`px-3 sm:px-6 py-2 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-[0.85rem] transition-all duration-300 whitespace-nowrap ${
                 activeTab === tab
                   ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white opacity-70"
@@ -587,7 +591,7 @@ export default function CreatedSurveys() {
         </div>
 
         {/* Survey Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 w-full">
           {filteredSurveys.map((survey) => {
             const isRunning = survey.status === "Running";
             const isDraft = survey.status === "Draft";
@@ -605,9 +609,12 @@ export default function CreatedSurveys() {
             };
 
             const getIconBg = () => {
-              if (isRunning) return "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500";
-              if (isDraft) return "bg-amber-50 dark:bg-amber-900/30 text-amber-500";
-              if (isScheduled) return "bg-purple-50 dark:bg-purple-900/30 text-purple-500";
+              if (isRunning)
+                return "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500";
+              if (isDraft)
+                return "bg-amber-50 dark:bg-amber-900/30 text-amber-500";
+              if (isScheduled)
+                return "bg-purple-50 dark:bg-purple-900/30 text-purple-500";
               return "bg-rose-50 dark:bg-rose-900/30 text-rose-500";
             };
 
@@ -619,9 +626,12 @@ export default function CreatedSurveys() {
             };
 
             const getBadgeClass = () => {
-              if (isRunning) return "text-emerald-600 border-emerald-100 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800 group-hover:bg-emerald-500 group-hover:text-white";
-              if (isDraft) return "text-amber-600 border-amber-100 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 group-hover:bg-amber-500 group-hover:text-white";
-              if (isScheduled) return "text-purple-600 border-purple-100 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800 group-hover:bg-purple-500 group-hover:text-white";
+              if (isRunning)
+                return "text-emerald-600 border-emerald-100 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800 group-hover:bg-emerald-500 group-hover:text-white";
+              if (isDraft)
+                return "text-amber-600 border-amber-100 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 group-hover:bg-amber-500 group-hover:text-white";
+              if (isScheduled)
+                return "text-purple-600 border-purple-100 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800 group-hover:bg-purple-500 group-hover:text-white";
               return "text-rose-600 border-rose-100 bg-rose-50 dark:bg-rose-900/20 dark:border-rose-800 group-hover:bg-rose-500 group-hover:text-white";
             };
 
@@ -629,7 +639,7 @@ export default function CreatedSurveys() {
               <div
                 key={survey._id}
                 onClick={() => handleCardClick(survey)}
-                className="group relative flex flex-col items-center p-8 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-2 cursor-pointer aspect-[3/4] overflow-hidden"
+                className="group relative flex flex-col items-center p-5 sm:p-8 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-2 cursor-pointer aspect-[3/4] overflow-hidden"
               >
                 <div
                   className={`absolute top-0 left-0 w-full h-1.5 ${getStatusColor()}`}
@@ -701,17 +711,17 @@ export default function CreatedSurveys() {
 
                 <div className="flex flex-col items-center justify-center flex-grow text-center w-full">
                   <div
-                    className={`w-14 h-14 rounded-3xl flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ${getIconBg()}`}
+                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl sm:rounded-3xl flex items-center justify-center mb-4 sm:mb-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ${getIconBg()}`}
                   >
                     {getIcon()}
                   </div>
-                  <h3 className="text-slate-800 dark:text-white font-black text-lg leading-tight line-clamp-2 transition-colors duration-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                  <h3 className="text-slate-800 dark:text-white font-black text-base sm:text-lg leading-tight line-clamp-2 transition-colors duration-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
                     {survey.surveyTitle || "Untitled Survey"}
                   </h3>
                 </div>
 
                 <div
-                  className={`mt-6 px-6 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] border-2 transition-all duration-500 ${getBadgeClass()}`}
+                  className={`mt-4 sm:mt-6 px-4 sm:px-6 py-1.5 sm:py-2 rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] border-2 transition-all duration-500 ${getBadgeClass()}`}
                 >
                   {survey.status}
                 </div>
@@ -721,11 +731,11 @@ export default function CreatedSurveys() {
         </div>
 
         {filteredSurveys.length === 0 && (
-          <div className="w-full py-32 text-center bg-slate-50 dark:bg-slate-800 border-4 border-dashed border-slate-200/50 dark:border-slate-700 rounded-[3rem] flex flex-col items-center gap-4">
+          <div className="w-full py-16 sm:py-32 text-center bg-slate-50 dark:bg-slate-800 border-4 border-dashed border-slate-200/50 dark:border-slate-700 rounded-[2rem] sm:rounded-[3rem] flex flex-col items-center gap-4">
             <div className="p-4 bg-white dark:bg-slate-700 rounded-full shadow-md text-slate-300">
               <Layout size={40} />
             </div>
-            <p className="text-slate-400 font-bold text-xl">
+            <p className="text-slate-400 font-bold text-lg sm:text-xl">
               No {activeTab.toLowerCase()} surveys found.
             </p>
           </div>
