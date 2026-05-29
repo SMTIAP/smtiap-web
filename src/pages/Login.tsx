@@ -10,7 +10,25 @@ export default function Login() {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleResendVerification = async () => {
+    if (!email) return;
+    try {
+      setResendLoading(true);
+      const res = await axios.post("http://localhost:5000/api/users/resend-verification", {
+        email,
+      });
+      setMessage(res.data.message || "Verification email resent! Please check your inbox.");
+      setNeedsVerification(false);
+    } catch (err: any) {
+      setMessage(err.response?.data?.message || "Failed to resend verification email.");
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,7 +36,8 @@ export default function Login() {
     try {
       setLoading(true);
       setMessage("");
-
+      setNeedsVerification(false);
+ 
       const res = await axios.post(
         "http://localhost:5000/api/users/login",
         {
@@ -31,7 +50,7 @@ export default function Login() {
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
       }
-
+ 
       if (userRole === "admin") {
         navigate("/admin");
       } else if (userRole === "creater") {
@@ -41,10 +60,13 @@ export default function Login() {
       } else {
         navigate("/admin");
       }
-
+ 
       setMessage("Login successful ✔");
       console.log(res.data);
     } catch (err: any) {
+      if (err.response?.status === 401 && err.response?.data?.message?.includes("verify")) {
+        setNeedsVerification(true);
+      }
       setMessage(err.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
@@ -129,7 +151,21 @@ export default function Login() {
       </form>
 
       {message && (
-        <div className="mt-[10px] text-[12px] font-semibold">{message}</div>
+        <div className={`mt-[10px] text-[12px] font-semibold ${needsVerification ? 'text-rose-500' : 'text-[#5a45b8]'}`}>{message}</div>
+      )}
+
+      {needsVerification && (
+        <div className="w-full bg-[#f3f0ff] border border-[#e5e0fa] text-[#5a45b8] rounded-[14px] p-4 mt-[14px] text-xs text-center flex flex-col items-center animate-[fadeIn_0.3s_ease-out]">
+          <p className="font-bold mb-2">Account is not verified yet</p>
+          <button
+            type="button"
+            onClick={handleResendVerification}
+            disabled={resendLoading}
+            className="w-full py-2 bg-gradient-to-br from-[#7b6ee0] to-[#5a45b8] text-white rounded-full font-bold text-[10px] uppercase tracking-wide cursor-pointer transition-all duration-200 hover:shadow-[0_2px_8px_rgba(90,69,184,0.3)] disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {resendLoading ? "Resending..." : "Resend Verification Email"}
+          </button>
+        </div>
       )}
     </div>
   );

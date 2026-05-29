@@ -10,6 +10,9 @@ export interface IUser extends Document {
 
   resetPasswordToken?: string | null;
   resetPasswordExpire?: Date | null;
+  isVerified: boolean;
+  verificationToken?: string | null;
+  verificationTokenExpire?: Date | null;
   matchPassword(enteredPassword: string): Promise<boolean>;
 }
 
@@ -34,15 +37,26 @@ const userSchema = new Schema<IUser>({
     default: "admin"
   },
   resetPasswordToken: {
-      type: String,
-      default: null
-    },
-
-    resetPasswordExpire: {
-      type: Date,
-      default: null
-    }
+    type: String,
+    default: null
   },
+  resetPasswordExpire: {
+    type: Date,
+    default: null
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  verificationToken: {
+    type: String,
+    default: null
+  },
+  verificationTokenExpire: {
+    type: Date,
+    default: null
+  }
+},
   {
     timestamps: true
   }

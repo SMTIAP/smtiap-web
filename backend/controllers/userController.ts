@@ -19,13 +19,54 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verificationTokenExpire = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
     const user = await User.create({
       username,
       email,
       password,
+      isVerified: false,
+      verificationToken,
+      verificationTokenExpire,
     });
 
-    sendToken(user, res);
+    const verificationUrl = `http://localhost:5173/verify-email?token=${verificationToken}&email=${email}`;
+    
+    try {
+      await sendEmail(
+        user.email,
+        "Verify Your Email - MTSP",
+        `
+          <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; border: 1px solid #E5E7EB; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <h2 style="color: #5C38E1; text-align: center;">Welcome to MTSP!</h2>
+            <p>Hello <strong>${user.username}</strong>,</p>
+            <p>Thank you for registering. Please verify your email address to activate your account. This verification link will expire in <strong>24 hours</strong>.</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${verificationUrl}" style="background: #5C38E1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Verify Email Address</a>
+            </div>
+            <p style="word-break: break-all; font-size: 12px; color: #6B7280; text-align: center;">
+              If the button doesn't work, copy and paste this link into your browser:<br/>
+              <a href="${verificationUrl}" style="color: #5C38E1;">${verificationUrl}</a>
+            </p>
+            <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;" />
+            <p style="color: #6B7280; font-size: 12px; text-align: center;">If you did not create an account, please ignore this email.</p>
+          </div>
+        `
+      );
+    } catch (emailError: any) {
+      console.error("❌ Email sending failed:", emailError);
+      // Clean up newly created user since verification email could not be sent
+      await User.deleteOne({ _id: user._id });
+      res.status(500).json({
+        message: `Account creation halted because verification email failed to send: ${emailError.message}. Please configure valid SMTP credentials in backend/.env.`
+      });
+      return;
+    }
+
+    res.status(201).json({
+      message: "Registration successful. Please check your email to verify your account.",
+    });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -39,6 +80,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     if (!user || !(await user.matchPassword(password))) {
       res.status(400).json({ message: "Invalid credentials" });
+      return;
+    }
+
+    if (!user.isVerified) {
+      res.status(401).json({ message: "Please verify your email address before logging in." });
       return;
     }
 
@@ -221,5 +267,95 @@ export const resetPassword = async (req: Request, res: Response) => {
     });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { token, email } = req.query;
+
+    if (!token || !email) {
+      res.status(400).json({ message: "Token and email are required" });
+      return;
+    }
+
+    const emailStr = typeof email === "string" ? email : String(email);
+    const tokenStr = typeof token === "string" ? token : String(token);
+
+    const user = await User.findOne({
+      email: emailStr,
+      verificationToken: tokenStr,
+      verificationTokenExpire: { $gt: new Date() },
+    });
+
+    if (!user) {
+      res.status(400).json({ message: "Invalid or expired verification token" });
+      return;
+    }
+
+    user.isVerified = true;
+    user.verificationToken = null;
+    user.verificationTokenExpire = null;
+    await user.save();
+
+    res.json({ message: "Email verified successfully! You can now log in." });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const resendVerification = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400).json({ message: "Email is required" });
+      return;
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    if (user.isVerified) {
+      res.status(400).json({ message: "Email is already verified" });
+      return;
+    }
+
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verificationTokenExpire = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    user.verificationToken = verificationToken;
+    user.verificationTokenExpire = verificationTokenExpire;
+    await user.save();
+
+    const verificationUrl = `http://localhost:5173/verify-email?token=${verificationToken}&email=${email}`;
+    await sendEmail(
+      user.email,
+      "Verify Your Email - MTSP",
+      `
+        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; border: 1px solid #E5E7EB; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+          <h2 style="color: #5C38E1; text-align: center;">Welcome to MTSP!</h2>
+          <p>Hello <strong>${user.username}</strong>,</p>
+          <p>Thank you for registering. Please verify your email address to activate your account. This verification link will expire in <strong>24 hours</strong>.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" style="background: #5C38E1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Verify Email Address</a>
+          </div>
+          <p style="word-break: break-all; font-size: 12px; color: #6B7280; text-align: center;">
+            If the button doesn't work, copy and paste this link into your browser:<br/>
+            <a href="${verificationUrl}" style="color: #5C38E1;">${verificationUrl}</a>
+          </p>
+          <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;" />
+          <p style="color: #6B7280; font-size: 12px; text-align: center;">If you did not create an account, please ignore this email.</p>
+        </div>
+      `
+    );
+
+    res.json({ message: "Verification email resent successfully! Please check your inbox." });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 };

@@ -125,6 +125,7 @@ export const createManagedUser = async (
       email,
       password,
       role,
+      isVerified: true,
     });
 
     await AuditLog.create({

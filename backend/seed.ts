@@ -197,6 +197,7 @@ const runSeed = async (): Promise<void> => {
         username: "SuperAdmin",
         password: hashedPassword,
         role: "super_admin",
+        isVerified: true,
       });
       console.log("Super admin created:", newSuperAdmin.email);
       
