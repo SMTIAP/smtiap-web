@@ -27,10 +27,13 @@ export default function ReviewAndPublish() {
   const [scheduledOpen, setScheduledOpen] = useState<string | null>(null);
   const [scheduledClose, setScheduledClose] = useState<string | null>(null);
 
-  // Helper function to get AM/PM
-  const getAmPm = (time: string) => {
-    const hour = parseInt(time.split(":")[0]);
-    return hour >= 12 ? "PM" : "AM";
+  // Convert 12-hour to 24-hour format
+  const convertTo24Hour = (time: string, ampm: string): string => {
+    let [hours, minutes] = time.split(":");
+    let hour = parseInt(hours);
+    if (ampm === "PM" && hour !== 12) hour += 12;
+    if (ampm === "AM" && hour === 12) hour = 0;
+    return `${hour.toString().padStart(2, "0")}:${minutes}`;
   };
 
   // Block viewers from publishing
@@ -84,7 +87,6 @@ export default function ReviewAndPublish() {
       const savedSurvey = data.survey;
 
       if (status === "Running" || status === "Scheduled") {
-        // Both Running and Scheduled go to share page
         navigate("/share-survey", {
           state: {
             surveyId: savedSurvey._id,
@@ -114,25 +116,63 @@ export default function ReviewAndPublish() {
     }
   };
 
-  // Schedule Modal Component
+  // Schedule Modal Component with AM/PM
   const ScheduleModal = () => {
     const [enableOpen, setEnableOpen] = useState(!!scheduledOpen);
     const [enableClose, setEnableClose] = useState(!!scheduledClose);
     const [openDate, setOpenDate] = useState(
       scheduledOpen ? new Date(scheduledOpen).toISOString().split("T")[0] : ""
     );
-    const [openTime, setOpenTime] = useState(
-      scheduledOpen ? new Date(scheduledOpen).toTimeString().slice(0, 5) : "09:00"
-    );
+    const [openHour, setOpenHour] = useState(() => {
+      if (scheduledOpen) {
+        const time = new Date(scheduledOpen).toTimeString().slice(0, 5);
+        let hour = parseInt(time.split(":")[0]);
+        if (hour === 0) hour = 12;
+        if (hour > 12) hour -= 12;
+        return hour.toString().padStart(2, "0");
+      }
+      return "09";
+    });
+    const [openMinute, setOpenMinute] = useState(() => {
+      if (scheduledOpen) {
+        return new Date(scheduledOpen).toTimeString().slice(3, 5);
+      }
+      return "00";
+    });
+    const [openAmPm, setOpenAmPm] = useState(() => {
+      if (scheduledOpen) {
+        const hour = parseInt(new Date(scheduledOpen).toTimeString().slice(0, 2));
+        return hour >= 12 ? "PM" : "AM";
+      }
+      return "AM";
+    });
     const [closeDate, setCloseDate] = useState(
       scheduledClose ? new Date(scheduledClose).toISOString().split("T")[0] : ""
     );
-    const [closeTime, setCloseTime] = useState(
-      scheduledClose ? new Date(scheduledClose).toTimeString().slice(0, 5) : "17:00"
-    );
+    const [closeHour, setCloseHour] = useState(() => {
+      if (scheduledClose) {
+        const time = new Date(scheduledClose).toTimeString().slice(0, 5);
+        let hour = parseInt(time.split(":")[0]);
+        if (hour === 0) hour = 12;
+        if (hour > 12) hour -= 12;
+        return hour.toString().padStart(2, "0");
+      }
+      return "05";
+    });
+    const [closeMinute, setCloseMinute] = useState(() => {
+      if (scheduledClose) {
+        return new Date(scheduledClose).toTimeString().slice(3, 5);
+      }
+      return "00";
+    });
+    const [closeAmPm, setCloseAmPm] = useState(() => {
+      if (scheduledClose) {
+        const hour = parseInt(new Date(scheduledClose).toTimeString().slice(0, 2));
+        return hour >= 12 ? "PM" : "AM";
+      }
+      return "PM";
+    });
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-    // Get today's date in YYYY-MM-DD format for min date validation
     const today = new Date().toISOString().split("T")[0];
 
     const handleSave = () => {
@@ -141,7 +181,8 @@ export default function ReviewAndPublish() {
       const now = new Date();
 
       if (enableOpen && openDate) {
-        const localDate = new Date(`${openDate}T${openTime}:00`);
+        const time24 = convertTo24Hour(`${openHour}:${openMinute}`, openAmPm);
+        const localDate = new Date(`${openDate}T${time24}:00`);
         if (localDate < now) {
           toast.error("Please select a future time for opening");
           return;
@@ -149,14 +190,18 @@ export default function ReviewAndPublish() {
         openDateTime = localDate.toISOString();
       }
       if (enableClose && closeDate) {
-        const localDate = new Date(`${closeDate}T${closeTime}:00`);
+        const time24 = convertTo24Hour(`${closeHour}:${closeMinute}`, closeAmPm);
+        const localDate = new Date(`${closeDate}T${time24}:00`);
         if (localDate < now) {
           toast.error("Please select a future time for closing");
           return;
         }
-        if (enableOpen && openDate && localDate <= new Date(`${openDate}T${openTime}:00`)) {
-          toast.error("Close date must be after open date");
-          return;
+        if (enableOpen && openDate && openDateTime) {
+          const openDateObj = new Date(openDateTime);
+          if (localDate <= openDateObj) {
+            toast.error("Close date must be after open date");
+            return;
+          }
         }
         closeDateTime = localDate.toISOString();
       }
@@ -168,7 +213,7 @@ export default function ReviewAndPublish() {
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/30 backdrop-blur-sm">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">Schedule Survey</h2>
             <button onClick={() => setShowScheduleModal(false)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
@@ -200,30 +245,58 @@ export default function ReviewAndPublish() {
             </label>
 
             {enableOpen && (
-              <div className="flex gap-2 ml-4 pl-3 border-l-2 border-indigo-200 dark:border-indigo-800">
-                <div className="flex-1 relative">
+              <div className="flex flex-col gap-2 ml-4 pl-3 border-l-2 border-indigo-200 dark:border-indigo-800">
+                <div className="relative">
                   <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="date"
                     value={openDate}
                     min={today}
                     onChange={(e) => setOpenDate(e.target.value)}
-                    className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm"
+                    className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
-                <div className="flex items-center gap-1">
-                  <div className="relative w-28">
+                <div className="flex gap-1 items-center">
+                  <div className="relative">
                     <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
-                      type="time"
-                      value={openTime}
-                      onChange={(e) => setOpenTime(e.target.value)}
-                      className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm"
+                      type="number"
+                      value={openHour}
+                      min="1"
+                      max="12"
+                      onChange={(e) => {
+                        let val = parseInt(e.target.value);
+                        if (val < 1) val = 1;
+                        if (val > 12) val = 12;
+                        setOpenHour(val.toString().padStart(2, "0"));
+                      }}
+                      className="w-20 pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                      placeholder="HH"
                     />
                   </div>
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 w-9">
-                    {getAmPm(openTime)}
-                  </span>
+                  <span className="text-lg font-medium text-slate-600 dark:text-slate-400">:</span>
+                  <input
+                    type="number"
+                    value={openMinute}
+                    min="0"
+                    max="59"
+                    onChange={(e) => {
+                      let val = parseInt(e.target.value);
+                      if (val < 0) val = 0;
+                      if (val > 59) val = 59;
+                      setOpenMinute(val.toString().padStart(2, "0"));
+                    }}
+                    className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                    placeholder="MM"
+                  />
+                  <select
+                    value={openAmPm}
+                    onChange={(e) => setOpenAmPm(e.target.value)}
+                    className="px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
                 </div>
               </div>
             )}
@@ -245,30 +318,58 @@ export default function ReviewAndPublish() {
             </label>
 
             {enableClose && (
-              <div className="flex gap-2 ml-4 pl-3 border-l-2 border-rose-200 dark:border-rose-800">
-                <div className="flex-1 relative">
+              <div className="flex flex-col gap-2 ml-4 pl-3 border-l-2 border-rose-200 dark:border-rose-800">
+                <div className="relative">
                   <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="date"
                     value={closeDate}
                     min={today}
                     onChange={(e) => setCloseDate(e.target.value)}
-                    className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm"
+                    className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
-                <div className="flex items-center gap-1">
-                  <div className="relative w-28">
+                <div className="flex gap-1 items-center">
+                  <div className="relative">
                     <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
-                      type="time"
-                      value={closeTime}
-                      onChange={(e) => setCloseTime(e.target.value)}
-                      className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm"
+                      type="number"
+                      value={closeHour}
+                      min="1"
+                      max="12"
+                      onChange={(e) => {
+                        let val = parseInt(e.target.value);
+                        if (val < 1) val = 1;
+                        if (val > 12) val = 12;
+                        setCloseHour(val.toString().padStart(2, "0"));
+                      }}
+                      className="w-20 pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                      placeholder="HH"
                     />
                   </div>
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 w-9">
-                    {getAmPm(closeTime)}
-                  </span>
+                  <span className="text-lg font-medium text-slate-600 dark:text-slate-400">:</span>
+                  <input
+                    type="number"
+                    value={closeMinute}
+                    min="0"
+                    max="59"
+                    onChange={(e) => {
+                      let val = parseInt(e.target.value);
+                      if (val < 0) val = 0;
+                      if (val > 59) val = 59;
+                      setCloseMinute(val.toString().padStart(2, "0"));
+                    }}
+                    className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                    placeholder="MM"
+                  />
+                  <select
+                    value={closeAmPm}
+                    onChange={(e) => setCloseAmPm(e.target.value)}
+                    className="px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
                 </div>
               </div>
             )}
