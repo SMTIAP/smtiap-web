@@ -432,9 +432,9 @@ export default function RoleManagement() {
               <ClipboardList size={18} />Audit Logs
             </button>
             <button
-              onClick={() => navigate("/admin")}
+              onClick={() => navigate(-1)}
               className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
-              title="Back to Dashboard"
+              
             >
               <ArrowLeft size={16} />
             </button>
