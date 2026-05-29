@@ -1,7 +1,7 @@
-import BackButton from "../components/BackButton";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../api/api";
-import { Download, Eraser} from "lucide-react";
+import { Download, Eraser, ArrowLeft } from "lucide-react";
 
 interface AuditLogEntry {
   _id: string;
@@ -11,7 +11,6 @@ interface AuditLogEntry {
   entity_id: string;
   createdAt: string;
   description: string;
-  // timestamp: string;
 }
 
 interface PaginationInfo {
@@ -22,6 +21,7 @@ interface PaginationInfo {
 }
 
 export default function Audit() {
+  const navigate = useNavigate();
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState<PaginationInfo>({
@@ -57,19 +57,19 @@ export default function Audit() {
     fetchFilterOptions();
   }, []);
 
-useEffect(() => {
-  const handleClickOutside = (event: MouseEvent) => {
-    if (
-      dropdownRef.current &&
-      !dropdownRef.current.contains(event.target as Node)
-    ) {
-      setOpenExport(false);
-    }
-  };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setOpenExport(false);
+      }
+    };
 
-  document.addEventListener("mousedown", handleClickOutside);
-  return () => document.removeEventListener("mousedown", handleClickOutside);
-}, []);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Fetch logs
   const fetchLogs = useCallback(
@@ -148,15 +148,15 @@ useEffect(() => {
 
   const getActionColor = (action: string) => {
     const a = action.toLowerCase();
-    if (a === "login") return "bg-blue-400";
-    if (a === "logout") return "bg-gray-400";
-    if (a === "create") return "bg-green-400";
-    if (a === "update") return "bg-yellow-400";
-    if (a === "delete") return "bg-red-400";
+    if (a === "login") return "bg-blue-500";
+    if (a === "logout") return "bg-gray-500";
+    if (a === "create") return "bg-green-500";
+    if (a === "update") return "bg-yellow-500";
+    if (a === "delete") return "bg-red-500";
     if (a === "add") return "bg-green-700";
     if (a === "ai-analysis-run") return "bg-purple-700";
-    if (a.startsWith("status_change")) return "bg-purple-400";
-    return "bg-gray-400";
+    if (a.startsWith("status_change")) return "bg-purple-500";
+    return "bg-gray-500";
   };
 
   const formatAction = (action: string) => {
@@ -180,13 +180,24 @@ useEffect(() => {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
+      <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
       <div className="w-full max-w-6xl px-6 py-10 flex flex-col gap-10">
+        {/* Header - Title on left, back button on right */}
         <div className="flex justify-between items-center w-full">
           <div className="flex items-center gap-4 w-fit">
-            <BackButton />
             <h2 className="text-3xl font-black tracking-tight text-[#0D141C] dark:text-white">
               Audit Trail
             </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Circular Back Button - Top Right */}
+            <button
+              onClick={() => navigate("/admin")}
+              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+              title="Back to Dashboard"
+            >
+              <ArrowLeft size={16} />
+            </button>
           </div>
         </div>
 
@@ -224,12 +235,11 @@ useEffect(() => {
           </div>
 
           <div className="flex items-center gap-4">
-             {/* Action Filter */}
+            {/* Action Filter */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-slate-600 dark:text-slate-300">
                 Action Type
               </label>
-
               <select
                 value={actionFilter}
                 onChange={(e) => setActionFilter(e.target.value)}
@@ -243,7 +253,7 @@ useEffect(() => {
               >
                 <option value="">All Actions</option>
                 {actions.map((action) => (
-                  <option key={action} value={action}  >
+                  <option key={action} value={action}>
                     {action.charAt(0).toUpperCase() + action.slice(1)}
                   </option>
                 ))}
@@ -256,7 +266,7 @@ useEffect(() => {
           <div className="flex w-full justify-end gap-2">
             <button
               onClick={handleClear}
-              className="flex items-center gap-1.5 px-4 h-[40px] rounded-lg text-white font-semibold text-[13px] shadow-md transition-all duration-200 shrink-0 bg-gray-400 cursor opacity-70 hover:scale-[1.02]"
+              className="flex items-center gap-1.5 px-4 h-[40px] rounded-lg text-white font-semibold text-[13px] shadow-md transition-all duration-200 shrink-0 bg-gray-400 hover:bg-gray-500 hover:scale-[1.02]"
             >
               <Eraser size={16} />
               Clear
@@ -265,30 +275,25 @@ useEffect(() => {
               <button
                 onClick={() => setOpenExport((prev) => !prev)}
                 className="flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 shrink-0"
-                        >
-              <Download size={16} />
+              >
+                <Download size={16} />
                 Export
               </button>
 
               {openExport && (
                 <div className="absolute right-0 mt-2 w-44 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl overflow-hidden z-50 animate-fade-in">
-                  
                   <button
                     onClick={handleExportCSV}
                     className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   >
                     Export CSV
                   </button>
-
                   <button
-                    // onClick={exportExcel}
                     className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   >
                     Export Excel
                   </button>
-
                   <button
-                    // onClick={exportPDF}
                     className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   >
                     Export PDF
@@ -310,64 +315,60 @@ useEffect(() => {
             </div>
           ) : (
             <>
-            <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
-              <table className="min-w-full border-separate border-spacing-y-1">
-                <thead className="sticky top-0 z-10">
-                  <tr className="bg-slate-100 dark:bg-slate-900">
-                    <th className="text-left px-6 py-2 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                      Timestamp
-                    </th>
-                    <th className="text-left px-6 py-2 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                      Username
-                    </th>
-                    <th className="text-left px-6 py-2 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                      Type
-                    </th>
-                    <th className="text-left px-6 py-2 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                      Entity
-                    </th>
-                    <th className="text-left px-6 py-2 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                      Description
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logs.map((log) => (
-                    <tr
-                      key={log._id}
-                      className="group bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition border-b border-slate-200 dark:border-slate-700"
-                    >
-                      <td className="px-6 py-3 text-slate-800 dark:text-slate-200 text-sm whitespace-nowrap border-b border-slate-200 dark:border-slate-700">
-                        {formatTimestamp(log.createdAt)}
-                      </td>
-
-                      <td className="px-6 py-3 text-slate-800 dark:text-slate-200 text-sm font-medium border-b border-slate-200 dark:border-slate-700">
-                        {log.user_id.username}
-                      </td>
-
-                      <td className="px-6 py-3 text-sm border-b border-slate-200 dark:border-slate-700">
-                        <button
-                          className={`px-3 py-1.5 ${getActionColor(log.action)} text-white text-xs rounded-md `}
-                        >
-                          {formatAction(log.action)}
-                        </button>
-                      </td>
-
-                      <td className="px-6 py-3 text-slate-800 dark:text-slate-200 text-sm border-b border-slate-200 dark:border-slate-700">
-                        {log.entity}
-                      </td>
-
-                      <td className="px-6 py-3 text-slate-700 dark:text-slate-300 text-sm max-w-[350px] break-words border-b border-slate-200 dark:border-slate-700">
-                        {log.description}
-                      </td>
+              <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                      <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                        Timestamp
+                      </th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                        Username
+                      </th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                        Type
+                      </th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                        Entity
+                      </th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                        Description
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {logs.map((log) => (
+                      <tr
+                        key={log._id}
+                        className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                      >
+                        <td className="px-6 py-3 text-slate-800 dark:text-slate-200 text-sm whitespace-nowrap">
+                          {formatTimestamp(log.createdAt)}
+                        </td>
+                        <td className="px-6 py-3 text-slate-800 dark:text-slate-200 text-sm font-medium">
+                          {log.user_id.username}
+                        </td>
+                        <td className="px-6 py-3 text-sm">
+                          <span
+                            className={`px-2 py-1 ${getActionColor(log.action)} text-white text-xs rounded-md inline-block`}
+                          >
+                            {formatAction(log.action)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3 text-slate-800 dark:text-slate-200 text-sm">
+                          {log.entity}
+                        </td>
+                        <td className="px-6 py-3 text-slate-700 dark:text-slate-300 text-sm max-w-[350px] break-words">
+                          {log.description}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                 </table>
               </div>
 
               {/* Pagination */}
-              <div className="flex justify-center items-center gap-4 mt-4">
+              <div className="flex justify-center items-center gap-4 mt-6">
                 <button
                   onClick={() => fetchLogs(pagination.page - 1)}
                   disabled={pagination.page === 1}
@@ -384,7 +385,7 @@ useEffect(() => {
                     onClick={() => fetchLogs(page)}
                     className={`px-3 py-1 text-sm rounded ${
                       pagination.page === page
-                        ? "flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 shrink-0"
+                        ? "bg-indigo-600 text-white"
                         : "text-gray-700 dark:text-slate-300 hover:text-black dark:hover:text-white"
                     }`}
                   >
@@ -401,7 +402,7 @@ useEffect(() => {
               </div>
 
               {/* Entries Info */}
-              <p className="text-sm text-gray-600 dark:text-slate-400 mt-4">
+              <p className="text-sm text-gray-600 dark:text-slate-400 text-center mt-4">
                 Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
                 {Math.min(
                   pagination.page * pagination.limit,
