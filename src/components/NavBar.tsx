@@ -178,7 +178,7 @@ export default function NavBar() {
       case "creater":
         return "/admin";
       case "billing_manager":
-        return "/subscription";
+        return "/admin";
       case "super_admin":
         return "/super-admin-dashboard";
       case "admin":
