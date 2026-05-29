@@ -241,8 +241,12 @@ export default function CreatedSurveys() {
       const response = await fetch("http://localhost:5000/api/surveys", { headers, credentials: "include" });
       const data = await response.json();
       const sortedData = (Array.isArray(data) ? data : []).sort((a, b) => {
-        const dateA = a.updatedAt ? new Date(a.updatedAt) : new Date(a.createdAt);
-        const dateB = b.updatedAt ? new Date(b.updatedAt) : new Date(b.createdAt);
+        const dateA = a.updatedAt
+          ? new Date(a.updatedAt)
+          : new Date(a.createdAt);
+        const dateB = b.updatedAt
+          ? new Date(b.updatedAt)
+          : new Date(b.createdAt);
         return dateB.getTime() - dateA.getTime();
       });
       setSurveys(sortedData);
@@ -365,24 +369,15 @@ export default function CreatedSurveys() {
         <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgb(99 102 241) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-6 py-10 lg:py-12">
-        {/* Header with icon */}
-        <div className="flex justify-between items-center w-full mb-12">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 blur-lg opacity-30"></div>
-              <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-xl flex items-center justify-center">
-                <Sparkles size={22} className="text-white" />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-[#0F172A] dark:text-white text-3xl font-black tracking-tight mb-2">
-                My Surveys
-              </h1>
-              <p className="text-[#64748B] dark:text-slate-400 text-sm font-medium">
-                Track performance and draft new insights.
-              </p>
-            </div>
+      <div className="flex max-w-[1200px] py-8 sm:py-12 px-4 sm:px-8 flex-col items-start gap-5 sm:gap-6 w-full">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full gap-3 sm:gap-0">
+          <div>
+            <h1 className="text-[#0F172A] dark:text-white text-2xl sm:text-3xl font-black tracking-tight mb-1 sm:mb-2">
+              My Surveys
+            </h1>
+            <p className="text-[#64748B] dark:text-slate-400 text-xs sm:text-sm font-medium">
+              Track performance and draft new insights.
+            </p>
           </div>
           <div className="flex items-center gap-3">
             {canCreate && (
@@ -406,36 +401,13 @@ export default function CreatedSurveys() {
           </div>
         </div>
 
-        {/* Premium Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">
-          {[
-            { label: "Total", value: surveys.length, icon: Layout, gradient: "from-indigo-500 to-indigo-600", bg: "from-indigo-50 to-indigo-100 dark:from-indigo-950/30 dark:to-indigo-900/30" },
-            { label: "Running", value: surveys.filter(s => s.status === "Running").length, icon: Activity, gradient: "from-emerald-500 to-emerald-600", bg: "from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/30" },
-            { label: "Draft", value: surveys.filter(s => s.status === "Draft").length, icon: Clock, gradient: "from-amber-500 to-amber-600", bg: "from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/30" },
-            { label: "Scheduled", value: surveys.filter(s => s.status === "Scheduled").length, icon: Calendar, gradient: "from-purple-500 to-purple-600", bg: "from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30" },
-            { label: "Finished", value: surveys.filter(s => s.status === "Finished").length, icon: CheckCircle2, gradient: "from-rose-500 to-rose-600", bg: "from-rose-50 to-rose-100 dark:from-rose-950/30 dark:to-rose-900/30" },
-          ].map((stat) => (
-            <div key={stat.label} className="group relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl p-4 border border-slate-200 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300 hover:shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-400 text-xs font-medium uppercase tracking-wide">{stat.label}</p>
-                  <p className="text-2xl font-bold text-slate-800 dark:text-white mt-1">{stat.value}</p>
-                </div>
-                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
-                  <stat.icon size={16} className="text-white" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Premium Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8 border-b border-slate-200 dark:border-slate-800 pb-0">
+        {/* Tabs */}
+        <div className="flex bg-slate-100/80 dark:bg-slate-800 p-1.5 rounded-[1.25rem] self-end backdrop-blur-md border border-slate-200/50 dark:border-slate-700 overflow-x-auto w-full sm:w-auto">
           {["All", "Running", "Draft", "Scheduled", "Finished"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`relative px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all ${
+              className={`px-3 sm:px-6 py-2 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-[0.85rem] transition-all duration-300 whitespace-nowrap ${
                 activeTab === tab
                   ? "text-indigo-600 dark:text-indigo-400"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
@@ -457,7 +429,7 @@ export default function CreatedSurveys() {
         </div>
 
         {/* Survey Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 w-full">
           {filteredSurveys.map((survey) => {
             const isRunning = survey.status === "Running";
             const isDraft = survey.status === "Draft";
@@ -474,10 +446,13 @@ export default function CreatedSurveys() {
             };
 
             const getIconBg = () => {
-              if (isRunning) return "bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-900/40 dark:to-emerald-800/40 text-emerald-600";
-              if (isDraft) return "bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/40 text-amber-600";
-              if (isScheduled) return "bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/40 dark:to-purple-800/40 text-purple-600";
-              return "bg-gradient-to-br from-rose-100 to-rose-200 dark:from-rose-900/40 dark:to-rose-800/40 text-rose-600";
+              if (isRunning)
+                return "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500";
+              if (isDraft)
+                return "bg-amber-50 dark:bg-amber-900/30 text-amber-500";
+              if (isScheduled)
+                return "bg-purple-50 dark:bg-purple-900/30 text-purple-500";
+              return "bg-rose-50 dark:bg-rose-900/30 text-rose-500";
             };
 
             const getIcon = () => {
@@ -488,17 +463,20 @@ export default function CreatedSurveys() {
             };
 
             const getBadgeClass = () => {
-              if (isRunning) return "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md";
-              if (isDraft) return "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md";
-              if (isScheduled) return "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md";
-              return "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-md";
+              if (isRunning)
+                return "text-emerald-600 border-emerald-100 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800 group-hover:bg-emerald-500 group-hover:text-white";
+              if (isDraft)
+                return "text-amber-600 border-amber-100 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 group-hover:bg-amber-500 group-hover:text-white";
+              if (isScheduled)
+                return "text-purple-600 border-purple-100 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800 group-hover:bg-purple-500 group-hover:text-white";
+              return "text-rose-600 border-rose-100 bg-rose-50 dark:bg-rose-900/20 dark:border-rose-800 group-hover:bg-rose-500 group-hover:text-white";
             };
 
             return (
               <div
                 key={survey._id}
                 onClick={() => handleCardClick(survey)}
-                className="group relative flex flex-col items-center p-8 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-2xl shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden"
+                className="group relative flex flex-col items-center p-5 sm:p-8 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-2 cursor-pointer aspect-[3/4] overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl -z-10"></div>
                 <div className="absolute inset-[1px] bg-white/90 dark:bg-slate-800/90 rounded-2xl -z-5"></div>
@@ -569,11 +547,11 @@ export default function CreatedSurveys() {
 
                 <div className="flex flex-col items-center justify-center flex-grow text-center w-full">
                   <div
-                    className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-4 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 shadow-lg ${getIconBg()}`}
+                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl sm:rounded-3xl flex items-center justify-center mb-4 sm:mb-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ${getIconBg()}`}
                   >
                     {getIcon()}
                   </div>
-                  <h3 className="text-slate-800 dark:text-white font-bold text-base leading-tight line-clamp-2 transition-colors duration-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 mb-2">
+                  <h3 className="text-slate-800 dark:text-white font-black text-base sm:text-lg leading-tight line-clamp-2 transition-colors duration-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
                     {survey.surveyTitle || "Untitled Survey"}
                   </h3>
                   {isRunning && (
@@ -591,7 +569,7 @@ export default function CreatedSurveys() {
                 </div>
 
                 <div
-                  className={`mt-4 px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${getBadgeClass()}`}
+                  className={`mt-4 sm:mt-6 px-4 sm:px-6 py-1.5 sm:py-2 rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] border-2 transition-all duration-500 ${getBadgeClass()}`}
                 >
                   {survey.status}
                 </div>
@@ -601,16 +579,12 @@ export default function CreatedSurveys() {
         </div>
 
         {filteredSurveys.length === 0 && (
-          <div className="text-center py-20">
-            <div className="relative w-32 h-32 mx-auto mb-8">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 blur-2xl opacity-20"></div>
-              <div className="relative w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center shadow-xl">
-                <Layout size={48} className="text-slate-300 dark:text-slate-600" />
-              </div>
+          <div className="w-full py-16 sm:py-32 text-center bg-slate-50 dark:bg-slate-800 border-4 border-dashed border-slate-200/50 dark:border-slate-700 rounded-[2rem] sm:rounded-[3rem] flex flex-col items-center gap-4">
+            <div className="p-4 bg-white dark:bg-slate-700 rounded-full shadow-md text-slate-300">
+              <Layout size={40} />
             </div>
-            <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300 mb-2">No surveys found</h3>
-            <p className="text-slate-400 text-sm mb-6">
-              {activeTab === "All" ? "You haven't created any surveys yet." : `No ${activeTab.toLowerCase()} surveys available.`}
+            <p className="text-slate-400 font-bold text-lg sm:text-xl">
+              No {activeTab.toLowerCase()} surveys found.
             </p>
             {canCreate && activeTab !== "Finished" && (
               <button onClick={() => navigate("/templates")} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all">

@@ -1,6 +1,7 @@
 import { useEffect, useState, type JSX } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import api from "../api/api";
+import Unauthorized from "../pages/Unauthorized";
 
 interface Props {
   children: JSX.Element;
@@ -50,7 +51,7 @@ export default function ProtectedRoute({ children, allowedRoles }: Props) {
   }
 
   if (!auth) {
-    return <Navigate to="/auth" replace state={{ from: location }} />;
+    return <Unauthorized />;
   }
 
   if (allowedRoles && userRole && !allowedRoles.includes(userRole)) {
