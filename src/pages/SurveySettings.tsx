@@ -20,12 +20,33 @@ export default function SurveySettings() {
   const [enableClose, setEnableClose] = useState(false);
   const [openDate, setOpenDate] = useState("");
   const [openTime, setOpenTime] = useState("09:00");
+  const [openAmPm, setOpenAmPm] = useState("AM");
   const [closeDate, setCloseDate] = useState("");
   const [closeTime, setCloseTime] = useState("17:00");
+  const [closeAmPm, setCloseAmPm] = useState("PM");
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const today = new Date().toISOString().split("T")[0];
+
+  // Convert 12-hour to 24-hour format
+  const convertTo24Hour = (time: string, ampm: string): string => {
+    let [hours, minutes] = time.split(":");
+    let hour = parseInt(hours);
+    if (ampm === "PM" && hour !== 12) hour += 12;
+    if (ampm === "AM" && hour === 12) hour = 0;
+    return `${hour.toString().padStart(2, "0")}:${minutes}`;
+  };
+
+  // Convert 24-hour to 12-hour format with AM/PM
+  const convertTo12Hour = (time24: string): { time: string; ampm: string } => {
+    let [hours, minutes] = time24.split(":");
+    let hour = parseInt(hours);
+    let ampm = hour >= 12 ? "PM" : "AM";
+    if (hour === 0) hour = 12;
+    if (hour > 12) hour -= 12;
+    return { time: `${hour.toString().padStart(2, "0")}:${minutes}`, ampm };
+  };
 
   // Fetch survey data
   useEffect(() => {
@@ -42,13 +63,19 @@ export default function SurveySettings() {
           setEnableOpen(true);
           const open = new Date(data.scheduledOpen);
           setOpenDate(open.toISOString().split("T")[0]);
-          setOpenTime(open.toTimeString().slice(0, 5));
+          const time24 = open.toTimeString().slice(0, 5);
+          const { time, ampm } = convertTo12Hour(time24);
+          setOpenTime(time);
+          setOpenAmPm(ampm);
         }
         if (data.scheduledClose) {
           setEnableClose(true);
           const close = new Date(data.scheduledClose);
           setCloseDate(close.toISOString().split("T")[0]);
-          setCloseTime(close.toTimeString().slice(0, 5));
+          const time24 = close.toTimeString().slice(0, 5);
+          const { time, ampm } = convertTo12Hour(time24);
+          setCloseTime(time);
+          setCloseAmPm(ampm);
         }
       } catch (err) {
         console.error(err);
@@ -67,7 +94,8 @@ export default function SurveySettings() {
       let closeDateTime: string | null = null;
 
       if (enableOpen && openDate) {
-        const localDate = new Date(`${openDate}T${openTime}:00`);
+        const time24 = convertTo24Hour(openTime, openAmPm);
+        const localDate = new Date(`${openDate}T${time24}:00`);
         if (localDate < new Date()) {
           toast.error("Open date cannot be in the past");
           return;
@@ -75,14 +103,18 @@ export default function SurveySettings() {
         openDateTime = localDate.toISOString();
       }
       if (enableClose && closeDate) {
-        const localDate = new Date(`${closeDate}T${closeTime}:00`);
+        const time24 = convertTo24Hour(closeTime, closeAmPm);
+        const localDate = new Date(`${closeDate}T${time24}:00`);
         if (localDate < new Date()) {
           toast.error("Close date cannot be in the past");
           return;
         }
-        if (enableOpen && openDate && localDate <= new Date(`${openDate}T${openTime}:00`)) {
-          toast.error("Close date must be after open date");
-          return;
+        if (enableOpen && openDate && openDateTime) {
+          const openDateObj = new Date(openDateTime);
+          if (localDate <= openDateObj) {
+            toast.error("Close date must be after open date");
+            return;
+          }
         }
         closeDateTime = localDate.toISOString();
       }
@@ -240,13 +272,13 @@ export default function SurveySettings() {
                 <div className="mb-5 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800">
                   <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300 mb-2">Current Schedule</p>
                   {survey.scheduledOpen && (
-                    <p className="text-sm text-indigo-600 dark:text-indigo-400 font-mono">
-                      📅 Opens: {new Date(survey.scheduledOpen).toLocaleString()}
+                    <p className="text-sm text-indigo-600 dark:text-indigo-400">
+                      Opens: {new Date(survey.scheduledOpen).toLocaleString()}
                     </p>
                   )}
                   {survey.scheduledClose && (
-                    <p className="text-sm text-indigo-600 dark:text-indigo-400 font-mono mt-1">
-                      🔒 Closes: {new Date(survey.scheduledClose).toLocaleString()}
+                    <p className="text-sm text-indigo-600 dark:text-indigo-400 mt-1">
+                      Closes: {new Date(survey.scheduledClose).toLocaleString()}
                     </p>
                   )}
                 </div>
@@ -255,7 +287,7 @@ export default function SurveySettings() {
               {/* Schedule Button */}
               <button
                 onClick={() => setShowScheduleModal(true)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-xl font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all border border-indigo-100 dark:border-indigo-800"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-all"
               >
                 <Calendar size={16} />
                 {survey?.scheduledOpen || survey?.scheduledClose ? "Edit Schedule" : "Set Schedule"}
@@ -266,14 +298,14 @@ export default function SurveySettings() {
                 <div className="mt-4 flex gap-3">
                   <button
                     onClick={handlePublishNow}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-xl text-sm font-medium hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all border border-emerald-100 dark:border-emerald-800"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-all"
                   >
                     <CheckCircle2 size={14} />
                     Publish Now
                   </button>
                   <button
                     onClick={handleCancelSchedule}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-xl text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all border border-amber-100 dark:border-amber-800"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-all"
                   >
                     <X size={14} />
                     Cancel Schedule
@@ -291,7 +323,7 @@ export default function SurveySettings() {
                   <Trash2 size={20} className="text-rose-600 dark:text-rose-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Delete Survey</h2>
+                  <h2 className="text-lg font-bold text-rose-600 dark:text-rose-400">Delete Survey</h2>
                   <p className="text-sm text-slate-500 dark:text-slate-400">Permanently remove this survey</p>
                 </div>
               </div>
@@ -299,7 +331,7 @@ export default function SurveySettings() {
             <div className="p-6">
               <button
                 onClick={handleDeleteSurvey}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-xl font-medium hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-all border border-rose-100 dark:border-rose-800"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-600 text-white rounded-xl font-semibold hover:bg-rose-700 transition-all"
               >
                 <Trash2 size={16} />
                 Delete Survey
@@ -309,7 +341,7 @@ export default function SurveySettings() {
         </div>
       </div>
 
-      {/* Schedule Modal */}
+      {/* Schedule Modal with AM/PM */}
       {showScheduleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/30 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 w-full max-w-md">
@@ -324,7 +356,7 @@ export default function SurveySettings() {
             <div className="mb-5 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center gap-2">
               <Globe size={14} className="text-slate-400" />
               <span className="text-xs text-slate-500 dark:text-slate-400">
-                <span className="font-medium">Your timezone:</span> {timezone}
+                Time zone: <span className="font-mono font-semibold">{timezone}</span>
               </span>
             </div>
 
@@ -332,12 +364,12 @@ export default function SurveySettings() {
             <div className="mb-5">
               <label className="flex items-center justify-between cursor-pointer mb-3">
                 <div>
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Start Date & Time</span>
-                  <p className="text-xs text-slate-400">When the survey becomes available</p>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Set start date</span>
+                  <p className="text-xs text-slate-400">Launch the survey on</p>
                 </div>
                 <div
                   onClick={() => setEnableOpen(!enableOpen)}
-                  className={`w-10 h-5 flex items-center rounded-full p-1 transition-colors cursor-pointer ${enableOpen ? "bg-indigo-500" : "bg-slate-200 dark:bg-slate-600"}`}
+                  className={`w-10 h-5 flex items-center rounded-full p-1 transition-colors cursor-pointer ${enableOpen ? "bg-indigo-600" : "bg-slate-200 dark:bg-slate-600"}`}
                 >
                   <div className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform ${enableOpen ? "translate-x-5" : ""}`} />
                 </div>
@@ -354,13 +386,40 @@ export default function SurveySettings() {
                       className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
-                  <div className="w-28">
+                  <div className="flex gap-1">
                     <input
-                      type="time"
-                      value={openTime}
-                      onChange={(e) => setOpenTime(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      type="number"
+                      value={openTime.split(":")[0]}
+                      min="1"
+                      max="12"
+                      onChange={(e) => {
+                        const minutes = openTime.split(":")[1];
+                        setOpenTime(`${e.target.value.padStart(2, "0")}:${minutes}`);
+                      }}
+                      className="w-16 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-center focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      placeholder="HH"
                     />
+                    <span className="text-lg font-medium text-slate-600 dark:text-slate-400 self-center">:</span>
+                    <input
+                      type="number"
+                      value={openTime.split(":")[1]}
+                      min="0"
+                      max="59"
+                      onChange={(e) => {
+                        const hours = openTime.split(":")[0];
+                        setOpenTime(`${hours}:${e.target.value.padStart(2, "0")}`);
+                      }}
+                      className="w-16 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-center focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      placeholder="MM"
+                    />
+                    <select
+                      value={openAmPm}
+                      onChange={(e) => setOpenAmPm(e.target.value)}
+                      className="px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
+                    </select>
                   </div>
                 </div>
               )}
@@ -370,12 +429,12 @@ export default function SurveySettings() {
             <div className="mb-6">
               <label className="flex items-center justify-between cursor-pointer mb-3">
                 <div>
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Close Date & Time</span>
-                  <p className="text-xs text-slate-400">When the survey stops accepting responses</p>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Set cut-off date</span>
+                  <p className="text-xs text-slate-400">Close the survey on</p>
                 </div>
                 <div
                   onClick={() => setEnableClose(!enableClose)}
-                  className={`w-10 h-5 flex items-center rounded-full p-1 transition-colors cursor-pointer ${enableClose ? "bg-indigo-500" : "bg-slate-200 dark:bg-slate-600"}`}
+                  className={`w-10 h-5 flex items-center rounded-full p-1 transition-colors cursor-pointer ${enableClose ? "bg-indigo-600" : "bg-slate-200 dark:bg-slate-600"}`}
                 >
                   <div className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform ${enableClose ? "translate-x-5" : ""}`} />
                 </div>
@@ -392,13 +451,40 @@ export default function SurveySettings() {
                       className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
-                  <div className="w-28">
+                  <div className="flex gap-1">
                     <input
-                      type="time"
-                      value={closeTime}
-                      onChange={(e) => setCloseTime(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      type="number"
+                      value={closeTime.split(":")[0]}
+                      min="1"
+                      max="12"
+                      onChange={(e) => {
+                        const minutes = closeTime.split(":")[1];
+                        setCloseTime(`${e.target.value.padStart(2, "0")}:${minutes}`);
+                      }}
+                      className="w-16 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-center focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      placeholder="HH"
                     />
+                    <span className="text-lg font-medium text-slate-600 dark:text-slate-400 self-center">:</span>
+                    <input
+                      type="number"
+                      value={closeTime.split(":")[1]}
+                      min="0"
+                      max="59"
+                      onChange={(e) => {
+                        const hours = closeTime.split(":")[0];
+                        setCloseTime(`${hours}:${e.target.value.padStart(2, "0")}`);
+                      }}
+                      className="w-16 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-center focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      placeholder="MM"
+                    />
+                    <select
+                      value={closeAmPm}
+                      onChange={(e) => setCloseAmPm(e.target.value)}
+                      className="px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
+                    </select>
                   </div>
                 </div>
               )}
