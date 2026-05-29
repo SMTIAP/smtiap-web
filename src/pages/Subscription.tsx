@@ -93,7 +93,7 @@ export default function Subscription() {
         <div className="max-w-[960px] w-full flex flex-col items-center">
           {/* Header with back button - title centered */}
           <div className="w-full relative flex items-center justify-center mb-2">
-            <h1 className="text-[#0F172A] dark:text-white text-3xl font-black tracking-tight">
+            <h1 className="text-[#0F172A] dark:text-white text-2xl sm:text-3xl font-black tracking-tight">
               Subscription
             </h1>
             {/* Circular Back Button - Top Right Absolute */}
@@ -106,12 +106,13 @@ export default function Subscription() {
             </button>
           </div>
 
-          <p className="text-[#64748B] dark:text-slate-400 text-sm text-center max-w-2xl mb-12 mt-2">
-            Choose the plan that's right for you. Pay for a monthly subscription or yearly.
+          <p className="text-[#64748B] dark:text-slate-400 text-sm text-center max-w-2xl mb-8 sm:mb-12 mt-2 px-2">
+            Choose the plan that's right for you. Pay for a monthly subscription
+            or yearly.
           </p>
 
           {paymentStatus.status === "success" && (
-            <div className="mb-6 w-full p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-3">
+            <div className="mb-6 w-full p-3 sm:p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-3">
               <Check className="text-green-600 dark:text-green-400" size={20} />
               <p className="text-green-800 dark:text-green-300">
                 Payment completed successfully! Order ID:{" "}
@@ -143,7 +144,7 @@ export default function Subscription() {
           )}
 
           {/* Billing switcher */}
-          <div className="flex p-1.5 bg-[#F2F2F5] dark:bg-slate-800 rounded-xl mb-8 w-full md:w-fit min-w-[320px]">
+          <div className="flex p-1.5 bg-[#F2F2F5] dark:bg-slate-800 rounded-xl mb-8 w-full max-w-[320px]">
             <button
               onClick={() => setIsYearly(false)}
               disabled={isLoading}
@@ -173,14 +174,14 @@ export default function Subscription() {
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className="relative flex flex-col p-8 rounded-2xl border border-[#E0DEE3] dark:border-slate-700 bg-white dark:bg-slate-800 transition-all hover:border-blue-500 hover:shadow-xl group"
+                className="relative flex flex-col p-5 sm:p-8 rounded-2xl border border-[#E0DEE3] dark:border-slate-700 bg-white dark:bg-slate-800 transition-all hover:border-blue-500 hover:shadow-xl group"
               >
-                <div className="mb-8">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                <div className="mb-6 sm:mb-8">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
                     {plan.name}
                   </h3>
                   <div className="flex items-baseline gap-1 flex-wrap">
-                    <span className="text-5xl font-black tracking-tight dark:text-white">
+                    <span className="text-3xl sm:text-5xl font-black tracking-tight dark:text-white">
                       LKR.{isYearly ? plan.yearlyPrice : plan.monthlyPrice}
                     </span>
                     <span className="text-gray-500 dark:text-slate-400 font-bold">
