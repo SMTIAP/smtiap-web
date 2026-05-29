@@ -24,7 +24,6 @@ export const protect = async (
     }
 
     if (!token) {
-      console.log("No token found in cookies or headers.");
       res.status(401).json({
         message: "Not authorized. No token found.",
         receivedCookies: req.cookies || "none",
