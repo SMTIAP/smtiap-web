@@ -1,5 +1,6 @@
 import { sendEmail } from "./emailService.js";
 import User, { IUser } from "../models/User.js";
+import Notification from "../models/Notification.js";
 
 
 interface TenantType {
@@ -16,6 +17,25 @@ interface UserAddedPayload {
   username: string;
   organizationName: string;
   role: string;
+}
+
+interface RoleChangedPayload {
+  email: string;
+  username: string;
+  organizationName: string;
+  newRole: string;
+}
+
+interface UserRemovePayload {
+  email: string;
+  username: string;
+  organizationName: string;
+}
+
+interface TenantRemovePayload {
+  email: string;
+  username: string;
+  organizationName: string;
 }
 
 export const formatRole = (role: string) => {
@@ -44,7 +64,7 @@ export const notifyOrganizationCreated = async (
 
             <!-- Header -->
             <div style="background:#2563eb; padding:20px; text-align:center;">
-                <h1 style="color:white; margin:0;">SMTIAP System</h1>
+                <h1 style="color:white; margin:0;">MTSP System</h1>
             </div>
 
             <!-- Body -->
@@ -57,7 +77,7 @@ export const notifyOrganizationCreated = async (
                 </p>
 
                 <p style="font-size:15px; line-height:1.6;">
-                Your organization has been successfully created in the SMTIAP platform.
+                Your organization has been successfully created in the MTSP platform.
                 </p>
 
                 <!-- Info Box -->
@@ -87,7 +107,7 @@ export const notifyOrganizationCreated = async (
 
             <!-- Footer -->
             <div style="background:#f9fafb; text-align:center; padding:15px; font-size:12px; color:#888;">
-                © ${new Date().getFullYear()} SMTIAP System. All rights reserved.
+                © ${new Date().getFullYear()} MTSP System. All rights reserved.
             </div>
 
             </div>
@@ -118,7 +138,7 @@ export const notifyUserAddedToOrganization = async ({
           <!-- Header -->
           <div style="background:linear-gradient(135deg,#2563eb,#4f46e5); padding:24px; text-align:center;">
             <h1 style="margin:0; color:#ffffff; font-size:20px; letter-spacing:0.5px;">
-              SMTIAP
+              MTSP
             </h1>
           </div>
 
@@ -135,7 +155,7 @@ export const notifyUserAddedToOrganization = async ({
 
             <p style="font-size:15px; line-height:1.6; color:#374151;">
               You have been successfully added to an organization in the
-              <b>SMTIAP platform</b>. You can now collaborate and access assigned resources based on your role.
+              <b>MTSP platform</b>. You can now collaborate and access assigned resources based on your role.
             </p>
 
             <!-- Info Card -->
@@ -169,7 +189,7 @@ export const notifyUserAddedToOrganization = async ({
 
           <!-- Footer -->
           <div style="background:#f9fafb; padding:16px; text-align:center; font-size:12px; color:#9ca3af;">
-            © ${new Date().getFullYear()} SMTIAP. All rights reserved.
+            © ${new Date().getFullYear()} MTSP. All rights reserved.
           </div>
 
         </div>
@@ -180,4 +200,226 @@ export const notifyUserAddedToOrganization = async ({
   } catch (error) {
     console.error("Notification error:", error);
   }
+};
+
+
+
+
+export const notifyRoleChanged = async ({
+  email,
+  username,
+  organizationName,
+  newRole,
+}: RoleChangedPayload): Promise<void> => {
+  try {
+    await sendEmail(
+      email,
+      "Your Role Has Been Updated",
+      `
+      <div style="font-family:Arial, sans-serif; background:#f4f6f8; padding:40px;">
+        <div style="max-width:600px; margin:auto; background:#ffffff; border-radius:14px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <div style="background:#2563eb; padding:18px 24px; text-align:center;">
+            <h2 style="color:#ffffff; margin:0; font-size:20px;">
+              MTSP
+            </h2>
+          </div>
+
+          <!-- Body -->
+          <div style="padding:30px; color:#1f2937;">
+
+            <h3 style="margin-top:0; color:#111827;">
+              Role Update Notification
+            </h3>
+
+            <p style="font-size:15px; line-height:1.6;">
+              Hello <b>${username}</b>,
+            </p>
+
+            <p style="font-size:15px; line-height:1.6;">
+              Your access level within the organization
+              <b>${organizationName}</b> has been updated by the Tenant Admin.
+            </p>
+
+            <!-- Info Box -->
+            <div style="margin-top:20px; background:#f1f5f9; border-left:4px solid #2563eb; padding:15px; border-radius:8px;">
+              <p style="margin:0; font-size:14px;">
+                <b>New Role:</b>
+                <span style="color:#2563eb; font-weight:600;">
+                  ${formatRole(newRole)}
+                </span>
+              </p>
+            </div>
+
+            <p style="margin-top:25px; font-size:14px; color:#6b7280;">
+              If you believe this change was made in error, please contact your system administrator.
+            </p>
+
+          </div>
+
+          <!-- Footer -->
+          <div style="background:#f9fafb; text-align:center; padding:14px; font-size:12px; color:#9ca3af;">
+            © ${new Date().getFullYear()} MTSP System. All rights reserved.
+          </div>
+
+        </div>
+      </div>
+      `
+    );
+  } catch (error) {
+    console.error("Role change email error:", error);
+  }
+};
+
+export const notifyUserRemove = async ({
+  email,
+  username,
+  organizationName,
+}: UserRemovePayload): Promise<void> => {
+  try {
+    await sendEmail(
+      email,
+      "Access Removed from Organization",
+      `
+      <div style="font-family:Arial, sans-serif; background:#f4f6f8; padding:40px;">
+        <div style="max-width:600px; margin:auto; background:#ffffff; border-radius:14px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <div style="background:#ef4444; padding:20px; text-align:center;">
+            <h2 style="color:#ffffff; margin:0; font-size:20px;">
+              MTSP
+            </h2>
+          </div>
+
+          <!-- Body -->
+          <div style="padding:30px; color:#1f2937;">
+
+            <h3 style="margin-top:0; color:#111827;">
+              Access Removed
+            </h3>
+
+            <p style="font-size:15px;">
+              Hello <b>${username}</b>,
+            </p>
+
+            <p style="font-size:15px; line-height:1.6;">
+              This is to inform you that your access to the organization
+              <b>${organizationName}</b> has been removed by a Tenant Admin.
+            </p>
+
+            <!-- Info Box -->
+            <div style="margin-top:20px; background:#fef2f2; border-left:4px solid #ef4444; padding:15px; border-radius:8px;">
+              <p style="margin:0; font-size:14px;">
+                <b>Organization:</b> ${organizationName}
+              </p>
+            </div>
+
+            <p style="margin-top:25px; font-size:14px; color:#6b7280;">
+              If you believe this action was taken in error, please contact your system administrator.
+            </p>
+
+          </div>
+
+          <!-- Footer -->
+          <div style="background:#f9fafb; text-align:center; padding:14px; font-size:12px; color:#9ca3af;">
+            © ${new Date().getFullYear()} MTSP System. All rights reserved.
+          </div>
+
+        </div>
+      </div>
+      `
+    );
+  } catch (error) {
+    console.error("User removal email error:", error);
+  }
+};
+
+export const notifyTenantRemoved = async ({
+  email,
+  username,
+  organizationName,
+}: TenantRemovePayload): Promise<void> => {
+   try {
+    await sendEmail(
+      email,
+      "Organization Deactivated",
+      `
+      <div style="font-family:Arial, sans-serif; background:#f4f6f8; padding:40px;">
+        <div style="max-width:600px; margin:auto; background:#ffffff; border-radius:14px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <div style="background:#374151; padding:20px; text-align:center;">
+            <h2 style="color:#ffffff; margin:0; font-size:20px;">
+              MTSP
+            </h2>
+          </div>
+
+          <!-- Body -->
+          <div style="padding:30px; color:#1f2937;">
+
+            <h3 style="margin-top:0; color:#111827;">
+              Organization Deactivated!
+            </h3>
+
+            <p style="font-size:15px;">
+              Hello <b>${username}</b>,
+            </p>
+
+            <p style="font-size:15px; line-height:1.6;">
+              This is to inform you that the organization
+              <b>${organizationName}</b> is no longer active on the MTSP platform.
+              As a result, access to this organization has been disabled.
+            </p>
+
+            <!-- Info Box -->
+            <div style="margin-top:20px; background:#f9fafb; border-left:4px solid #6b7280; padding:15px; border-radius:8px;">
+              <p style="margin:0; font-size:14px;">
+                <b>Organization:</b> ${organizationName}
+              </p>
+              <p style="margin:6px 0 0; font-size:14px;">
+                <b>Status:</b> Deactivated
+              </p>
+            </div>
+
+            <p style="margin-top:25px; font-size:14px; color:#6b7280;">
+              If you believe this change was made in error, please contact your system administrator for assistance.
+            </p>
+
+          </div>
+
+          <!-- Footer -->
+          <div style="background:#f9fafb; text-align:center; padding:14px; font-size:12px; color:#9ca3af;">
+            © ${new Date().getFullYear()} MTSP System. All rights reserved.
+          </div>
+
+        </div>
+      </div>
+      `
+    );
+  } catch (error) {
+    console.error("Tenant removal email error:", error);
+  }
+}
+
+interface CreateNotificationPayload {
+  tenant_id: string;
+  user_id: string;
+  message: string;
+  type?: "in_app" | "email" | "sms" | "push";
+}
+
+export const createAppNotification = async ({
+  tenant_id,
+  user_id,
+  message,
+  type,
+}: CreateNotificationPayload) => {
+  return Notification.create({
+    tenant_id,
+    user_id,
+    message,
+    type,
+    status: "sent",
+  });
 };

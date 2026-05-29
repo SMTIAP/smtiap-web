@@ -1,5 +1,6 @@
 import { Router, Request } from "express";
 import crypto from "crypto";
+import bcrypt from "bcrypt";
 import {
   createSurvey,
   getSurveys,
@@ -50,13 +51,17 @@ router.put("/:id", protect, loadTenant, updateSurvey);
 router.patch("/:id/status", protect, loadTenant, updateStatus);
 router.delete("/:id", protect, loadTenant, deleteSurvey);
 
-// ✅ Verify survey password
+// ✅ Verify survey password - NOW USING BCRYPT
 router.post("/:id/verify-password", async (req, res) => {
   try {
     const survey = await Survey.findById(req.params.id);
     if (!survey) return res.status(404).json({ error: "Survey not found" });
     if (!survey.isPasswordProtected) return res.json({ success: true });
-    if (survey.password === req.body.password) {
+    
+    // Use bcrypt.compare to verify hashed password
+    const isValid = await bcrypt.compare(req.body.password, survey.password);
+    
+    if (isValid) {
       res.json({ success: true });
     } else {
       res.status(401).json({ success: false, error: "Incorrect password" });
