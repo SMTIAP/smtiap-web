@@ -29,6 +29,7 @@ import Audit from "./pages/Audit";
 import NavBar from "./components/NavBar.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
+import VerifyEmail from "./pages/VerifyEmail.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import ShareSurvey from "./pages/ShareSurvey";
 import TakeSurvey from "./pages/TakeSurvey";
@@ -88,6 +89,7 @@ export default function App() {
             <Routes>
               <Route path="/take-survey/:surveyId" element={<TakeSurvey />} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/super-admin-login" element={<SuperAdminLogin />} />

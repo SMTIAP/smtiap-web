@@ -28,6 +28,7 @@ export const initGitHubStrategy = () => {
               email,
               username: profile.username || email.split("@")[0],
               password: "github-oauth",
+              isVerified: true,
             });
           }
 

@@ -35,6 +35,7 @@ export const createDefaultSuperAdmin = async (): Promise<void> => {
     email,
     password,
     role: "super_admin",
+    isVerified: true,
   });
 
   console.log(

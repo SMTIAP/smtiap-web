@@ -23,6 +23,7 @@ export const initGoogleStrategy = () => {
               email,
               username: profile.displayName || email.split("@")[0],
               password: "google-oauth",
+              isVerified: true,
             });
           }
 
