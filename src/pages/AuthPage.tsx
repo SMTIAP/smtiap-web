@@ -58,19 +58,19 @@ export default function AuthPage() {
     <div className="flex items-center justify-center min-h-screen w-full bg-gradient-to-br from-[#dce3f5] via-[#e8ecf5] to-[#d8dff2] font-nunito">
       <div className="relative w-[820px] h-[500px] bg-white rounded-[50px] shadow-[0_20px_60px_rgba(90,70,180,0.18),_0_4px_20px_rgba(0,0,0,0.08)] overflow-hidden flex max-md:w-[95vw] max-md:h-auto max-md:flex-col max-md:rounded-[24px]">
         <div
-          className={`absolute top-0 w-1/2 h-full flex flex-col items-center justify-center py-[36px] px-[40px] transition-all duration-[550ms] ease-[cubic-bezier(0.77,0,0.18,1)] max-md:static max-md:w-full max-md:py-[28px] max-md:px-[20px] left-0 ${isSignIn ? "" : "opacity-0 pointer-events-none"}`}
+          className={`absolute top-0 w-1/2 h-full flex flex-col items-center justify-center py-[36px] px-[40px] transition-all duration-[550ms] ease-[cubic-bezier(0.77,0,0.18,1)] max-md:static max-md:w-full max-md:py-[28px] max-md:px-[20px] left-0 ${isSignIn ? "" : "max-md:hidden opacity-0 pointer-events-none"}`}
         >
           <Login />
         </div>
 
         <div
-          className={`absolute top-0 w-1/2 h-full flex flex-col items-center justify-center py-[36px] px-[40px] transition-all duration-[550ms] ease-[cubic-bezier(0.77,0,0.18,1)] max-md:static max-md:w-full max-md:py-[28px] max-md:px-[20px] left-1/2 ${isSignIn ? "opacity-0 pointer-events-none" : ""}`}
+          className={`absolute top-0 w-1/2 h-full flex flex-col items-center justify-center py-[36px] px-[40px] transition-all duration-[550ms] ease-[cubic-bezier(0.77,0,0.18,1)] max-md:static max-md:w-full max-md:py-[28px] max-md:px-[20px] left-1/2 ${isSignIn ? "max-md:hidden opacity-0 pointer-events-none" : ""}`}
         >
           <Registration />
         </div>
 
         <div
-          className={`absolute top-0 w-1/2 h-full bg-gradient-to-br from-[#7b6ee0] to-[#5a45b8] rounded-[50px] flex flex-col items-center justify-center py-[50px] px-[36px] text-center z-10 transition-[left] duration-[550ms] ease-[cubic-bezier(0.77,0,0.18,1)] max-md:static max-md:w-full max-md:rounded-t-[20px] max-md:rounded-b-none max-md:py-[24px] max-md:px-[20px] max-md:!left-auto ${isSignIn ? "left-1/2" : "left-0"}`}
+          className={`absolute top-0 w-1/2 h-full bg-gradient-to-br from-[#7b6ee0] to-[#5a45b8] rounded-[50px] flex flex-col items-center justify-center py-[50px] px-[36px] text-center z-10 transition-[left] duration-[550ms] ease-[cubic-bezier(0.77,0,0.18,1)] max-md:static max-md:w-full max-md:rounded-[20px] max-md:py-[24px] max-md:px-[20px] max-md:mb-6 max-md:!left-auto ${isSignIn ? "left-1/2" : "left-0"}`}
         >
           {isSignIn ? (
             <>
