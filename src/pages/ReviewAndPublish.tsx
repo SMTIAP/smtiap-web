@@ -212,12 +212,12 @@ export default function ReviewAndPublish() {
     };
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/30 backdrop-blur-sm">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/30 backdrop-blur-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 w-full max-w-md">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">Schedule Survey</h2>
-            <button onClick={() => setShowScheduleModal(false)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
-              <X size={20} />
+            <button onClick={() => setShowScheduleModal(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-600 transition-all">
+              <X size={18} className="text-slate-500 dark:text-slate-400" />
             </button>
           </div>
 
@@ -245,35 +245,29 @@ export default function ReviewAndPublish() {
             </label>
 
             {enableOpen && (
-              <div className="flex flex-col gap-2 ml-4 pl-3 border-l-2 border-indigo-200 dark:border-indigo-800">
-                <div className="relative">
-                  <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="date"
-                    value={openDate}
-                    min={today}
-                    onChange={(e) => setOpenDate(e.target.value)}
-                    className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
-                </div>
+              <div className="space-y-2 ml-2">
+                <input
+                  type="date"
+                  value={openDate}
+                  min={today}
+                  onChange={(e) => setOpenDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
                 <div className="flex gap-1 items-center">
-                  <div className="relative">
-                    <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="number"
-                      value={openHour}
-                      min="1"
-                      max="12"
-                      onChange={(e) => {
-                        let val = parseInt(e.target.value);
-                        if (val < 1) val = 1;
-                        if (val > 12) val = 12;
-                        setOpenHour(val.toString().padStart(2, "0"));
-                      }}
-                      className="w-20 pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
-                      placeholder="HH"
-                    />
-                  </div>
+                  <input
+                    type="number"
+                    value={openHour}
+                    min="1"
+                    max="12"
+                    onChange={(e) => {
+                      let val = parseInt(e.target.value);
+                      if (isNaN(val)) val = 1;
+                      if (val < 1) val = 1;
+                      if (val > 12) val = 12;
+                      setOpenHour(val.toString().padStart(2, "0"));
+                    }}
+                    className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                  />
                   <span className="text-lg font-medium text-slate-600 dark:text-slate-400">:</span>
                   <input
                     type="number"
@@ -282,12 +276,12 @@ export default function ReviewAndPublish() {
                     max="59"
                     onChange={(e) => {
                       let val = parseInt(e.target.value);
+                      if (isNaN(val)) val = 0;
                       if (val < 0) val = 0;
                       if (val > 59) val = 59;
                       setOpenMinute(val.toString().padStart(2, "0"));
                     }}
                     className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
-                    placeholder="MM"
                   />
                   <select
                     value={openAmPm}
@@ -318,35 +312,29 @@ export default function ReviewAndPublish() {
             </label>
 
             {enableClose && (
-              <div className="flex flex-col gap-2 ml-4 pl-3 border-l-2 border-rose-200 dark:border-rose-800">
-                <div className="relative">
-                  <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="date"
-                    value={closeDate}
-                    min={today}
-                    onChange={(e) => setCloseDate(e.target.value)}
-                    className="w-full pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
-                </div>
+              <div className="space-y-2 ml-2">
+                <input
+                  type="date"
+                  value={closeDate}
+                  min={today}
+                  onChange={(e) => setCloseDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
                 <div className="flex gap-1 items-center">
-                  <div className="relative">
-                    <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="number"
-                      value={closeHour}
-                      min="1"
-                      max="12"
-                      onChange={(e) => {
-                        let val = parseInt(e.target.value);
-                        if (val < 1) val = 1;
-                        if (val > 12) val = 12;
-                        setCloseHour(val.toString().padStart(2, "0"));
-                      }}
-                      className="w-20 pl-9 pr-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
-                      placeholder="HH"
-                    />
-                  </div>
+                  <input
+                    type="number"
+                    value={closeHour}
+                    min="1"
+                    max="12"
+                    onChange={(e) => {
+                      let val = parseInt(e.target.value);
+                      if (isNaN(val)) val = 1;
+                      if (val < 1) val = 1;
+                      if (val > 12) val = 12;
+                      setCloseHour(val.toString().padStart(2, "0"));
+                    }}
+                    className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                  />
                   <span className="text-lg font-medium text-slate-600 dark:text-slate-400">:</span>
                   <input
                     type="number"
@@ -355,12 +343,12 @@ export default function ReviewAndPublish() {
                     max="59"
                     onChange={(e) => {
                       let val = parseInt(e.target.value);
+                      if (isNaN(val)) val = 0;
                       if (val < 0) val = 0;
                       if (val > 59) val = 59;
                       setCloseMinute(val.toString().padStart(2, "0"));
                     }}
                     className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
-                    placeholder="MM"
                   />
                   <select
                     value={closeAmPm}
@@ -378,13 +366,13 @@ export default function ReviewAndPublish() {
           <div className="flex gap-3 mt-6">
             <button
               onClick={() => setShowScheduleModal(false)}
-              className="flex-1 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700"
+              className="flex-1 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className="flex-1 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
+              className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-all"
             >
               Save Schedule
             </button>
