@@ -65,7 +65,7 @@ export default function Login() {
 
   return (
     <div className="w-full flex flex-col items-center">
-      <h1 className="text-[26px] font-[900] text-[#1a1a2e] mb-[18px] tracking-[-0.5px]">
+      <h1 className="text-[22px] sm:text-[26px] font-[900] text-[#1a1a2e] mb-[14px] sm:mb-[18px] tracking-[-0.5px]">
         Sign In
       </h1>
 
