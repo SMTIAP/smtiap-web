@@ -91,6 +91,7 @@ export default function ReviewAndPublish() {
           state: {
             surveyId: savedSurvey._id,
             surveyTitle: savedSurvey.surveyTitle,
+            scheduledOpen: status === "Scheduled" ? savedSurvey.scheduledOpen : null,
           },
         });
       } else {
@@ -251,7 +252,7 @@ export default function ReviewAndPublish() {
                   value={openDate}
                   min={today}
                   onChange={(e) => setOpenDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
                 <div className="flex gap-1 items-center">
                   <input
@@ -266,7 +267,7 @@ export default function ReviewAndPublish() {
                       if (val > 12) val = 12;
                       setOpenHour(val.toString().padStart(2, "0"));
                     }}
-                    className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                    className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
                   />
                   <span className="text-lg font-medium text-slate-600 dark:text-slate-400">:</span>
                   <input
@@ -281,12 +282,12 @@ export default function ReviewAndPublish() {
                       if (val > 59) val = 59;
                       setOpenMinute(val.toString().padStart(2, "0"));
                     }}
-                    className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                    className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
                   />
                   <select
                     value={openAmPm}
                     onChange={(e) => setOpenAmPm(e.target.value)}
-                    className="px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   >
                     <option value="AM">AM</option>
                     <option value="PM">PM</option>
@@ -318,7 +319,7 @@ export default function ReviewAndPublish() {
                   value={closeDate}
                   min={today}
                   onChange={(e) => setCloseDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
                 <div className="flex gap-1 items-center">
                   <input
@@ -333,7 +334,7 @@ export default function ReviewAndPublish() {
                       if (val > 12) val = 12;
                       setCloseHour(val.toString().padStart(2, "0"));
                     }}
-                    className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                    className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
                   />
                   <span className="text-lg font-medium text-slate-600 dark:text-slate-400">:</span>
                   <input
@@ -348,12 +349,12 @@ export default function ReviewAndPublish() {
                       if (val > 59) val = 59;
                       setCloseMinute(val.toString().padStart(2, "0"));
                     }}
-                    className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                    className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
                   />
                   <select
                     value={closeAmPm}
                     onChange={(e) => setCloseAmPm(e.target.value)}
-                    className="px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   >
                     <option value="AM">AM</option>
                     <option value="PM">PM</option>

@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { Copy, Check, Download, Share2, ChevronLeft, Lock } from "lucide-react";
+import { Copy, Check, Download, Share2, ChevronLeft, Lock, Calendar } from "lucide-react";
 
 export default function ShareSurvey() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { surveyId, surveyTitle } = location.state || {};
+  const { surveyId, surveyTitle, scheduledOpen } = location.state || {};
 
   const surveyLink = `${window.location.origin}/take-survey/${surveyId}`;
   const [copied, setCopied] = useState(false);
@@ -14,6 +14,9 @@ export default function ShareSurvey() {
   const [password, setPassword] = useState("");
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+
+  const isScheduled = !!scheduledOpen;
+  const formattedOpenDate = scheduledOpen ? new Date(scheduledOpen).toLocaleString() : null;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(surveyLink);
@@ -101,16 +104,31 @@ export default function ShareSurvey() {
           </button>
         </div>
 
-        <div className="bg-indigo-50 dark:bg-indigo-900/30 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 text-indigo-600 dark:text-indigo-400">
-          <Share2 size={32} />
+        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 ${isScheduled ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" : "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"}`}>
+          {isScheduled ? <Calendar size={32} /> : <Share2 size={32} />}
         </div>
 
         <h1 className="text-2xl font-black text-slate-900 dark:text-white mb-2">
-          Survey Published!
+          {isScheduled ? "Survey Scheduled!" : "Survey Published!"}
         </h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">
-          Share the link or download the QR code to start collecting responses.
-        </p>
+        
+        {isScheduled && formattedOpenDate ? (
+          <>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-2">
+              Your survey has been scheduled and will go live on:
+            </p>
+            <p className="text-amber-600 dark:text-amber-400 font-bold text-base mb-4">
+              {formattedOpenDate}
+            </p>
+            <p className="text-slate-400 dark:text-slate-500 text-xs mb-6">
+              Share the link now. Respondents will see a "Not Started Yet" message until the scheduled time.
+            </p>
+          </>
+        ) : (
+          <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">
+            Share the link or download the QR code to start collecting responses.
+          </p>
+        )}
 
         {/* Password Protection */}
         <div className="mb-6 text-left bg-slate-50 dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-700">
@@ -161,7 +179,7 @@ export default function ShareSurvey() {
         {/* Survey Link */}
         <div className="mb-8 text-left">
           <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2 block">
-            Unique Survey Link
+            {isScheduled ? "Survey Link (preview available now)" : "Unique Survey Link"}
           </label>
           <div className="flex gap-2">
             <input
