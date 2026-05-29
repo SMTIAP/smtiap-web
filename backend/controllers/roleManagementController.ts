@@ -4,7 +4,7 @@ import Tenant from "../models/Tenant.js";
 import UserTenantRole from "../models/UserTenantRole.js";
 import AuditLog from "../models/AuditLog.js";
 import { toast } from "sonner";
-import { notifyUserAddedToOrganization } from "../services/notificationService.js";
+import { notifyRoleChanged, notifyUserAddedToOrganization, notifyUserRemove, notifyTenantRemoved, createAppNotification } from "../services/notificationService.js";
 
 export const formatRole = (role: string) => {
   return role
@@ -220,6 +220,15 @@ export const updateOrgRole = async (req: Request, res: Response) => {
     const user = await User.findById(userId);
     const tenant = await Tenant.findById(tenantId);
 
+    if (user && tenant) {
+      await notifyRoleChanged ({
+        email: user?.email,
+        organizationName: tenant?.name,
+        username: user?.username,
+        newRole: newRole,
+      })
+    }
+
     // 5. Audit log
     await AuditLog.create({
       tenant_id: tenantId,
@@ -228,6 +237,13 @@ export const updateOrgRole = async (req: Request, res: Response) => {
       entity: "User",
       entity_id: userId,
       description: `Role changed from ${formatRole(oldRole)} to ${formatRole(newRole)} for ${user?.username} in Organization ${tenant?.name}`,
+    });
+
+    await createAppNotification({
+      tenant_id: tenantId,
+      user_id: userId,
+      message: `Your role was changed to ${formatRole(newRole)} in ${tenant?.name}`,
+      type: "email",
     });
 
     return res.status(200).json({
@@ -279,6 +295,14 @@ export const removeOrgUser = async (req: Request, res: Response) => {
     const user = await User.findById(userId);
     const tenant = await Tenant.findById(tenantId);
 
+    if(user && tenant){
+      await notifyUserRemove({
+        email: user.email,
+        username: user.username,
+        organizationName: tenant.name,
+      })
+    }
+
     await AuditLog.create({
       tenant_id: tenantId,
       user_id: actor._id,
@@ -312,6 +336,12 @@ export const removeTenant = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Tenant not found" });
     }
 
+    // Get all active users before deactivating
+    const tenantUsers = await UserTenantRole.find({
+      tenantId,
+      status: "active",
+    }).populate("userId", "email username");
+
     // 2. Deactivate all user-tenant relationships
     await UserTenantRole.updateMany(
       { tenantId },
@@ -320,6 +350,21 @@ export const removeTenant = async (req: Request, res: Response) => {
           status: "inactive",
         },
       }
+    );
+
+    // Notify all users in parallel (faster)
+    await Promise.all(
+      tenantUsers.map(async (member) => {
+        const user = member.userId as any;
+
+        if (!user?.email) return;
+
+        return notifyTenantRemoved({
+          email: user.email,
+          username: user.username,
+          organizationName: tenant.name,
+        });
+      })
     );
 
     return res.status(200).json({

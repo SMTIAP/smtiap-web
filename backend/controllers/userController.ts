@@ -155,7 +155,7 @@ export const forgotPassword = async (
     // Send temporary password via email
     await sendEmail(
       user.email,
-      "Your Temporary Password - SMTIAP",
+      "Your Temporary Password - MTSP",
       `
         <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
           <h2 style="color: #5C38E1;">Password Reset Request</h2>
