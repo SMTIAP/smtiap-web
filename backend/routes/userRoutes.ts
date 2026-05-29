@@ -7,6 +7,8 @@ import {
   getMyTenants,
   forgotPassword,
   resetPassword,
+  verifyEmail,
+  resendVerification,
 } from "../controllers/userController.js";
 import { protect } from "../middleware/auth.js";
 import { authorizeRoles } from "../middleware/role.js";
@@ -23,6 +25,8 @@ router.get("/me", protect, getMe);
 router.get("/me/tenants", protect, getMyTenants);
 router.post("/forgot-password", forgotPassword);
 router.put("/reset-password", resetPassword);
+router.get("/verify-email", verifyEmail);
+router.post("/resend-verification", resendVerification);
 
 router.get(
   "/superadmin",

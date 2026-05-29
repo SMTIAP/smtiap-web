@@ -23,6 +23,7 @@ export const initLinkedInStrategy = () => {
               email,
               username: profile.displayName || email.split("@")[0],
               password: "linkedin-oauth-user",
+              isVerified: true,
             });
           }
 

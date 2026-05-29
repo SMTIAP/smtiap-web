@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PasswordInput from "../components/PasswordInput";
 import axios from "axios";
 import { GoogleIcon, GithubIcon, LinkedInIcon } from "./AuthPage";
-import { useNavigate } from "react-router-dom";
 
 export default function Register() {
   const [username, setUsername] = useState("");
@@ -10,8 +9,33 @@ export default function Register() {
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const [message, setMessage] = useState("");
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
+
+  useEffect(() => {
+    if (resendCountdown > 0) {
+      const timer = setTimeout(() => setResendCountdown((prev) => prev - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCountdown]);
+
+  const handleResend = async () => {
+    if (resendCountdown > 0) return;
+    try {
+      setResendLoading(true);
+      const res = await axios.post("http://localhost:5000/api/users/resend-verification", {
+        email: registeredEmail,
+      });
+      setMessage(res.data.message || "Verification link resent successfully!");
+      setResendCountdown(60);
+    } catch (err: any) {
+      setMessage(err.response?.data?.message || "Failed to resend verification link.");
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,22 +53,9 @@ export default function Register() {
         },
         { withCredentials: true },
       );
-      const userRole = res.data.role;
-      if (res.data.token) {
-        localStorage.setItem("token", res.data.token);
-      }
 
-      if (userRole === "admin") {
-        navigate("/admin");
-      } else if (userRole === "creater") {
-        navigate("/admin");
-      } else if (userRole === "super_admin") {
-        navigate("/super-admin-dashboard"); // Update this if super admin route differs
-      } else {
-        navigate("/admin");
-      }
-
-      setMessage("Account created successfully ✔");
+      setRegisteredEmail(email);
+      setMessage(res.data.message || "Registration successful! Please check your email to verify your account.");
       console.log(res.data);
     } catch (err: any) {
       setMessage(err.response?.data?.message || "Registration failed");
@@ -64,6 +75,43 @@ export default function Register() {
   const handleLinkedInLogin = () => {
     window.location.href = "http://localhost:5000/api/users/linkedin";
   };
+
+  if (registeredEmail) {
+    return (
+      <div className="w-full flex flex-col items-center text-center animate-[fadeIn_0.5s_ease-out]">
+        <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center mb-5 border border-indigo-100 shadow-[0_4px_15px_rgba(123,110,224,0.15)]">
+          <svg className="w-8 h-8 text-[#7b6ee0]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        </div>
+        
+        <h1 className="text-[24px] font-[900] text-[#1a1a2e] mb-[10px] tracking-[-0.5px]">
+          Verify Your Email
+        </h1>
+        
+        <p className="text-[13px] text-[#6B7280] font-semibold leading-relaxed mb-6 max-w-[280px]">
+          We've sent a verification link to <span className="text-[#7b6ee0] font-bold">{registeredEmail}</span>. Please click the link to activate your account.
+        </p>
+
+        <div className="w-full bg-[#f8fafc] border border-slate-100 rounded-2xl p-4 mb-5">
+          <p className="text-[11px] text-[#888] font-medium mb-3">Didn't receive the email?</p>
+          <button
+            onClick={handleResend}
+            disabled={resendLoading || resendCountdown > 0}
+            className="w-full py-2.5 bg-[#7b6ee0] hover:bg-[#5a45b8] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold text-xs tracking-wider rounded-xl transition-all duration-200"
+          >
+            {resendLoading ? "Resending..." : resendCountdown > 0 ? `Resend in ${resendCountdown}s` : "Resend Verification Email"}
+          </button>
+        </div>
+
+        {message && (
+          <div className="mt-[6px] text-[11px] font-semibold text-[#5a45b8] bg-[#f3f0ff] py-2 px-4 rounded-lg w-full max-w-[280px]">
+            {message}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="w-full flex flex-col items-center">

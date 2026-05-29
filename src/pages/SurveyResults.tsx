@@ -27,27 +27,27 @@ const StopConfirmModal = ({
       className="absolute inset-0 bg-black/25 backdrop-blur-sm"
       onClick={onCancel}
     />
-    <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 max-w-xs w-full z-10">
+    <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-700 p-6 max-w-xs w-full z-10">
       <button
         onClick={onCancel}
-        className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-all"
+        className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 transition-all"
       >
         <X size={14} />
       </button>
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center shrink-0">
-          <StopCircle size={16} className="text-red-500" />
+        <div className="w-9 h-9 bg-red-50 dark:bg-red-900/40 rounded-xl flex items-center justify-center shrink-0">
+          <StopCircle size={16} className="text-red-500 dark:text-red-400" />
         </div>
-        <p className="font-black text-slate-900 text-base">Stop survey?</p>
+        <p className="font-black text-slate-900 dark:text-white text-base">Stop survey?</p>
       </div>
-      <p className="text-slate-400 text-xs mb-6">
+      <p className="text-slate-400 dark:text-slate-500 text-xs mb-6">
         No new responses after this.
       </p>
       <div className="flex gap-2">
         <button
           onClick={onCancel}
           disabled={stopping}
-          className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
+          className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-600 transition-all"
         >
           Cancel
         </button>
@@ -150,18 +150,18 @@ export default function SurveyResults() {
 
   if (loading)
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] flex items-center justify-center">
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-500 text-sm">Loading results...</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">Loading results...</p>
         </div>
       </div>
     );
 
   if (!survey)
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <p className="text-slate-500">Survey not found.</p>
+      <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] flex items-center justify-center">
+        <p className="text-slate-500 dark:text-slate-400">Survey not found.</p>
       </div>
     );
 
@@ -173,7 +173,7 @@ export default function SurveyResults() {
   const isRunning = survey.status === "Running";
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] py-12 px-6">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] py-12 px-6 transition-colors duration-300">
       {showStopModal && (
         <StopConfirmModal
           onConfirm={handleStopSurvey}
@@ -182,8 +182,8 @@ export default function SurveyResults() {
         />
       )}
 
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors duration-300">
           <div
             className="h-2 w-full"
             style={{ backgroundColor: primaryColor }}
@@ -192,7 +192,7 @@ export default function SurveyResults() {
             <div className="flex justify-between items-start">
               <button
                 onClick={() => navigate("/created-surveys")}
-                className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 mb-4 transition-all"
+                className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-all"
               >
                 <ChevronLeft size={14} /> Back to surveys
               </button>
@@ -201,7 +201,7 @@ export default function SurveyResults() {
               {isRunning && canModify && (
                 <button
                   onClick={() => setShowStopModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-bold hover:bg-red-100 transition-all"
+                  className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-xl text-xs font-bold hover:bg-red-100 dark:hover:bg-red-900/50 transition-all"
                 >
                   <StopCircle size={14} />
                   Stop Survey
@@ -209,31 +209,31 @@ export default function SurveyResults() {
               )}
 
               {!isRunning && (
-                <span className="px-4 py-2 bg-rose-50 text-rose-500 border border-rose-100 rounded-xl text-xs font-bold">
+                <span className="px-4 py-2 bg-rose-50 dark:bg-rose-900/30 text-rose-500 dark:text-rose-400 border border-rose-100 dark:border-rose-800 rounded-xl text-xs font-bold">
                   ✓ Finished
                 </span>
               )}
             </div>
 
-            <h1 className="text-2xl font-black text-slate-900">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white mt-4">
               {survey.surveyTitle || "Untitled Survey"}
             </h1>
-            <p className="text-slate-400 text-sm mt-1">
+            <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">
               {totalResponses} response{totalResponses !== 1 ? "s" : ""}{" "}
               collected
             </p>
 
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
               {/* Tab switcher between Summary, Individual and All responses views */}
-              <div className="flex gap-2 bg-slate-100 p-1 rounded-2xl w-fit">
+              <div className="flex gap-2 bg-slate-100 dark:bg-slate-700 p-1 rounded-2xl w-fit">
                 {(["summary", "individual", "all"] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
                     className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
                       activeTab === tab
-                        ? "bg-white text-indigo-600 shadow-sm"
-                        : "text-slate-400 hover:text-slate-600"
+                        ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                        : "text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                     }`}
                   >
                     {tab === "summary"
@@ -259,10 +259,10 @@ export default function SurveyResults() {
         </div>
 
         {totalResponses === 0 && (
-          <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-16 text-center">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-16 text-center transition-colors duration-300">
             <p className="text-4xl mb-4">📭</p>
-            <p className="text-slate-700 font-bold text-lg">No responses yet</p>
-            <p className="text-slate-400 text-sm mt-1">
+            <p className="text-slate-700 dark:text-slate-300 font-bold text-lg">No responses yet</p>
+            <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">
               Share your survey link to start collecting answers.
             </p>
           </div>
@@ -278,12 +278,12 @@ export default function SurveyResults() {
             return (
               <div
                 key={q._id}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+                className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 transition-colors duration-300"
               >
-                <p className="font-bold text-slate-800 text-base mb-1">
+                <p className="font-bold text-slate-800 dark:text-white text-base mb-1">
                   {q.label}
                 </p>
-                <p className="text-xs text-slate-400 mb-4">
+                <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">
                   {answers.length} response{answers.length !== 1 ? "s" : ""}
                 </p>
 
@@ -297,14 +297,14 @@ export default function SurveyResults() {
                       return (
                         <div key={opt}>
                           <div className="flex justify-between text-sm mb-1">
-                            <span className="text-slate-700 font-medium">
+                            <span className="text-slate-700 dark:text-slate-300 font-medium">
                               {opt}
                             </span>
-                            <span className="text-slate-400 text-xs">
+                            <span className="text-slate-400 dark:text-slate-500 text-xs">
                               {count} ({pct}%)
                             </span>
                           </div>
-                          <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full transition-all duration-500"
                               style={{
@@ -337,14 +337,14 @@ export default function SurveyResults() {
                       return (
                         <div key={opt}>
                           <div className="flex justify-between text-sm mb-1">
-                            <span className="text-slate-700 font-medium">
+                            <span className="text-slate-700 dark:text-slate-300 font-medium">
                               {opt}
                             </span>
-                            <span className="text-slate-400 text-xs">
+                            <span className="text-slate-400 dark:text-slate-500 text-xs">
                               {count} ({pct}%)
                             </span>
                           </div>
-                          <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full transition-all duration-500"
                               style={{
@@ -369,7 +369,7 @@ export default function SurveyResults() {
                         answers.reduce((s, a) => s + Number(a), 0) /
                         answers.length
                       ).toFixed(1)}
-                      <span className="text-base text-slate-400 font-normal ml-2">
+                      <span className="text-base text-slate-400 dark:text-slate-500 font-normal ml-2">
                         / {q.max || 5} avg
                       </span>
                     </p>
@@ -386,7 +386,7 @@ export default function SurveyResults() {
                             key={i}
                             className="flex flex-col items-center gap-1 flex-1"
                           >
-                            <div className="w-full bg-slate-100 rounded-full overflow-hidden h-16 flex flex-col-reverse">
+                            <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden h-16 flex flex-col-reverse">
                               <div
                                 className="w-full rounded-full transition-all duration-500"
                                 style={{
@@ -396,10 +396,10 @@ export default function SurveyResults() {
                                 }}
                               />
                             </div>
-                            <span className="text-xs text-slate-500 font-bold">
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">
                               {i + 1}
                             </span>
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-slate-400 dark:text-slate-500">
                               {count}
                             </span>
                           </div>
@@ -415,14 +415,14 @@ export default function SurveyResults() {
                   q.type === "date") && (
                   <ul className="space-y-2">
                     {answers.length === 0 ? (
-                      <p className="text-slate-400 text-sm italic">
+                      <p className="text-slate-400 dark:text-slate-500 text-sm italic">
                         No answers yet
                       </p>
                     ) : (
                       answers.map((a, i) => (
                         <li
                           key={i}
-                          className="text-sm text-slate-700 bg-slate-50 rounded-xl px-4 py-3 border border-slate-100"
+                          className="text-sm text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 rounded-xl px-4 py-3 border border-slate-100 dark:border-slate-700"
                         >
                           {a}
                         </li>
@@ -446,27 +446,27 @@ export default function SurveyResults() {
         {/* Individual tab — browse responses one by one with prev/next navigation */}
         {activeTab === "individual" && totalResponses > 0 && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-4">
+            <div className="flex justify-between items-center bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm px-6 py-4 transition-colors duration-300">
               <button
                 disabled={activeResponseIndex === 0}
                 onClick={() => setActiveResponseIndex((i) => i - 1)}
-                className="px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               >
                 ← Prev
               </button>
-              <span className="text-sm font-bold text-slate-500">
+              <span className="text-sm font-bold text-slate-500 dark:text-slate-400">
                 Response {activeResponseIndex + 1} of {totalResponses}
               </span>
               <button
                 disabled={activeResponseIndex === totalResponses - 1}
                 onClick={() => setActiveResponseIndex((i) => i + 1)}
-                className="px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               >
                 Next →
               </button>
             </div>
 
-            <p className="text-xs text-slate-400 text-center">
+            <p className="text-xs text-slate-400 dark:text-slate-500 text-center">
               Submitted:{" "}
               {(() => {
                 const raw =
@@ -484,19 +484,19 @@ export default function SurveyResults() {
               return (
                 <div
                   key={q._id}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+                  className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 transition-colors duration-300"
                 >
-                  <p className="font-bold text-slate-700 text-sm mb-2">
+                  <p className="font-bold text-slate-700 dark:text-slate-300 text-sm mb-2">
                     {q.label}
                   </p>
                   {answer !== undefined && answer !== null && answer !== "" ? (
-                    <p className="text-slate-800 text-base bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
+                    <p className="text-slate-800 dark:text-slate-200 text-base bg-slate-50 dark:bg-slate-900 rounded-xl px-4 py-3 border border-slate-100 dark:border-slate-700">
                       {Array.isArray(answer)
                         ? answer.join(", ")
                         : String(answer)}
                     </p>
                   ) : (
-                    <p className="text-slate-400 text-sm italic">No answer</p>
+                    <p className="text-slate-400 dark:text-slate-500 text-sm italic">No answer</p>
                   )}
                 </div>
               );
