@@ -10,7 +10,7 @@ dotenv.config({
 });
 
 export const createDefaultSuperAdmin = async (): Promise<void> => {
-  const email = process.env.SUPER_ADMIN_EMAIL || "superadmin@smtiap.com";
+  const email = process.env.SUPER_ADMIN_EMAIL || "smtiapweb@gmail.com";
   const password = process.env.SUPER_ADMIN_PASSWORD || "SuperAdmin@12345";
   const username = process.env.SUPER_ADMIN_USERNAME || "Super Admin";
   const createEnabled =
