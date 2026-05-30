@@ -1,5 +1,6 @@
 import { sendEmail } from "./emailService.js";
 import User, { IUser } from "../models/User.js";
+import Survey from "../models/Survey.js";
 import Notification from "../models/Notification.js";
 
 
@@ -38,6 +39,13 @@ interface TenantRemovePayload {
   organizationName: string;
 }
 
+interface SurveyPublishedAndStoppedPayload {
+  email: string,
+  username: string,
+  organizationName: string,
+  surveyName: string
+}
+
 export const formatRole = (role: string) => {
   return role
     .split("_")
@@ -45,41 +53,6 @@ export const formatRole = (role: string) => {
     .join(" ");
 };
 
-
-
-// export type NotificationData =
-//   | {
-//       type: NotificationType.ORGANIZATION_CREATED;
-//       organizationName: string;
-//       createdBy: string;
-//     }
-
-//   | {
-//       type: NotificationType.USER_ADDED;
-//       organizationName: string;
-//       username: string;
-//       role: string;
-//     }
-
-//   | {
-//       type: NotificationType.ROLE_CHANGED;
-//       organizationName: string;
-//       username: string;
-//       oldRole: string;
-//       newRole: string;
-//       actorName?: string;
-//     }
-
-//   | {
-//       type: NotificationType.USER_REMOVED;
-//       organizationName: string;
-//       username: string;
-//     }
-
-//   | {
-//       type: NotificationType.TENANT_DEACTIVATED;
-//       organizationName: string;
-//     };
 
 export const notifyOrganizationCreated = async (
   org: TenantType
@@ -437,3 +410,153 @@ export const notifyTenantRemoved = async ({
   }
 }
 
+export const notifySurveyPublished = async({
+    email,
+    username,
+    organizationName,
+    surveyName,
+}: SurveyPublishedAndStoppedPayload): Promise<void> => {
+  try {
+    await sendEmail(
+      email,
+      "Survey Published",
+      `
+      <div style="font-family:Arial, sans-serif; background:#f4f6f8; padding:40px;">
+        <div style="max-width:600px; margin:auto; background:#ffffff; border-radius:14px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <div style="background:#2563eb; padding:20px; text-align:center;">
+            <h2 style="color:#ffffff; margin:0; font-size:20px;">
+              MTSP
+            </h2>
+          </div>
+
+          <!-- Body -->
+          <div style="padding:30px; color:#1f2937;">
+
+            <h3 style="margin-top:0; color:#111827;">
+              Survey Published
+            </h3>
+
+            <p style="font-size:15px;">
+              Hello <b>${username}</b>,
+            </p>
+
+            <p style="font-size:15px; line-height:1.6;">
+              ${
+                organizationName
+                  ? `A new survey has been published in the organization <b>${organizationName}</b>.`
+                  : `A new survey has been published in the system.`
+              }
+            </p>
+
+            <!-- Info Box -->
+            <div style="margin-top:20px; background:#eff6ff; border-left:4px solid #2563eb; padding:15px; border-radius:8px;">
+              <p style="margin:0; font-size:14px;">
+                <b>Survey:</b> ${surveyName}
+              </p>
+              <p style="margin:6px 0 0; font-size:14px;">
+              ${organizationName ? `<b>Organization:</b> ${organizationName}</p> ` : ``}
+            </div>
+
+            <p style="margin-top:25px; font-size:15px; line-height:1.6;">
+              The survey has been successfully published and is now accessible to respondents.
+            </p>
+
+            <div style="text-align:center; margin-top:24px;">
+              <a href="http://localhost:3000/dashboard"
+                style="display:inline-block; padding:12px 22px; background:#2563eb; color:#ffffff; text-decoration:none; border-radius:8px; font-weight:600;">
+                Open MTSP
+              </a>
+            </div>
+
+          </div>
+
+          <!-- Footer -->
+          <div style="background:#f9fafb; text-align:center; padding:14px; font-size:12px; color:#9ca3af;">
+            © ${new Date().getFullYear()} MTSP System. All rights reserved.
+          </div>
+
+        </div>
+      </div>
+      `
+    );
+  } catch (error) {
+    console.error("Survey published email error:", error);
+  }
+};
+
+
+export const notifySurveyStopped = async ({
+  email,
+  username,
+  organizationName,
+  surveyName,
+}: SurveyPublishedAndStoppedPayload): Promise<void> => {
+  try {
+    await sendEmail(
+      email,
+      "Survey Stopped",
+      `
+      <div style="font-family:Arial, sans-serif; background:#f4f6f8; padding:40px;">
+        <div style="max-width:600px; margin:auto; background:#ffffff; border-radius:14px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <div style="background:#6b7280; padding:20px; text-align:center;">
+            <h2 style="color:#ffffff; margin:0; font-size:20px;">
+              MTSP
+            </h2>
+          </div>
+
+          <!-- Body -->
+          <div style="padding:30px; color:#1f2937;">
+
+            <h3 style="margin-top:0; color:#111827;">
+              Survey Stopped
+            </h3>
+
+            <p style="font-size:15px;">
+              Hello <b>${username}</b>,
+            </p>
+
+            <p style="font-size:15px; line-height:1.6;">
+              A survey has been stopped (closed) in the organization
+              <b>${organizationName}</b>.
+            </p>
+
+            <!-- Info Box -->
+            <div style="margin-top:20px; background:#f3f4f6; border-left:4px solid #6b7280; padding:15px; border-radius:8px;">
+              <p style="margin:0; font-size:14px;">
+                <b>Survey:</b> ${surveyName}
+              </p>
+              <p style="margin:6px 0 0; font-size:14px;">
+                <b>Organization:</b> ${organizationName}
+              </p>
+            </div>
+
+            <p style="margin-top:25px; font-size:15px; line-height:1.6;">
+              The survey is no longer accepting responses.
+            </p>
+
+            <div style="text-align:center; margin-top:24px;">
+              <a href="http://localhost:3000/dashboard"
+                style="display:inline-block; padding:12px 22px; background:#6b7280; color:#ffffff; text-decoration:none; border-radius:8px; font-weight:600;">
+                Open MTSP
+              </a>
+            </div>
+
+          </div>
+
+          <!-- Footer -->
+          <div style="background:#f9fafb; text-align:center; padding:14px; font-size:12px; color:#9ca3af;">
+            © ${new Date().getFullYear()} MTSP System. All rights reserved.
+          </div>
+
+        </div>
+      </div>
+      `
+    );
+  } catch (error) {
+    console.error("Survey stopped email error:", error);
+  }
+};

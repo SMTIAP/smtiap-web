@@ -3,6 +3,10 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import Survey from "../models/Survey.js";
 import AuditLog from "../models/AuditLog.js";
+import { notifySurveyPublished } from "../services/emailNotificationService.js";
+import User from "../models/User.js";
+import { toast } from "sonner";
+import Tenant from "../models/Tenant.js";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -391,18 +395,45 @@ export const updateStatus = async (req: Request, res: Response) => {
         survey.tenantId ? String(survey.tenantId) : undefined,
       )
     )
-      return;
+
+    return;
     const updated = await Survey.findByIdAndUpdate(
       req.params.id,
       { status },
       { new: true },
     );
+
     logAudit(
       req,
       `status_change_${status.toLowerCase()}`,
       updated!._id,
       `Survey "${survey.surveyTitle}" status changed to "${status}"`,
     );
+
+    if (status === "Running") {
+      console.log("updateStatus called 6");
+      const user = reqUser(req);
+
+      if (user?._id) {
+        const currentUser = await User.findById(user._id);
+        const tenant = survey.tenantId
+          ? await Tenant.findById(survey.tenantId)
+          : null;
+
+        if (currentUser?.email) {
+          await notifySurveyPublished({
+            email: currentUser.email,
+            username: currentUser.username,
+            organizationName: tenant?.name ?? '',
+            surveyName: survey.surveyTitle,
+          });
+        }
+    } else {
+      toast.error("Not Working")
+    }
+}
+
+
     res.json({ message: "Status updated", survey: updated });
   } catch (err) {
     res.status(500).json({ message: String(err) });
