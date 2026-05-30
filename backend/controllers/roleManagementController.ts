@@ -267,6 +267,24 @@ export const updateOrgRole = async (req: Request, res: Response) => {
     //   type: "email",
     // });
 
+    //In-app notification for User (NEW)
+    await createAppNotification({
+      tenant_id: tenantId,
+      user_id: userId,
+      type: "ROLE_CHANGED",
+      channel: "in_app",
+      message: `Your role was changed to ${formatRole(newRole)} in ${tenant?.name}`,
+    });
+
+    //In-app notification for Actor (NEW)
+    await createAppNotification({
+      tenant_id: tenantId,
+      user_id: actor,
+      type: "ROLE_CHANGED",
+      channel: "in_app",
+      message: `Change of role from ${formatRole(oldRole)} to ${formatRole(newRole)} in ${tenant?.name} for ${user?.username} in the Organization ${tenant?.name} was successful`,
+    });
+
     return res.status(200).json({
       updated,
       oldRole,
