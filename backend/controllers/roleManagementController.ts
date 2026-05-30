@@ -4,7 +4,8 @@ import Tenant from "../models/Tenant.js";
 import UserTenantRole from "../models/UserTenantRole.js";
 import AuditLog from "../models/AuditLog.js";
 import { toast } from "sonner";
-import { notifyRoleChanged, notifyUserAddedToOrganization, notifyUserRemove, notifyTenantRemoved, createAppNotification } from "../services/notificationService.js";
+import { notifyRoleChanged, notifyUserAddedToOrganization, notifyUserRemove, notifyTenantRemoved } from "../services/emailNotificationService.js";
+import { createAppNotification } from "../services/notificationService.js";
 
 export const formatRole = (role: string) => {
   return role
@@ -122,6 +123,8 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
       role,
     });
 
+
+
     //Fetch user details
     const user = await User.findById(userId).lean<IUser>();
     const tenant = await Tenant.findById(tenantId).lean();
@@ -134,6 +137,24 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
         role,
       });
     }
+
+    //In-app notification for User (NEW)
+    await createAppNotification({
+      tenant_id: tenantId,
+      user_id: userId,
+      type: "USER_ADDED",
+      channel: "in_app",
+      message: `You have been added to "${tenant?.name}" with role "${formatRole(role)}".`,
+    });
+
+    //In-app notification for Actor (NEW)
+    await createAppNotification({
+      tenant_id: tenantId,
+      user_id: actor,
+      type: "USER_ADDED",
+      channel: "in_app",
+      message: `You added ${user?.username} to the Organization "${tenant?.name}" with role "${formatRole(role)}".`,
+    });
 
     await AuditLog.create({
       tenant_id: tenantId,
@@ -239,12 +260,12 @@ export const updateOrgRole = async (req: Request, res: Response) => {
       description: `Role changed from ${formatRole(oldRole)} to ${formatRole(newRole)} for ${user?.username} in Organization ${tenant?.name}`,
     });
 
-    await createAppNotification({
-      tenant_id: tenantId,
-      user_id: userId,
-      message: `Your role was changed to ${formatRole(newRole)} in ${tenant?.name}`,
-      type: "email",
-    });
+    // await createAppNotification({
+    //   tenant_id: tenantId,
+    //   user_id: userId,
+    //   message: `Your role was changed to ${formatRole(newRole)} in ${tenant?.name}`,
+    //   type: "email",
+    // });
 
     return res.status(200).json({
       updated,
