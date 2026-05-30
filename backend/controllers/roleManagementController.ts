@@ -381,6 +381,7 @@ export const removeOrgUser = async (req: Request, res: Response) => {
 
 export const removeTenant = async (req: Request, res: Response) => {
   const { tenantId } = req.params;
+  const actor = (req as any).user;
 
   try {
     const tenant = await Tenant.findByIdAndUpdate(
@@ -393,6 +394,8 @@ export const removeTenant = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Tenant not found" });
     }
 
+    const actorId = actor?._id?.toString();
+    
     // Get all active users before deactivating
     const tenantUsers = await UserTenantRole.find({
       tenantId,
@@ -409,12 +412,36 @@ export const removeTenant = async (req: Request, res: Response) => {
       }
     );
 
+    // 👇 Actor notification
+    if (actor) {
+      await createAppNotification({
+        tenant_id: tenantId,
+        user_id: actor._id,
+        type: "TENANT_DEACTIVATED",
+        channel: "in_app",
+        message: `Successfully deleted organization ${tenant?.name}`,
+      });
+    }
+
     // Notify all users in parallel (faster)
     await Promise.all(
-      tenantUsers.map(async (member) => {
+      tenantUsers
+        .filter((member) => member.userId?._id?.toString() !== actorId)
+        .map(async (member) => {
         const user = member.userId as any;
 
         if (!user?.email) return;
+
+        
+
+        // 👇 Other users notification
+        await createAppNotification({
+          tenant_id: tenantId,
+          user_id: user._id,
+          type: "TENANT_DEACTIVATED",
+          channel: "in_app",
+          message: `Organization ${tenant.name} has been deleted`,
+        });
 
         return notifyTenantRemoved({
           email: user.email,
