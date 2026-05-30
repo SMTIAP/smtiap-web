@@ -228,7 +228,13 @@ export default function RoleManagement() {
     const confirmed = await confirmAsync(`Add "${user.username}" to "${tenant.name}"?`);
     if (!confirmed) return;
     try {
-      const newRole = selectedRole[user._id] || "viewer";
+      // const newRole = selectedRole[user._id] || "viewer";
+      const newRole = selectedRole[user._id];
+
+      if (!newRole) {
+        toast.error("Please select a role before adding user");
+        return;
+      }
       const response = await fetch(`http://localhost:5000/api/role-management/${user._id}/${tenant._id}`, {
         method: "PUT",
         headers: authHeaders(),
@@ -498,18 +504,20 @@ export default function RoleManagement() {
                     <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{user.email}</td>
                     <td className="px-6 py-3">
                       <select
-                        value={selectedRole[user._id] || user.role}
+                        value={selectedRole[user._id]}
                         onChange={(e) => {
                           const value = e.target.value;
-                          setSelectedRole((prev) => {
-                            const updated = { ...prev };
-                            if (value === user.role) delete updated[user._id];
-                            else updated[user._id] = value;
-                            return updated;
-                          });
+                          setSelectedRole((prev) => ({
+                          ...prev,
+                          [user._id]: value,
+                        }));
                         }}
                         className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                       >
+                          {/* ✅ NEW: placeholder */}
+                        <option value="">
+                          Select Role
+                        </option>
                         <option value="admin">Tenant Admin</option>
                         <option value="viewer">Viewer</option>
                         <option value="creator">Creator</option>
