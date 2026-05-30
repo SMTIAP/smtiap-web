@@ -342,13 +342,31 @@ export const removeOrgUser = async (req: Request, res: Response) => {
       })
     }
 
+    //In-app notification for User (NEW)
+    await createAppNotification({
+      tenant_id: tenantId,
+      user_id: userId,
+      type: "USER_REMOVED",
+      channel: "in_app",
+      message: `You have been removed from the Organization ${tenant?.name}`,
+    });
+
+    //In-app notification for Actor (NEW)
+    await createAppNotification({
+      tenant_id: tenantId,
+      user_id: actor,
+      type: "USER_REMOVED",
+      channel: "in_app",
+      message: `Successfully removed ${user?.username} from organization ${tenant?.name}`,
+    });
+
     await AuditLog.create({
       tenant_id: tenantId,
       user_id: actor._id,
       action: "delete",
       entity: "User",
       entity_id: userId,
-      description: `Deleted ${user?.username} from Organization ${tenant?.name}`,
+      description: `Removed ${user?.username} from Organization ${tenant?.name}`,
     });
 
     res.status(200).json({
