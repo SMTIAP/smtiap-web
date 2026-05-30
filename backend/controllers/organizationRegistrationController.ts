@@ -2,7 +2,8 @@ import { Request, Response } from "express";
 import Tenant from "../models/Tenant.js";
 import UserTenantRole from "../models/UserTenantRole.js";
 import AuditLog from "../models/AuditLog.js";
-import { notifyOrganizationCreated } from "../services/notificationService.js";
+import { notifyOrganizationCreated } from "../services/emailNotificationService.js";
+import { createAppNotification } from "../services/notificationService.js";
 
 interface AuthenticatedRequest extends Request {
   user?: { _id: string };
@@ -78,6 +79,14 @@ export const createOrganization = async (req: Request, res: Response) => {
       domain: cleanTenant.domain,
       orgType: cleanTenant.orgType,
       createdBy: cleanTenant.createdBy.toString(),
+    });
+
+    await createAppNotification({
+      tenant_id: tenant._id.toString(),
+      user_id: userId,
+      type: "ORGANIZATION_CREATED",
+      channel: "in_app",
+      message: `Organization ${name} has been successfully created`,
     });
 
     return res.status(201).json({

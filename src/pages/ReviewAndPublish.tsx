@@ -86,6 +86,31 @@ export default function ReviewAndPublish() {
       const data = await res.json();
       const savedSurvey = data.survey;
 
+      if (status === "Running") {
+        const token = localStorage.getItem("token");
+
+        const statusRes = await fetch(
+          `http://localhost:5000/api/surveys/${savedSurvey._id}/status`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              status: "Running",
+            }),
+          }
+        );
+
+        if (!statusRes.ok) {
+          toast.error("Failed to publish survey");
+          return;
+        }
+      }
+
+      toast.success("Survey Published Successfully");
+
       if (status === "Running" || status === "Scheduled") {
         navigate("/share-survey", {
           state: {

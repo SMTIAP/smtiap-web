@@ -4,7 +4,8 @@ import Tenant from "../models/Tenant.js";
 import UserTenantRole from "../models/UserTenantRole.js";
 import AuditLog from "../models/AuditLog.js";
 import { toast } from "sonner";
-import { notifyRoleChanged, notifyUserAddedToOrganization, notifyUserRemove, notifyTenantRemoved, createAppNotification } from "../services/notificationService.js";
+import { notifyRoleChanged, notifyUserAddedToOrganization, notifyUserRemove, notifyTenantRemoved } from "../services/emailNotificationService.js";
+import { createAppNotification } from "../services/notificationService.js";
 
 export const formatRole = (role: string) => {
   return role
@@ -122,6 +123,8 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
       role,
     });
 
+
+
     //Fetch user details
     const user = await User.findById(userId).lean<IUser>();
     const tenant = await Tenant.findById(tenantId).lean();
@@ -134,6 +137,24 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
         role,
       });
     }
+
+    //In-app notification for User (NEW)
+    await createAppNotification({
+      tenant_id: tenantId,
+      user_id: userId,
+      type: "USER_ADDED",
+      channel: "in_app",
+      message: `You have been added to "${tenant?.name}" with role "${formatRole(role)}".`,
+    });
+
+    //In-app notification for Actor (NEW)
+    await createAppNotification({
+      tenant_id: tenantId,
+      user_id: actor,
+      type: "USER_ADDED",
+      channel: "in_app",
+      message: `You added ${user?.username} to the Organization "${tenant?.name}" with role "${formatRole(role)}".`,
+    });
 
     await AuditLog.create({
       tenant_id: tenantId,
@@ -239,11 +260,29 @@ export const updateOrgRole = async (req: Request, res: Response) => {
       description: `Role changed from ${formatRole(oldRole)} to ${formatRole(newRole)} for ${user?.username} in Organization ${tenant?.name}`,
     });
 
+    // await createAppNotification({
+    //   tenant_id: tenantId,
+    //   user_id: userId,
+    //   message: `Your role was changed to ${formatRole(newRole)} in ${tenant?.name}`,
+    //   type: "email",
+    // });
+
+    //In-app notification for User (NEW)
     await createAppNotification({
       tenant_id: tenantId,
       user_id: userId,
+      type: "ROLE_CHANGED",
+      channel: "in_app",
       message: `Your role was changed to ${formatRole(newRole)} in ${tenant?.name}`,
-      type: "email",
+    });
+
+    //In-app notification for Actor (NEW)
+    await createAppNotification({
+      tenant_id: tenantId,
+      user_id: actor,
+      type: "ROLE_CHANGED",
+      channel: "in_app",
+      message: `Change of role from ${formatRole(oldRole)} to ${formatRole(newRole)} in ${tenant?.name} for ${user?.username} in the Organization ${tenant?.name} was successful`,
     });
 
     return res.status(200).json({
@@ -303,13 +342,31 @@ export const removeOrgUser = async (req: Request, res: Response) => {
       })
     }
 
+    //In-app notification for User (NEW)
+    await createAppNotification({
+      tenant_id: tenantId,
+      user_id: userId,
+      type: "USER_REMOVED",
+      channel: "in_app",
+      message: `You have been removed from the Organization ${tenant?.name}`,
+    });
+
+    //In-app notification for Actor (NEW)
+    await createAppNotification({
+      tenant_id: tenantId,
+      user_id: actor,
+      type: "USER_REMOVED",
+      channel: "in_app",
+      message: `Successfully removed ${user?.username} from organization ${tenant?.name}`,
+    });
+
     await AuditLog.create({
       tenant_id: tenantId,
       user_id: actor._id,
       action: "delete",
       entity: "User",
       entity_id: userId,
-      description: `Deleted ${user?.username} from Organization ${tenant?.name}`,
+      description: `Removed ${user?.username} from Organization ${tenant?.name}`,
     });
 
     res.status(200).json({
@@ -324,6 +381,7 @@ export const removeOrgUser = async (req: Request, res: Response) => {
 
 export const removeTenant = async (req: Request, res: Response) => {
   const { tenantId } = req.params;
+  const actor = (req as any).user;
 
   try {
     const tenant = await Tenant.findByIdAndUpdate(
@@ -336,6 +394,8 @@ export const removeTenant = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Tenant not found" });
     }
 
+    const actorId = actor?._id?.toString();
+    
     // Get all active users before deactivating
     const tenantUsers = await UserTenantRole.find({
       tenantId,
@@ -352,12 +412,36 @@ export const removeTenant = async (req: Request, res: Response) => {
       }
     );
 
+    // 👇 Actor notification
+    if (actor) {
+      await createAppNotification({
+        tenant_id: tenantId,
+        user_id: actor._id,
+        type: "TENANT_DEACTIVATED",
+        channel: "in_app",
+        message: `Successfully deleted organization ${tenant?.name}`,
+      });
+    }
+
     // Notify all users in parallel (faster)
     await Promise.all(
-      tenantUsers.map(async (member) => {
+      tenantUsers
+        .filter((member) => member.userId?._id?.toString() !== actorId)
+        .map(async (member) => {
         const user = member.userId as any;
 
         if (!user?.email) return;
+
+        
+
+        // 👇 Other users notification
+        await createAppNotification({
+          tenant_id: tenantId,
+          user_id: user._id,
+          type: "TENANT_DEACTIVATED",
+          channel: "in_app",
+          message: `Organization ${tenant.name} has been deleted`,
+        });
 
         return notifyTenantRemoved({
           email: user.email,
