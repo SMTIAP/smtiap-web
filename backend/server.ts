@@ -35,8 +35,9 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import superAdminRoutes from "./routes/superAdminRoutes.js";
 import templateRoutes from "./routes/templateRoutes";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import { createDefaultSuperAdmin } from "./utils/createDefaultSuperAdmin.js";
-import { startSurveyStatusJob } from "./jobs/updateSurveyStatus.js";  // ✅ ADD THIS
+import { startSurveyStatusJob } from "./jobs/updateSurveyStatus.js"; // ✅ ADD THIS
 
 const ensureCollections = async () => {
   await Promise.all([
@@ -67,7 +68,8 @@ app.use(
     origin: (origin, cb) => {
       if (
         !origin ||
-        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) || origin === 'http://127.0.0.1:5173'
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+        origin === "http://127.0.0.1:5173"
       )
         cb(null, true);
       else cb(new Error("Not allowed by CORS"));
@@ -90,6 +92,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/templates", templateRoutes);
 app.use("/api/ai", aiRoutes);
 app.use(analyticsRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use(errorHandler);
 
 app.get("/", (req, res) => {
@@ -109,7 +112,6 @@ const startServer = async () => {
     await ensureCollections();
     await createDefaultSuperAdmin();
 
-    
     startSurveyStatusJob();
     console.log("✅ Survey status scheduler started");
 

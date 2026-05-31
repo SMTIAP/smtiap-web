@@ -26,6 +26,7 @@ import Subscription from "./pages/Subscription";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 import Audit from "./pages/Audit";
+import NotificationsPage from "./pages/NotificationsPage";
 import NavBar from "./components/NavBar.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
@@ -288,6 +289,14 @@ export default function App() {
                   element={
                     <ProtectedRoute>
                       <Audit />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/notifications"
+                  element={
+                    <ProtectedRoute>
+                      <NotificationsPage />
                     </ProtectedRoute>
                   }
                 />
