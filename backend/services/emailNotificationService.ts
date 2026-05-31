@@ -39,7 +39,14 @@ interface TenantRemovePayload {
   organizationName: string;
 }
 
-interface SurveyPublishedAndStoppedPayload {
+interface SurveyPublishedPayload {
+  email: string,
+  username: string,
+  organizationName: string,
+  surveyName: string
+}
+
+interface SurveyStoppedPayload {
   email: string,
   username: string,
   organizationName: string,
@@ -415,7 +422,7 @@ export const notifySurveyPublished = async({
     username,
     organizationName,
     surveyName,
-}: SurveyPublishedAndStoppedPayload): Promise<void> => {
+}: SurveyPublishedPayload): Promise<void> => {
   try {
     await sendEmail(
       email,
@@ -492,7 +499,7 @@ export const notifySurveyStopped = async ({
   username,
   organizationName,
   surveyName,
-}: SurveyPublishedAndStoppedPayload): Promise<void> => {
+}: SurveyStoppedPayload): Promise<void> => {
   try {
     await sendEmail(
       email,
@@ -520,8 +527,12 @@ export const notifySurveyStopped = async ({
             </p>
 
             <p style="font-size:15px; line-height:1.6;">
-              A survey has been stopped (closed) in the organization
-              <b>${organizationName}</b>.
+              ${
+                organizationName
+                  ? `A survey has been stopped (closed) in the organization <b>${organizationName}</b>.`
+                  : `A survey has been stopped (closed) in the organization`
+              }
+              
             </p>
 
             <!-- Info Box -->
@@ -530,7 +541,15 @@ export const notifySurveyStopped = async ({
                 <b>Survey:</b> ${surveyName}
               </p>
               <p style="margin:6px 0 0; font-size:14px;">
-                <b>Organization:</b> ${organizationName}
+                ${
+                  organizationName
+                    ? `
+                  <p style="margin:6px 0 0; font-size:14px;">
+                    <b>Organization:</b> ${organizationName}
+                  </p>
+                `
+                    : ""
+                }
               </p>
             </div>
 

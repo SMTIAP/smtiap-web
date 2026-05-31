@@ -142,7 +142,7 @@ export default function SurveyResults() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setSurvey((prev: any) => ({ ...prev, status: "Finished" }));
       setShowStopModal(false);
-      toast.success("Survey stopped successfully");
+      toast.success("Survey Stopped Successfully");
     } catch (err) {
       console.error("Failed to stop survey:", err);
     } finally {
