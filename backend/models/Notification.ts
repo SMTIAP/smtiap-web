@@ -1,7 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 
 export interface NotificationDoc {
-  tenant_id: mongoose.Types.ObjectId;
+  tenant_id: mongoose.Types.ObjectId | null;
   user_id: mongoose.Types.ObjectId;
 
   type:
@@ -9,7 +9,11 @@ export interface NotificationDoc {
     | "USER_ADDED"
     | "ROLE_CHANGED"
     | "USER_REMOVED"
-    | "TENANT_DEACTIVATED";
+    | "TENANT_DEACTIVATED"
+    | "SURVEY_CREATED"
+    | "SURVEY_UPDATE"
+    | "SURVEY_PUBLISHED"
+    | "SURVEY_STOPPED";
 
   channel?: "in_app" | "email" | "sms" | "push" | null;
 
@@ -31,7 +35,7 @@ const notificationSchema = new Schema<NotificationDoc>(
     tenant_id: {
       type: Schema.Types.ObjectId,
       ref: "Tenant",
-      required: true,
+      required: false,
     },
     user_id: {
       type: Schema.Types.ObjectId,
@@ -48,6 +52,11 @@ const notificationSchema = new Schema<NotificationDoc>(
         "ROLE_CHANGED",
         "USER_REMOVED",
         "TENANT_DEACTIVATED",
+        "SURVEY_CREATED",
+        "SURVEY_UPDATE",
+        "SURVEY_PUBLISHED",
+        "SURVEY_STOPPED",
+        
       ],
     },
 
@@ -65,7 +74,7 @@ const notificationSchema = new Schema<NotificationDoc>(
     delivery_status: {
       type: String,
       enum: ["pending", "sent", "failed"],
-      default: "pending",
+      default: "sent",
     },
 
     read_at: {
