@@ -107,9 +107,11 @@ export default function ReviewAndPublish() {
           toast.error("Failed to publish survey");
           return;
         }
+
+        toast.success("Survey Published Successfully")
       }
 
-      toast.success("Survey Published Successfully");
+      
 
       if (status === "Running" || status === "Scheduled") {
         navigate("/share-survey", {
