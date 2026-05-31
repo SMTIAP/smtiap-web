@@ -343,6 +343,8 @@ export const updateSurvey = async (req: Request, res: Response) => {
     )
       return;
 
+      const oldTitle = survey.surveyTitle;
+
     // Never allow overwriting tenantId or createdBy via the request body
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { tenantId: _tid, createdBy: _cb, password, isPasswordProtected, ...safeBody } = req.body;
@@ -365,12 +367,19 @@ export const updateSurvey = async (req: Request, res: Response) => {
       new: true,
       runValidators: true,
     });
-    logAudit(
-      req,
-      "update",
-      survey._id,
-      `Survey "${survey.surveyTitle}" Updated`,
-    );
+
+    // 🔥 AUDIT: title changed
+    if (safeBody.surveyTitle && safeBody.surveyTitle !== oldTitle) {
+          console.log("Reached 2");
+      await AuditLog.create({
+        tenant_id: survey.tenantId ?? null,
+        user_id: reqUserId(req),
+        action: "update",
+        entity: "Survey",
+        entity_id: survey._id,
+        description: `Survey title changed from "${oldTitle}" to "${safeBody.surveyTitle}"`,
+      });
+    }
     res.json({ message: "Survey updated", survey: updated });
   } catch (err) {
     res.status(500).json({ message: String(err) });
