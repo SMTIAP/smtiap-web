@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { BarChart3, ChevronLeft, StopCircle, X } from "lucide-react";
 import AllResponsesTable from "../components/AllResponsesTable";
 import { useTenant } from "../contexts/TenantContext";
+import { toast } from "sonner";
 
 interface Question {
   _id: string;
@@ -141,6 +142,7 @@ export default function SurveyResults() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setSurvey((prev: any) => ({ ...prev, status: "Finished" }));
       setShowStopModal(false);
+      toast.success("Survey stopped successfully");
     } catch (err) {
       console.error("Failed to stop survey:", err);
     } finally {
