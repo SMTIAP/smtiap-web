@@ -250,7 +250,7 @@ export const updateOrgRole = async (req: Request, res: Response) => {
       })
     }
 
-    // 5. Audit log
+    //Audit log
     await AuditLog.create({
       tenant_id: tenantId,
       user_id: actor._id,
@@ -419,7 +419,15 @@ export const removeTenant = async (req: Request, res: Response) => {
         user_id: actor._id,
         type: "TENANT_DEACTIVATED",
         channel: "in_app",
-        message: `Successfully deleted organization ${tenant?.name}`,
+        message: `Successfully deaactivated organization ${tenant?.name}`,
+      });
+    }
+
+    if (actor?.email) {
+      await notifyTenantRemoved({
+        email: actor.email,
+        username: actor.username,
+        organizationName: tenant.name,
       });
     }
 
@@ -440,7 +448,7 @@ export const removeTenant = async (req: Request, res: Response) => {
           user_id: user._id,
           type: "TENANT_DEACTIVATED",
           channel: "in_app",
-          message: `Organization ${tenant.name} has been deleted`,
+          message: `Organization ${tenant.name} has been deactivated`,
         });
 
         return notifyTenantRemoved({
@@ -449,7 +457,18 @@ export const removeTenant = async (req: Request, res: Response) => {
           organizationName: tenant.name,
         });
       })
+
     );
+
+    //Audit log
+    await AuditLog.create({
+      tenant_id: tenantId,
+      user_id: actor._id,
+      action: "delete",
+      entity: "Tenant",
+      entity_id: tenantId,
+      description: `Deactivated Organization ${tenant?.name}`,
+    });
 
     return res.status(200).json({
       message: "Tenant and related users deactivated successfully",
