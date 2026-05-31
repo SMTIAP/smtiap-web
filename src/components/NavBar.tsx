@@ -18,9 +18,9 @@ import {
   Loader2,
   Menu,
   X,
-  Bell,
   type LucideIcon,
 } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 import api from "../api/api";
 import { useDarkMode } from "../App";
 import { useTenant, type TenantInfo } from "../contexts/TenantContext";
@@ -244,16 +244,7 @@ export default function NavBar() {
 
           <div className="flex items-center gap-3">
             {/* Notifications */}
-            <button
-              className="relative w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-              title="Notifications"
-              onClick={() => console.log("Open notifications")}
-            >
-              <Bell size={16} className="text-slate-600 dark:text-slate-300" />
-
-              {/* red dot indicator */}
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
-            </button>
+            <NotificationBell />
             {/* Dark Mode Toggle */}
             <button
               onClick={toggleDarkMode}
