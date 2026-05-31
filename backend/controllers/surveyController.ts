@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import Survey from "../models/Survey.js";
 import AuditLog from "../models/AuditLog.js";
-import { notifySurveyPublished } from "../services/emailNotificationService.js";
+import { notifySurveyPublished, notifySurveyStopped } from "../services/emailNotificationService.js";
 import User from "../models/User.js";
 import { toast } from "sonner";
 import Tenant from "../models/Tenant.js";
@@ -410,10 +410,9 @@ export const updateStatus = async (req: Request, res: Response) => {
       `Survey "${survey.surveyTitle}" status changed to "${status}"`,
     );
 
-    if (status === "Running") {
-      console.log("updateStatus called 6");
-      const user = reqUser(req);
+    const user = reqUser(req);
 
+    if (status === "Running") {
       if (user?._id) {
         const currentUser = await User.findById(user._id);
         const tenant = survey.tenantId
@@ -424,14 +423,31 @@ export const updateStatus = async (req: Request, res: Response) => {
           await notifySurveyPublished({
             email: currentUser.email,
             username: currentUser.username,
-            organizationName: tenant?.name ?? '',
+            organizationName: tenant?.name ?? "",
             surveyName: survey.surveyTitle,
           });
         }
-    } else {
-      toast.error("Not Working")
+      }
     }
-}
+
+    if (status === "Finished") {
+      const currentUser = user?._id
+        ? await User.findById(user._id)
+        : null;
+
+      const tenant = survey.tenantId
+        ? await Tenant.findById(survey.tenantId)
+        : null;
+
+      if (currentUser?.email) {
+        await notifySurveyStopped({
+          email: currentUser.email,
+          username: currentUser.username,
+          organizationName: tenant?.name ?? "",
+          surveyName: survey.surveyTitle,
+        });
+      }
+    }
 
 
     res.json({ message: "Status updated", survey: updated });
