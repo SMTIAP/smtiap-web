@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState, Fragment } from "react";
-import { ArrowLeft, Search, Plus, ClipboardList, Trash2 } from "lucide-react";
+import { ArrowLeft, Search, Plus, ClipboardList, Trash2, Users } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "sonner";
 
@@ -413,6 +413,7 @@ export default function RoleManagement() {
     group.tenant.name.toLowerCase().includes(searchOrganization.toLowerCase())
   );
 
+  
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
       <div className="h-1.5 w-full bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500" />
@@ -420,9 +421,14 @@ export default function RoleManagement() {
         {/* Header - Title on left, buttons on right */}
         <div className="flex justify-between items-center w-full">
           <div className="flex items-center gap-4 w-fit">
-            <h2 className="text-3xl font-black tracking-tight text-[#0D141C] dark:text-white">
-              Employees and Role Management
-            </h2>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-purple-600">
+                <Users className="h-5 w-5 text-white" />
+              </div>
+              <h2 className="text-3xl font-black tracking-tight text-[#0D141C] dark:text-white">
+                Employees and Role Management
+              </h2>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button
