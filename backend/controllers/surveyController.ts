@@ -7,6 +7,7 @@ import { notifySurveyPublished, notifySurveyStopped } from "../services/emailNot
 import User from "../models/User.js";
 import { toast } from "sonner";
 import Tenant from "../models/Tenant.js";
+import { createAppNotification } from "../services/notificationService.js";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -411,6 +412,11 @@ export const updateStatus = async (req: Request, res: Response) => {
     );
 
     const user = reqUser(req);
+    
+    const userId = reqUserId(req);
+
+if (!userId) return; // or handle error
+    
 
     if (status === "Running") {
       if (user?._id) {
@@ -427,6 +433,27 @@ export const updateStatus = async (req: Request, res: Response) => {
             surveyName: survey.surveyTitle,
           });
         }
+      }
+
+      try {
+        const tenant = survey.tenantId
+          ? await Tenant.findById(survey.tenantId)
+          : null;
+
+        const orgName = tenant?.name ?? "System";
+
+        await createAppNotification({
+          
+          tenant_id: survey.tenantId ? String(survey.tenantId) : "", // or null if schema allows
+          user_id: userId!,
+          type: "SURVEY_PUBLISHED",
+          channel: "in_app",
+          message: `Survey "${survey.surveyTitle}" has been published in ${orgName}`,
+          surveyId: survey._id.toString(),
+          surveyName: survey.surveyTitle,
+        });
+      } catch (err) {
+        console.error("Notification failed but survey will still publish:", err);
       }
     }
 
