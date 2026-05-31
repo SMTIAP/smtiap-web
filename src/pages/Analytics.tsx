@@ -1,4 +1,4 @@
-﻿import { useMemo } from "react";
+﻿import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Chart as ChartJS,
@@ -54,6 +54,10 @@ export default function Analytics() {
     [searchParams],
   );
 
+  // Date range filter state
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
   // All data-fetching state, side-effects, and runAnalysis handler
   const {
     surveyTitle,
@@ -69,6 +73,27 @@ export default function Analytics() {
     runAnalysis,
   } = useAnalyticsData(surveyId, apiBaseUrl);
 
+  // Filter responses by date range (client-side)
+  const filteredResponses = useMemo(() => {
+    if (!fromDate && !toDate) return surveyResponses;
+    return surveyResponses.filter((response) => {
+      const submittedRaw = response?.submittedAt ?? response?.createdAt;
+      const submittedDate = submittedRaw ? new Date(submittedRaw) : null;
+      if (!submittedDate) return !fromDate && !toDate;
+      if (fromDate) {
+        const start = new Date(`${fromDate}T00:00:00`);
+        if (submittedDate < start) return false;
+      }
+      if (toDate) {
+        const end = new Date(`${toDate}T23:59:59.999`);
+        if (submittedDate > end) return false;
+      }
+      return true;
+    });
+  }, [surveyResponses, fromDate, toDate]);
+
+  const filteredTotalResponses = filteredResponses.length;
+
   // All chart datasets, options, and derived stats (memoised)
   const {
     ratingQuestions,
@@ -80,7 +105,7 @@ export default function Analytics() {
     ratingOptions,
     buildOptionChartData,
     optionChartOptions,
-  } = useAnalyticsCharts(surveyQuestions, surveyResponses);
+  } = useAnalyticsCharts(surveyQuestions, filteredResponses);
 
   // Render: survey picker (no surveyId in URL)
   if (!surveyId) {
@@ -95,17 +120,22 @@ export default function Analytics() {
   // Render: full analytics dashboard
   return (
     <div className="flex flex-col min-h-screen bg-[#F7FAFC] dark:bg-[#0F172A] font-inter text-[#0D141C] dark:text-white transition-colors duration-300">
-    
       <AnalyticsTopBar />
 
       <main className="flex-1 flex flex-col items-center">
         <div className="max-w-[960px] w-full px-4 md:px-0 py-5">
           {/* Component  - back nav + survey title badge + filter/export toolbar */}
-          <AnalyticsDashboardHeader surveyTitle={surveyTitle} />
+          <AnalyticsDashboardHeader
+            surveyTitle={surveyTitle}
+            fromDate={fromDate}
+            setFromDate={setFromDate}
+            toDate={toDate}
+            setToDate={setToDate}
+          />
 
           {/* Component - stat cards + chart sections */}
           <AnalyticsChartsSection
-            totalResponses={totalResponses}
+            totalResponses={filteredTotalResponses}
             completionRate={completionRate}
             averageRating={averageRating}
             ratingQuestions={ratingQuestions}

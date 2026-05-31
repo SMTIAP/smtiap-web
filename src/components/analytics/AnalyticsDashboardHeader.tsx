@@ -4,9 +4,19 @@ import AnalyticsToolbar from "./AnalyticsToolbar";
 
 interface AnalyticsDashboardHeaderProps {
   surveyTitle: string;
+  fromDate: string;
+  setFromDate: (value: string) => void;
+  toDate: string;
+  setToDate: (value: string) => void;
 }
 
-export default function AnalyticsDashboardHeader({ surveyTitle }: AnalyticsDashboardHeaderProps) {
+export default function AnalyticsDashboardHeader({
+  surveyTitle,
+  fromDate,
+  setFromDate,
+  toDate,
+  setToDate,
+}: AnalyticsDashboardHeaderProps) {
   return (
     <>
       <div className="w-full flex justify-start mb-6">
@@ -16,7 +26,13 @@ export default function AnalyticsDashboardHeader({ surveyTitle }: AnalyticsDashb
         <div className="flex py-3 items-center gap-3 flex-wrap w-full">
           <SurveyTitleBadge surveyTitle={surveyTitle} />
         </div>
-        <AnalyticsToolbar surveyTitle={surveyTitle} />
+        <AnalyticsToolbar
+          surveyTitle={surveyTitle}
+          fromDate={fromDate}
+          setFromDate={setFromDate}
+          toDate={toDate}
+          setToDate={setToDate}
+        />
       </div>
     </>
   );

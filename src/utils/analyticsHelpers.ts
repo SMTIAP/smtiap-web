@@ -1,5 +1,6 @@
 // A single submitted survey response document from the API.
 export interface SurveyResponseDoc {
+  submittedAt?: string;
   createdAt?: string;
   responses?: Record<string, unknown>;
 }
