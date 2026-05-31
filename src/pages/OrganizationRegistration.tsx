@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import BackButton from "../components/BackButton";
 import { useState } from "react";
 import { useTenant } from "../contexts/TenantContext";
 import { toast } from "sonner";
+import { Building2, ArrowLeft, CheckSquare } from "lucide-react";
 
 export default function OrganizationRegistration() {
   const navigate = useNavigate();
@@ -97,22 +97,33 @@ export default function OrganizationRegistration() {
     }
   };
 
-  const inputClass = "w-full rounded-lg border border-slate-200 dark:border-slate-600 px-4 py-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-400 outline-none transition-colors";
-  const labelClass = "text-sm font-medium text-slate-600 dark:text-slate-300";
+  const inputClass ="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200 placeholder:text-slate-400";
+  const labelClass ="text-sm font-medium text-slate-600 dark:text-slate-400";
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] flex flex-col items-center transition-colors duration-300">
       {/* Header */}
-      <div className="w-full max-w-4xl px-6 py-8 flex items-center gap-4">
-        <BackButton />
-        <h1 className="text-3xl font-bold text-slate-800 dark:text-white">
-          Organization Registration
-        </h1>
+      <div className="w-full max-w-4xl px-6 py-8 flex items-center gap-4 justify-between">
+        <div className="flex items-center gap-4">
+        
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-purple-600">
+            <Building2 className="h-5 w-5 text-white" />
+          </div>
+          <h2 className="text-3xl font-black tracking-tight text-[#0D141C] dark:text-white">
+            Organization Registration
+          </h2>
+        </div>
+        <button
+          onClick={() => navigate(-1)}
+          className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+        >
+          <ArrowLeft size={16} />
+        </button>
       </div>
 
       {/* Form Wrapper */}
       <div className="w-full max-w-4xl px-6 pb-10">
-        <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-sm p-10 flex flex-col gap-8 transition-colors duration-300">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm p-10 flex flex-col gap-8 transition-colors duration-300">
           {/* Title */}
           <div className="border-b dark:border-slate-700 pb-3">
             <h2 className="text-lg font-semibold text-slate-700 dark:text-slate-300">
@@ -122,7 +133,7 @@ export default function OrganizationRegistration() {
 
           {/* Organization Name */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            <label className={labelClass}>
               Organization Name
             </label>
             <input
@@ -131,7 +142,7 @@ export default function OrganizationRegistration() {
               value={formData.name}
               type="text"
               placeholder="Enter organization name"
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
+              className={inputClass}
             />
             {errors.name && (
               <p className="text-red-500 text-sm mt-1">{errors.name}</p>
@@ -140,14 +151,14 @@ export default function OrganizationRegistration() {
 
           {/* Country */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            <label className={labelClass}>
               Country
             </label>
             <select
               name="country"
               value={formData.country}
               onChange={handleChange}
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
+              className={inputClass}
             >
               <option value="">Select country</option>
               <option value="Afghanistan">Afghanistan</option>
@@ -253,7 +264,7 @@ export default function OrganizationRegistration() {
 
           {/* Address */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            <label className={labelClass}>
               Address
             </label>
             <input
@@ -262,7 +273,7 @@ export default function OrganizationRegistration() {
               onChange={handleChange}
               type="text"
               placeholder="Enter address"
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
+              className={inputClass}
             />
             {errors.address && (
               <p className="text-red-500 text-sm mt-1">{errors.address}</p>
@@ -271,7 +282,7 @@ export default function OrganizationRegistration() {
 
           {/* Domain */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            <label className={labelClass}>
               Organization Domain
             </label>
             <input
@@ -280,7 +291,7 @@ export default function OrganizationRegistration() {
               value={formData.domain}
               type="text"
               placeholder="Enter organization domain"
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
+              className={inputClass}
             />
             {errors.domain && (
               <p className="text-red-500 text-sm mt-1">{errors.domain}</p>
@@ -289,7 +300,7 @@ export default function OrganizationRegistration() {
 
           {/* Description */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            <label className={labelClass}>
               Description
             </label>
             <textarea
@@ -298,7 +309,7 @@ export default function OrganizationRegistration() {
               onChange={handleChange}
               rows={3}
               placeholder="Enter description"
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none resize-none"
+              className={`${inputClass} resize-none`}
             />
             {errors.description && (
               <p className="text-red-500 text-sm mt-1">{errors.description}</p>
@@ -307,31 +318,46 @@ export default function OrganizationRegistration() {
 
           {/* Org Type */}
           <div className="flex flex-col gap-3">
-            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            <label className={labelClass}>
               Organization Type
             </label>
-            <div className="flex gap-6">
-              <label className="flex items-center gap-2">
+            <div className="flex gap-4">
+                <label
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-sm cursor-pointer transition-all hover:border-indigo-400 ${
+                    formData.orgType === "profit"
+                      ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30"
+                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                  }`}
+                >
                 <input
                   type="radio"
                   name="orgType"
                   value="profit"
                   checked={formData.orgType === "profit"}
                   onChange={handleChange}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-400"
                 />
-                <span className="text-sm text-slate-700 dark:text-slate-300">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   For Profit
                 </span>
               </label>
-              <label className="flex items-center gap-2">
+              <label
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-sm cursor-pointer transition-all hover:border-indigo-400 ${
+                  formData.orgType === "non-profit"
+                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30"
+                    : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                }`}
+              >
                 <input
                   type="radio"
                   name="orgType"
                   value="non-profit"
                   checked={formData.orgType === "non-profit"}
                   onChange={handleChange}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-400"
                 />
-                <span className="text-sm text-slate-700 dark:text-slate-300">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+
                   Non Profit
                 </span>
               </label>
@@ -341,8 +367,8 @@ export default function OrganizationRegistration() {
 
           {/* Submit */}
           <button onClick={handleSubmit}
-            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-10 rounded-lg transition self-center">
-            Register Organization
+            className="mt-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:shadow-lg hover:scale-[1.02] text-white font-semibold text-[15px] py-3 px-10 rounded-lg transition-all duration-200 self-center shrink-0 flex items-center gap-2">
+             <CheckSquare size={18} />Register Organization
           </button>
         </div>
       </div>
