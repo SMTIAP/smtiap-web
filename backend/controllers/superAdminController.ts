@@ -5,6 +5,9 @@ import AuditLog from "../models/AuditLog.js";
 import Tenant from "../models/Tenant.js";
 import Survey from "../models/Survey.js";
 import CreditLedger from "../models/CreditLedger.js";
+import UserTenantRole from "../models/UserTenantRole.js";
+import { createAppNotification } from "../services/notificationService.js";
+import { notifyTenantRemoved } from "../services/emailNotificationService.js";
 
 export const superAdminLogin = async (
   req: Request,
@@ -110,13 +113,17 @@ export const createManagedUser = async (
     if (role === "super_admin") {
       res
         .status(400)
-        .json({ message: "Cannot create another super admin from this console" });
+        .json({
+          message: "Cannot create another super admin from this console",
+        });
       return;
     }
 
     const existing = await User.findOne({ email });
     if (existing) {
-      res.status(400).json({ message: "A user with that email already exists" });
+      res
+        .status(400)
+        .json({ message: "A user with that email already exists" });
       return;
     }
 
@@ -166,7 +173,9 @@ export const updateManagedUser = async (
     if (role === "super_admin") {
       res
         .status(400)
-        .json({ message: "Cannot change role to super admin from this console" });
+        .json({
+          message: "Cannot change role to super admin from this console",
+        });
       return;
     }
 
@@ -176,7 +185,11 @@ export const updateManagedUser = async (
       return;
     }
 
-    if (String(user._id) === String(actor._id) && role && role !== "super_admin") {
+    if (
+      String(user._id) === String(actor._id) &&
+      role &&
+      role !== "super_admin"
+    ) {
       res.status(400).json({
         message: "Super admin cannot change their own role from this console",
       });
@@ -268,13 +281,18 @@ export const getManagedTenants = async (
 
     const enrichedTenants = await Promise.all(
       tenants.map(async (tenant) => {
-        const ledgers = await CreditLedger.find({ tenant_id: tenant._id } as any);
-        const balance = ledgers.reduce((acc, curr: any) => acc - curr.credits_used, 0);
+        const ledgers = await CreditLedger.find({
+          tenant_id: tenant._id,
+        } as any);
+        const balance = ledgers.reduce(
+          (acc, curr: any) => acc - curr.credits_used,
+          0,
+        );
         return {
           ...tenant,
           creditBalance: balance,
         };
-      })
+      }),
     );
 
     res.status(200).json(enrichedTenants);
@@ -303,10 +321,57 @@ export const updateManagedTenant = async (
     const oldStatus = tenant.status;
     const oldPlan = tenant.plan;
 
+    const wasDeactivated = status === "inactive" && oldStatus !== "inactive";
+
     if (status) tenant.status = status;
     if (plan) tenant.plan = plan;
 
     await tenant.save();
+
+    if (wasDeactivated) {
+      // Fetch admins/creators BEFORE deactivating their records
+      const tenantAdmins = await UserTenantRole.find({
+        tenantId,
+        role: { $in: ["admin", "creator"] },
+        status: "active",
+      }).populate("userId", "email username");
+
+      // Deactivate all user-tenant relationships
+      await UserTenantRole.updateMany(
+        { tenantId },
+        { $set: { status: "inactive" } },
+      );
+
+      // Notify tenant admins and creators
+      const actorId = actor?._id?.toString();
+
+      await Promise.all(
+        tenantAdmins
+          .filter((entry) => entry.userId?._id?.toString() !== actorId)
+          .map(async (entry) => {
+            const user = entry.userId as unknown as {
+              _id: string;
+              email: string;
+              username: string;
+            };
+            if (!user?.email) return;
+
+            await createAppNotification({
+              tenant_id: tenantId,
+              user_id: user._id,
+              type: "TENANT_DEACTIVATED",
+              channel: "in_app",
+              message: `Organization "${tenant.name}" has been deactivated by the system administrator.`,
+            });
+
+            await notifyTenantRemoved({
+              email: user.email,
+              username: user.username,
+              organizationName: tenant.name,
+            });
+          }),
+      );
+    }
 
     await AuditLog.create({
       user_id: actor._id,
@@ -345,7 +410,10 @@ export const adjustTenantCredits = async (
     }
 
     const ledgers = await CreditLedger.find({ tenant_id: tenant._id } as any);
-    const currentBalance = ledgers.reduce((acc, curr: any) => acc - curr.credits_used, 0);
+    const currentBalance = ledgers.reduce(
+      (acc, curr: any) => acc - curr.credits_used,
+      0,
+    );
 
     const creditsUsed = -Number(amount);
     const balanceAfter = currentBalance + Number(amount);
