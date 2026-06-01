@@ -32,7 +32,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
 
     const verificationUrl = `http://localhost:5173/verify-email?token=${verificationToken}&email=${email}`;
-    
+
     try {
       await sendEmail(
         user.email,
@@ -52,20 +52,21 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;" />
             <p style="color: #6B7280; font-size: 12px; text-align: center;">If you did not create an account, please ignore this email.</p>
           </div>
-        `
+        `,
       );
     } catch (emailError: any) {
       console.error("❌ Email sending failed:", emailError);
       // Clean up newly created user since verification email could not be sent
       await User.deleteOne({ _id: user._id });
       res.status(500).json({
-        message: `Account creation halted because verification email failed to send: ${emailError.message}. Please configure valid SMTP credentials in backend/.env.`
+        message: `Account creation halted because verification email failed to send: ${emailError.message}. Please configure valid SMTP credentials in backend/.env.`,
       });
       return;
     }
 
     res.status(201).json({
-      message: "Registration successful. Please check your email to verify your account.",
+      message:
+        "Registration successful. Please check your email to verify your account.",
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -84,7 +85,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     if (!user.isVerified) {
-      res.status(401).json({ message: "Please verify your email address before logging in." });
+      res
+        .status(401)
+        .json({
+          message: "Please verify your email address before logging in.",
+        });
       return;
     }
 
@@ -130,8 +135,11 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  // Fetch tenant memberships
-  const memberships = await UserTenantRole.find({ userId: user._id })
+  // Fetch active tenant memberships only
+  const memberships = await UserTenantRole.find({
+    userId: user._id,
+    status: "active",
+  })
     .populate("tenantId", "name domain plan status")
     .lean()
     .catch(() => []);
@@ -158,7 +166,10 @@ export const getMyTenants = async (
       return;
     }
 
-    const memberships = await UserTenantRole.find({ userId: user._id })
+    const memberships = await UserTenantRole.find({
+      userId: user._id,
+      status: "active",
+    })
       .populate("tenantId", "name domain plan status")
       .lean();
 
@@ -231,11 +242,9 @@ export const resetPassword = async (req: Request, res: Response) => {
     const { email, tempPassword, newPassword } = req.body;
 
     if (!email || !tempPassword || !newPassword) {
-      return res
-        .status(400)
-        .json({
-          message: "Email, temporary password, and new password are required",
-        });
+      return res.status(400).json({
+        message: "Email, temporary password, and new password are required",
+      });
     }
 
     const hashedToken = crypto
@@ -270,7 +279,10 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
-export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
+export const verifyEmail = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { token, email } = req.query;
 
@@ -289,7 +301,9 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
     });
 
     if (!user) {
-      res.status(400).json({ message: "Invalid or expired verification token" });
+      res
+        .status(400)
+        .json({ message: "Invalid or expired verification token" });
       return;
     }
 
@@ -304,7 +318,10 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-export const resendVerification = async (req: Request, res: Response): Promise<void> => {
+export const resendVerification = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { email } = req.body;
 
@@ -351,10 +368,13 @@ export const resendVerification = async (req: Request, res: Response): Promise<v
           <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 20px 0;" />
           <p style="color: #6B7280; font-size: 12px; text-align: center;">If you did not create an account, please ignore this email.</p>
         </div>
-      `
+      `,
     );
 
-    res.json({ message: "Verification email resent successfully! Please check your inbox." });
+    res.json({
+      message:
+        "Verification email resent successfully! Please check your inbox.",
+    });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
