@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Survey from "../models/Survey.js";
 
 const SURVEY_GENERATION_SYSTEM_PROMPT = `You are a survey generation assistant. Given a user's description, generate a complete survey in JSON format.
 
@@ -72,7 +73,7 @@ export const generateSurveyWithAi = async (
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
     const fullPrompt = `${SURVEY_GENERATION_SYSTEM_PROMPT}\n\nUser request: ${prompt}`;
 
@@ -150,7 +151,7 @@ export const modifySurveyWithAi = async (
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
     const currentSurveyJson = JSON.stringify(currentSurvey, null, 2);
     const fullPrompt = `${SURVEY_MODIFICATION_SYSTEM_PROMPT}\n\nCurrent survey:\n${currentSurveyJson}\n\nModification request: ${prompt}`;
@@ -178,8 +179,8 @@ const tryLocalNavigation = (prompt: string) => {
   // Define route mapping
   const routes = [
     { pattern: /\b(dashboard|creator-dashboard|creator dashboard)\b/, path: "/creator-dashboard", name: "Dashboard" },
-    { pattern: /\b(analytics|stats|charts|reports)\b/, path: "/analytics", name: "Analytics" },
-    { pattern: /\b(created surveys|my surveys|view surveys|surveys|survey list)\b/, path: "/created-surveys", name: "Created Surveys" },
+    { pattern: /\b(analytics|stats|charts|reports|analyze|analyzed|analysis|analyse|analysed)\b/, path: "/analytics", name: "Analytics" },
+    { pattern: /\b(created surveys|my surveys|view surveys|surveys|survey|survey list)\b/, path: "/created-surveys", name: "Created Surveys" },
     { pattern: /\b(create new survey|create survey|new survey|make survey|add survey)\b/, path: "/create-new-survey", name: "Create New Survey" },
     { pattern: /\b(templates|template)\b/, path: "/templates", name: "Templates" },
     { pattern: /\b(subscription|billing|plan|credits|pricing)\b/, path: "/subscription", name: "Subscription" },
@@ -216,13 +217,46 @@ export const chatWithAi = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { prompt } = req.body;
+  const { prompt, history } = req.body;
   if (!prompt) {
     res.status(400).json({ error: "Prompt is required" });
     return;
   }
 
   try {
+    // Intercept specific requests for individual survey analytics or settings using surveyTitle
+    const normalizedPrompt = prompt.toLowerCase();
+    const isAnalyticsRequest = /\b(analytics|results|charts|stats|responses|analyse|analysis|analyze|analyzed)\b/.test(normalizedPrompt);
+    const isSettingsRequest = /\b(settings|configure|configuration|edit settings)\b/.test(normalizedPrompt);
+
+    if (isAnalyticsRequest || isSettingsRequest) {
+      // Find all surveys
+      const surveys = await Survey.find({}, "surveyTitle _id").lean();
+      // Sort surveys by title length descending to prevent partial match issues
+      const sortedSurveys = surveys.sort((a, b) => b.surveyTitle.length - a.surveyTitle.length);
+
+      for (const survey of sortedSurveys) {
+        const titleLower = survey.surveyTitle.toLowerCase();
+        if (normalizedPrompt.includes(titleLower)) {
+          if (isAnalyticsRequest) {
+            res.json({
+              response_message: `Opening analytics for survey "${survey.surveyTitle}".`,
+              action: "navigate",
+              path: `/survey-results/${survey._id}`
+            });
+            return;
+          } else if (isSettingsRequest) {
+            res.json({
+              response_message: `Opening settings for survey "${survey.surveyTitle}".`,
+              action: "navigate",
+              path: `/survey-settings/${survey._id}`
+            });
+            return;
+          }
+        }
+      }
+    }
+
     const apiKey =
       process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -237,16 +271,36 @@ export const chatWithAi = async (
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
     // System prompt for structured navigation/actions
-    const systemInstruction = `You are a helpful AI assistant for a website. 
-Your goal is to understand the user's intent, respond to them politely, and tell the frontend what action to take.
+    const systemInstruction = `You are a helpful AI assistant for a website (SMTIAP survey platform). 
+Your goal is to understand the user's intent, answer questions politely and accurately using the system context below, and tell the frontend what action to take.
 You must always respond in strictly valid JSON format with the following structure:
 {
   "response_message": "The text to speak back to the user",
-  "action": "navigate" | "speak" | "none",
-  "path": "/path/to/page" // ONLY if action is navigate, otherwise null
+  "action": "navigate" | "speak" | "generate" | "none",
+  "path": "/path/to/page" // ONLY if action is navigate, otherwise null,
+  "surveyData": { // ONLY if action is generate, otherwise omit this field entirely
+    "surveyTitle": "string",
+    "description": "string",
+    "pages": [
+      {
+        "title": "string",
+        "questions": [
+          {
+            "type": "short_text" | "long_text" | "multiple_choice" | "checkboxes" | "rating" | "number" | "date",
+            "label": "string",
+            "required": boolean,
+            "placeholder": "string (optional)",
+            "options": ["string"] (only for multiple_choice/checkboxes),
+            "max": number (only for rating/number),
+            "min": number (only for number)
+          }
+        ]
+      }
+    ]
+  }
 }
 
 Available pages to navigate to:
@@ -262,10 +316,35 @@ Available pages to navigate to:
 - Admin: /admin
 - Home: /
 
-If the user asks to go to a page or open a page, set action to "navigate", path to the page path, and response_message to confirm the action.
-If the user asks a general question or says hello, answer it in response_message, set action to "speak", and path to null.`;
+SYSTEM CONTEXT & INFORMATION:
+1. Billing & Pricing Plans:
+   - Route: /subscription
+   - Currency: LKR (Sri Lankan Rupees), payment processed securely via PayHere gateway sandbox.
+   - Free Plan: LKR 0/month. Features: 1 user, Basic features, Community support.
+   - Startup Plan: LKR 1,000/month or LKR 11,000/year (saves LKR 1,000 yearly). Features: 5 users, All basic features, Priority support, Advanced analytics.
+   - Pro Plan: LKR 1,500/month or LKR 17,000/year. Features: 10 users, All startup features, Dedicated account manager, Custom integrations.
+   - If user asks about billing or how to upgrade, explain the plans and offer to navigate them to the /subscription page.
 
-    const fullPrompt = `${systemInstruction}\n\nUser request: ${prompt}`;
+2. Survey & Permissions:
+   - Surveys belong to tenants (organizations) to ensure data isolation.
+   - Survey statuses: Draft, Running, Finished, Scheduled.
+   - Survey details: Supports multi-page structures, customizable branding (colors, logo, website URL), password protection, anonymous responses, and advanced question types (short_text, long_text, multiple_choice, checkboxes, rating, number, date).
+   - Conditional branching: Supported for multiple_choice and checkboxes questions to route user to target questions or end the survey.
+   - Role Permissions: Users with roles 'super_admin', 'admin', or 'creator' can create, update, and delete surveys. Users with roles 'viewer' or 'billing_manager' cannot modify or create surveys.
+   - If user asks about survey configurations, statuses, templates, or permissions, provide details and/or offer navigation to relevant routes like /created-surveys, /create-new-survey, or /templates.
+
+If the user asks to generate, create, or build a survey (especially if they upload or provide questions and answers in a text file), parse and analyze the provided text content, generate the survey JSON structure matching the surveyData format, set action to "generate", set surveyData to the generated JSON, and response_message to a polite confirmation like "I have generated the survey from your questions. Let me take you to the editor."
+If the user asks to go to a page or open a page, set action to "navigate", path to the page path, and response_message to confirm the action.
+If the user asks a general question, hello, or asks about billing/surveys, answer it in response_message, set action to "speak" (or "navigate" if they explicitly asked to go to the page), and path to null (unless navigating).`;
+
+    let historyText = "";
+    if (Array.isArray(history) && history.length > 0) {
+      historyText = "\n\nConversation History:\n" + history
+        .map((msg: any) => `${msg.sender === "user" ? "User" : "AI Assistant"}: ${msg.text}`)
+        .join("\n");
+    }
+
+    const fullPrompt = `${systemInstruction}${historyText}\n\nUser request: ${prompt}`;
 
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
