@@ -40,6 +40,7 @@ import OrganizationRegistration from "./pages/OrganizationRegistration.tsx";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SuperAdminLogin from "./pages/SuperAdminLogin.tsx";
 import SuperAdminTemplates from "./pages/SuperAdminTemplates";
+import SuperAdminAuditLog from "./pages/SuperAdminAuditLog";
 import SuperAdminTemplateEditor from "./pages/SuperAdminTemplateEditor";
 import SuperAdminCategories from "./pages/SuperAdminCategories";
 import VoiceAI from "./components/VoiceAI.tsx";
@@ -136,6 +137,16 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
+
+<Route
+  path="/super-admin/audit-log"
+  element={
+    <ProtectedRoute allowedRoles={["super_admin"]}>
+      <SuperAdminAuditLog />
+    </ProtectedRoute>
+  }
+/>
+
 
               <Route element={<Layout />}>
                 <Route path="/" element={<LandingPage />} />
