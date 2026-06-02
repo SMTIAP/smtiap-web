@@ -19,7 +19,7 @@ const SurveyCard: React.FC<SurveyCardProps> = ({
     const finishedCard = (
       <div className="group relative flex flex-col items-center p-8 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-2xl shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden aspect-[3/4]">
         {/* Animated gradient border */}
-        <div className="absolute inset-0 bg-gradient-to-r from-rose-400 via-rose-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl -z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl -z-10"></div>
         <div className="absolute inset-[1px] bg-white/90 dark:bg-slate-800/90 rounded-2xl -z-5"></div>
         
         {/* Status bar */}
@@ -63,6 +63,7 @@ const SurveyCard: React.FC<SurveyCardProps> = ({
     return finishedCard;
   }
 
+  // Default variant - for template cards (different style, but same shape concept)
   const CardContent = (
     <div className="flex pb-3 flex-col items-start gap-3 w-44 h-full">
       {imageSrc ? (

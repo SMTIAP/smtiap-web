@@ -75,6 +75,8 @@ interface DashboardUser {
   username?: string;
   role?: string;
 }
+
+// ✅ UPDATED: Added scheduled to DashboardStats interface
 interface DashboardStats {
   roles: {
     admin: number;
@@ -82,7 +84,13 @@ interface DashboardStats {
     billing_manager: number;
     viewer: number;
   };
-  surveys: { total: number; draft: number; published: number; ended: number };
+  surveys: { 
+    total: number; 
+    draft: number; 
+    published: number; 
+    scheduled: number;  // ✅ ADDED
+    ended: number; 
+  };
   subscription: {
     plan: string;
     startDate: string;
@@ -225,10 +233,13 @@ export default function OrganizationAdmin() {
     { label: "Billing", value: stats?.roles.billing_manager ?? "—" },
     { label: "Viewers", value: stats?.roles.viewer ?? "—" },
   ];
+
+  // ✅ UPDATED: Added Scheduled row with blue badge styling
   const statRows2 = [
     { label: "Created Total", value: stats?.surveys.total ?? "—" },
     { label: "Draft Mode", value: stats?.surveys.draft ?? "—" },
     { label: "Published", value: stats?.surveys.published ?? "—" },
+    { label: "Scheduled", value: stats?.surveys.scheduled ?? 0 },
     { label: "Ended", value: stats?.surveys.ended ?? "—" },
   ];
 
@@ -316,7 +327,7 @@ export default function OrganizationAdmin() {
                   </div>
                 </div>
 
-                {/* Card 2: Surveys Status */}
+                {/* Card 2: Surveys Status - ✅ Now includes Scheduled */}
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 hover:shadow-md transition-shadow w-full">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-purple-50 dark:bg-purple-900/40">
