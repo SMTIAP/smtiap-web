@@ -75,6 +75,8 @@ interface DashboardUser {
   username?: string;
   role?: string;
 }
+
+
 interface DashboardStats {
   roles: {
     admin: number;
@@ -82,7 +84,13 @@ interface DashboardStats {
     billing_manager: number;
     viewer: number;
   };
-  surveys: { total: number; draft: number; published: number; ended: number };
+  surveys: { 
+    total: number; 
+    draft: number; 
+    published: number; 
+    scheduled: number;  // ✅ ADDED
+    ended: number; 
+  };
   subscription: {
     plan: string;
     startDate: string;
@@ -225,10 +233,13 @@ export default function OrganizationAdmin() {
     { label: "Billing", value: stats?.roles.billing_manager ?? "—" },
     { label: "Viewers", value: stats?.roles.viewer ?? "—" },
   ];
+
+  
   const statRows2 = [
     { label: "Created Total", value: stats?.surveys.total ?? "—" },
     { label: "Draft Mode", value: stats?.surveys.draft ?? "—" },
     { label: "Published", value: stats?.surveys.published ?? "—" },
+    { label: "Scheduled", value: stats?.surveys.scheduled ?? 0 },
     { label: "Ended", value: stats?.surveys.ended ?? "—" },
   ];
 

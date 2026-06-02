@@ -23,9 +23,6 @@ router.get(
       }
       const userObjectId = new mongoose.Types.ObjectId(userId);
 
-      // --- TENANT CONTEXT (loaded by loadTenant middleware) ---
-      // Use activeTenantId (single active tenant) — not all tenant memberships.
-      // This ensures "My Account" context only shows the user's own personal data.
       const activeTenantId =
         ((req as any).activeTenantId as string | null) ?? null;
       const activeTenantObjectId =
@@ -33,7 +30,6 @@ router.get(
           ? new mongoose.Types.ObjectId(activeTenantId)
           : null;
 
-      // --- USER ROLE COUNTS (scoped to active tenant only) ---
       const [adminCount, creatorCount, billingCount, viewerCount] =
         activeTenantObjectId
           ? await Promise.all([
@@ -56,8 +52,6 @@ router.get(
             ])
           : [0, 0, 0, 0];
 
-      // Count surveys scoped to active tenant, or own personal surveys when in system context
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const surveyFilter: any = activeTenantId
         ? { tenantId: activeTenantId }
         : {
@@ -69,15 +63,15 @@ router.get(
         $and: [surveyFilter, { status }],
       });
 
-      const [totalSurveys, draftCount, runningCount, finishedCount] =
+      const [totalSurveys, draftCount, runningCount, scheduledCount, finishedCount] =
         await Promise.all([
           Survey.countDocuments(surveyFilter),
           Survey.countDocuments(withStatus("Draft")),
           Survey.countDocuments(withStatus("Running")),
+          Survey.countDocuments(withStatus("Scheduled")),
           Survey.countDocuments(withStatus("Finished")),
         ]);
 
-      // --- SUBSCRIPTION ---
       const subscription = activeTenantObjectId
         ? await Subscription.findOne({ tenant_id: activeTenantObjectId })
             .sort({ end_date: -1 })
@@ -125,6 +119,7 @@ router.get(
             total: totalSurveys,
             draft: draftCount,
             published: runningCount,
+            scheduled: scheduledCount,
             ended: finishedCount,
           },
           subscription: subscriptionData,
