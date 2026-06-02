@@ -38,6 +38,7 @@ const surveySchema = new mongoose.Schema(
     logo: { type: String, default: null },
     themeColor: { type: String, default: "#6366F1" },
     primaryColor: { type: String, default: "#6366F1" },
+    backgroundColor: { type: String, default: "#F8FAFC" },
     customizeBranding: { type: Boolean, default: false },
     isAnonymous: { type: Boolean, default: false },
     pages: [pageSchema],

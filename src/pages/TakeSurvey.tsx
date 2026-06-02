@@ -61,6 +61,21 @@ function generateCaptcha() {
   return { a, b, answer: a + b };
 }
 
+function getTextColor(backgroundColor: string, opacity: number = 1): string {
+  if (!backgroundColor || backgroundColor === "#F8FAFC") {
+    return `rgba(30, 41, 59, ${opacity})`; // slate-800
+  }
+  let hex = backgroundColor.replace("#", "");
+  if (hex.length === 3) {
+    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+  }
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness > 128 ? `rgba(30, 41, 59, ${opacity})` : `rgba(255, 255, 255, ${opacity})`;
+}
+
 export default function TakeSurvey() {
   const { surveyId } = useParams<{ surveyId: string }>();
   const [surveyData, setSurveyData] = useState<{
@@ -181,12 +196,12 @@ export default function TakeSurvey() {
 
   if (error || !surveyData)
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor }}>
-        <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
-          <p className="text-2xl font-bold text-slate-800 mb-2">
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0F172A]">
+        <div className="text-center p-10 rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto" style={{ backgroundColor: backgroundColor || "#FFFFFF", borderColor: getTextColor(backgroundColor, 0.1) }}>
+          <p className="text-2xl font-bold mb-2" style={{ color: getTextColor(backgroundColor) }}>
             Survey not found
           </p>
-          <p className="text-slate-500 text-sm">
+          <p className="text-sm font-medium" style={{ color: getTextColor(backgroundColor, 0.6) }}>
             This survey may have been removed or the link is invalid.
           </p>
         </div>
@@ -200,16 +215,16 @@ export default function TakeSurvey() {
     
     if (now < openDate) {
       return (
-        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor }}>
-          <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
-            <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0F172A]">
+          <div className="text-center p-10 rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto" style={{ backgroundColor: backgroundColor || "#FFFFFF", borderColor: getTextColor(backgroundColor, 0.1) }}>
+            <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-100">
               <Calendar size={28} className="text-amber-500" />
             </div>
-            <h2 className="text-2xl font-black text-slate-900 mb-2">Survey Not Started Yet</h2>
-            <p className="text-slate-500 text-sm">
+            <h2 className="text-2xl font-black mb-2" style={{ color: getTextColor(backgroundColor) }}>Survey Not Started Yet</h2>
+            <p className="text-sm font-medium mb-1" style={{ color: getTextColor(backgroundColor, 0.6) }}>
               This survey will be available on
             </p>
-            <p className="text-slate-700 font-bold mt-2">
+            <p className="font-bold mt-2" style={{ color: getTextColor(backgroundColor) }}>
               {openDate.toLocaleDateString()} at {openDate.toLocaleTimeString()}
             </p>
           </div>
@@ -225,16 +240,16 @@ export default function TakeSurvey() {
     
     if (now > closeDate) {
       return (
-        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor }}>
-          <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
-            <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0F172A]">
+          <div className="text-center p-10 rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto" style={{ backgroundColor: backgroundColor || "#FFFFFF", borderColor: getTextColor(backgroundColor, 0.1) }}>
+            <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-100">
               <svg width="28" height="28" fill="none" stroke="#F43F5E" strokeWidth="2.5" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M15 9l-6 6M9 9l6 6" strokeLinecap="round" />
               </svg>
             </div>
-            <h2 className="text-2xl font-black text-slate-900 mb-2">Survey Closed</h2>
-            <p className="text-slate-500 text-sm">
+            <h2 className="text-2xl font-black mb-2" style={{ color: getTextColor(backgroundColor) }}>Survey Closed</h2>
+            <p className="text-sm font-medium" style={{ color: getTextColor(backgroundColor, 0.6) }}>
               This survey closed on {closeDate.toLocaleDateString()} at {closeDate.toLocaleTimeString()}
             </p>
           </div>
@@ -245,9 +260,9 @@ export default function TakeSurvey() {
 
   if (surveyData.status === "Finished")
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor }}>
-        <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
-          <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0F172A]">
+        <div className="text-center p-10 rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto" style={{ backgroundColor: backgroundColor || "#FFFFFF", borderColor: getTextColor(backgroundColor, 0.1) }}>
+          <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-100">
             <svg
               width="28"
               height="28"
@@ -260,10 +275,10 @@ export default function TakeSurvey() {
               <path d="M15 9l-6 6M9 9l6 6" strokeLinecap="round" />
             </svg>
           </div>
-          <h2 className="text-2xl font-black text-slate-900 mb-2">
+          <h2 className="text-2xl font-black mb-2" style={{ color: getTextColor(backgroundColor) }}>
             Survey Closed
           </h2>
-          <p className="text-slate-500 text-sm">
+          <p className="text-sm font-medium" style={{ color: getTextColor(backgroundColor, 0.6) }}>
             This survey is no longer accepting responses.
           </p>
         </div>
@@ -273,9 +288,9 @@ export default function TakeSurvey() {
   // Password gate — blocks access until correct password is entered
   if (surveyData.isPasswordProtected && !passwordVerified)
     return (
-      <div className="min-h-screen flex items-center justify-center px-6" style={{ backgroundColor }}>
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 w-full max-w-sm text-center">
-          <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+      <div className="min-h-screen flex items-center justify-center px-6 bg-[#F8FAFC] dark:bg-[#0F172A]">
+        <div className="rounded-3xl shadow-xl border border-gray-100 p-8 w-full max-w-sm text-center" style={{ backgroundColor: backgroundColor || "#FFFFFF", borderColor: getTextColor(backgroundColor, 0.1) }}>
+          <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-100">
             <svg
               width="24"
               height="24"
@@ -288,10 +303,10 @@ export default function TakeSurvey() {
               <path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round" />
             </svg>
           </div>
-          <h3 className="text-xl font-black text-slate-900 mb-1">
+          <h3 className="text-xl font-black mb-1" style={{ color: getTextColor(backgroundColor) }}>
             Password Required
           </h3>
-          <p className="text-slate-400 text-xs mb-6">
+          <p className="text-xs mb-6 font-medium" style={{ color: getTextColor(backgroundColor, 0.6) }}>
             This survey is password protected
           </p>
           <input
@@ -303,11 +318,15 @@ export default function TakeSurvey() {
               setPasswordError(false);
             }}
             onKeyDown={(e) => e.key === "Enter" && handlePasswordSubmit()}
-            className={`w-full text-center text-sm font-semibold bg-slate-50 border-2 rounded-2xl px-4 py-3 outline-none transition-all mb-3 ${
+            className={`w-full text-center text-sm font-semibold bg-transparent border-2 rounded-2xl px-4 py-3 outline-none transition-all mb-3 ${
               passwordError
-                ? "border-red-300 bg-red-50"
-                : "border-slate-200 focus:border-indigo-400"
+                ? "border-red-300 bg-red-50/20 text-red-500"
+                : "focus:border-indigo-400"
             }`}
+            style={{ 
+              borderColor: passwordError ? undefined : getTextColor(backgroundColor, 0.2),
+              color: getTextColor(backgroundColor)
+            }}
           />
           {passwordError && (
             <p className="text-red-400 text-xs mb-3 font-semibold">
@@ -317,7 +336,7 @@ export default function TakeSurvey() {
           <button
             onClick={handlePasswordSubmit}
             disabled={!passwordInput || checkingPassword}
-            className="w-full py-3 text-white rounded-2xl text-sm font-bold hover:opacity-90 disabled:opacity-40 transition-all"
+            className="w-full py-3 text-white rounded-2xl text-sm font-bold hover:opacity-90 disabled:opacity-40 transition-all shadow-sm"
             style={{ backgroundColor: primaryColor }}
           >
             {checkingPassword ? "Checking..." : "Enter Survey →"}
@@ -328,9 +347,9 @@ export default function TakeSurvey() {
 
   if (submitted)
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor }}>
-        <div className="text-center p-10 bg-white rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto">
-          <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0F172A]">
+        <div className="text-center p-10 rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto" style={{ backgroundColor: backgroundColor || "#FFFFFF", borderColor: getTextColor(backgroundColor, 0.1) }}>
+          <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-100">
             <svg
               width="28"
               height="28"
@@ -346,10 +365,10 @@ export default function TakeSurvey() {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-black text-slate-900 mb-2">
+          <h2 className="text-2xl font-black mb-2" style={{ color: getTextColor(backgroundColor) }}>
             Thank you!
           </h2>
-          <p className="text-slate-500 text-sm">
+          <p className="text-sm font-medium" style={{ color: getTextColor(backgroundColor, 0.6) }}>
             Your response has been submitted successfully.
           </p>
         </div>
@@ -515,8 +534,7 @@ export default function TakeSurvey() {
 
   return (
     <div
-      className="min-h-screen py-12 px-6 transition-colors duration-300"
-      style={{ backgroundColor: backgroundColor }}
+      className="min-h-screen py-12 px-6 bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300"
     >
       {/* Math captcha modal shown before final form submission */}
       {showCaptcha && (
@@ -593,8 +611,11 @@ export default function TakeSurvey() {
       )}
 
       <div className="max-w-2xl mx-auto">
-        {/* Survey header - white card with theme color top bar */}
-        <div className="bg-white rounded-3xl shadow-md border border-gray-200 overflow-hidden mb-6">
+        {/* Survey header with custom background color and contrast text */}
+        <div 
+          className="rounded-3xl shadow-md border border-gray-200 overflow-hidden mb-6 transition-all duration-300"
+          style={{ backgroundColor: backgroundColor || "#FFFFFF", borderColor: getTextColor(backgroundColor, 0.1) }}
+        >
           <div
             className="h-2 w-full transition-colors duration-300"
             style={{ backgroundColor: primaryColor }}
@@ -609,11 +630,11 @@ export default function TakeSurvey() {
                 />
               </div>
             )}
-            <h1 className="text-2xl font-black text-slate-900 mb-1">
+            <h1 className="text-2xl font-black mb-1" style={{ color: getTextColor(backgroundColor) }}>
               {surveyData.surveyTitle || "Untitled Survey"}
             </h1>
             {surveyData.description && (
-              <p className="text-slate-500 text-sm mb-1">
+              <p className="text-sm mb-1" style={{ color: getTextColor(backgroundColor, 0.7) }}>
                 {surveyData.description}
               </p>
             )}
@@ -637,11 +658,11 @@ export default function TakeSurvey() {
                     style={{
                       width: i === activeQuestionIndex ? "24px" : "8px",
                       backgroundColor:
-                        i === activeQuestionIndex ? primaryColor : "#E2E8F0",
+                        i === activeQuestionIndex ? primaryColor : getTextColor(backgroundColor, 0.2),
                     }}
                   />
                 ))}
-                <span className="text-xs text-slate-400 ml-2">
+                <span className="text-xs ml-2 font-medium" style={{ color: getTextColor(backgroundColor, 0.5) }}>
                   Question {Math.min(activeQuestionIndex + 1, totalQuestions)}{" "}
                   of {totalQuestions}
                 </span>
@@ -670,9 +691,12 @@ export default function TakeSurvey() {
               </p>
             )}
 
-            {/* Question card - white background */}
-            <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-md">
-              <p className="text-base text-slate-800 font-semibold mb-4">
+            {/* Question card with custom background color and contrast text */}
+            <div 
+              className="p-6 rounded-2xl border border-gray-100 shadow-md transition-all duration-300"
+              style={{ backgroundColor: backgroundColor || "#FFFFFF", borderColor: getTextColor(backgroundColor, 0.1) }}
+            >
+              <p className="text-base font-semibold mb-4" style={{ color: getTextColor(backgroundColor) }}>
                 {activeQuestionIndex + 1}.{" "}
                 {currentQuestion.label || "Untitled Question"}
                 {currentQuestion.required && (
@@ -693,8 +717,13 @@ export default function TakeSurvey() {
                       e.target.value,
                     )
                   }
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
-                  style={{ caretColor: primaryColor }}
+                  className="w-full border-b-2 outline-none pb-2 transition-all text-sm focus:border-gray-500"
+                  style={{ 
+                    backgroundColor: "transparent", 
+                    borderColor: getTextColor(backgroundColor, 0.3),
+                    color: getTextColor(backgroundColor), 
+                    caretColor: primaryColor 
+                  }}
                 />
               )}
 
@@ -711,8 +740,13 @@ export default function TakeSurvey() {
                     )
                   }
                   rows={4}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm resize-none"
-                  style={{ caretColor: primaryColor }}
+                  className="w-full border-2 rounded-xl p-3 outline-none transition-all text-sm resize-none focus:border-gray-500"
+                  style={{ 
+                    backgroundColor: "transparent", 
+                    borderColor: getTextColor(backgroundColor, 0.3),
+                    color: getTextColor(backgroundColor), 
+                    caretColor: primaryColor 
+                  }}
                 />
               )}
 
@@ -721,7 +755,11 @@ export default function TakeSurvey() {
                   {currentQuestion.options?.map((opt: string, i: number) => (
                     <label
                       key={i}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-indigo-200 cursor-pointer transition-all"
+                      className="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:border-indigo-500/50"
+                      style={{ 
+                        borderColor: getTextColor(backgroundColor, 0.1),
+                        backgroundColor: getTextColor(backgroundColor, 0.02)
+                      }}
                     >
                       <input
                         type="radio"
@@ -736,7 +774,7 @@ export default function TakeSurvey() {
                         className="w-4 h-4 transition-colors"
                         style={{ accentColor: primaryColor }}
                       />
-                      <span className="text-sm text-slate-700">{opt}</span>
+                      <span className="text-sm font-medium" style={{ color: getTextColor(backgroundColor) }}>{opt}</span>
                     </label>
                   ))}
                 </div>
@@ -747,7 +785,11 @@ export default function TakeSurvey() {
                   {currentQuestion.options?.map((opt: string, i: number) => (
                     <label
                       key={i}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-indigo-200 cursor-pointer transition-all"
+                      className="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:border-indigo-500/50"
+                      style={{ 
+                        borderColor: getTextColor(backgroundColor, 0.1),
+                        backgroundColor: getTextColor(backgroundColor, 0.02)
+                      }}
                     >
                       <input
                         type="checkbox"
@@ -776,7 +818,7 @@ export default function TakeSurvey() {
                         className="w-4 h-4 rounded transition-colors"
                         style={{ accentColor: primaryColor }}
                       />
-                      <span className="text-sm text-slate-700">{opt}</span>
+                      <span className="text-sm font-medium" style={{ color: getTextColor(backgroundColor) }}>{opt}</span>
                     </label>
                   ))}
                 </div>
@@ -798,15 +840,15 @@ export default function TakeSurvey() {
                         borderColor:
                           Number(responses[getResponseKey(currentQuestion)]) > i
                             ? primaryColor
-                            : "#E2E8F0",
+                            : getTextColor(backgroundColor, 0.2),
                         backgroundColor:
                           Number(responses[getResponseKey(currentQuestion)]) > i
                             ? primaryColor
-                            : "white",
+                            : "transparent",
                         color:
                           Number(responses[getResponseKey(currentQuestion)]) > i
                             ? "white"
-                            : "#94A3B8",
+                            : getTextColor(backgroundColor, 0.5),
                       }}
                     >
                       {i + 1}
@@ -825,8 +867,13 @@ export default function TakeSurvey() {
                       e.target.value,
                     )
                   }
-                  className="w-32 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
-                  style={{ caretColor: primaryColor }}
+                  className="w-32 border-b-2 outline-none pb-2 transition-all text-sm focus:border-gray-500"
+                  style={{ 
+                    backgroundColor: "transparent", 
+                    borderColor: getTextColor(backgroundColor, 0.3),
+                    color: getTextColor(backgroundColor), 
+                    caretColor: primaryColor 
+                  }}
                 />
               )}
 
@@ -840,8 +887,13 @@ export default function TakeSurvey() {
                       e.target.value,
                     )
                   }
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
-                  style={{ accentColor: primaryColor }}
+                  className="border-b-2 outline-none pb-2 transition-all text-sm focus:border-gray-500"
+                  style={{ 
+                    backgroundColor: "transparent", 
+                    borderColor: getTextColor(backgroundColor, 0.3),
+                    color: getTextColor(backgroundColor), 
+                    accentColor: primaryColor 
+                  }}
                 />
               )}
             </div>
@@ -851,7 +903,12 @@ export default function TakeSurvey() {
               {questionHistory.length > 0 ? (
                 <button
                   onClick={handleBack}
-                  className="px-6 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-gray-50 transition-all bg-white"
+                  className="px-6 py-3 border rounded-xl text-sm font-semibold transition-all hover:bg-gray-100"
+                  style={{
+                    backgroundColor: backgroundColor || "#FFFFFF",
+                    borderColor: getTextColor(backgroundColor, 0.2),
+                    color: getTextColor(backgroundColor, 0.7)
+                  }}
                 >
                   ← Back
                 </button>
@@ -880,7 +937,7 @@ export default function TakeSurvey() {
             </div>
           </div>
         ) : (
-          <div className="p-10 text-center text-slate-400 italic bg-white/80 backdrop-blur-sm rounded-2xl shadow-md">
+          <div className="p-10 text-center text-slate-400 italic bg-white/80 backdrop-blur-sm rounded-2xl shadow-md" style={{ backgroundColor: backgroundColor || "#FFFFFF", color: getTextColor(backgroundColor, 0.5) }}>
             No questions found in this survey.
           </div>
         )}
