@@ -76,7 +76,7 @@ interface DashboardUser {
   role?: string;
 }
 
-// ✅ UPDATED: Added scheduled to DashboardStats interface
+
 interface DashboardStats {
   roles: {
     admin: number;
@@ -234,7 +234,7 @@ export default function OrganizationAdmin() {
     { label: "Viewers", value: stats?.roles.viewer ?? "—" },
   ];
 
-  // ✅ UPDATED: Added Scheduled row with blue badge styling
+  
   const statRows2 = [
     { label: "Created Total", value: stats?.surveys.total ?? "—" },
     { label: "Draft Mode", value: stats?.surveys.draft ?? "—" },
@@ -327,7 +327,7 @@ export default function OrganizationAdmin() {
                   </div>
                 </div>
 
-                {/* Card 2: Surveys Status - ✅ Now includes Scheduled */}
+                {/* Card 2: Surveys Status */}
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 hover:shadow-md transition-shadow w-full">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-purple-50 dark:bg-purple-900/40">
