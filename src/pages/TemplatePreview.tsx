@@ -396,10 +396,10 @@ export default function TemplatePreview() {
               <FileText size={13} />
               <span>{template.previewQuestions?.length || 0} questions · 1 page</span>
             </div>
-            {/* ✅ ADD ESTIMATED TIME HERE */}
+            {/* ✅ ESTIMATED TIME WITHOUT EMOJI */}
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs mt-2">
               <Clock size={13} />
-              <span>⏱️ {getEstimatedTimeLabel(template.estimatedTime)}</span>
+              <span>{getEstimatedTimeLabel(template.estimatedTime)}</span>
             </div>
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs mt-2">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColor }} />
