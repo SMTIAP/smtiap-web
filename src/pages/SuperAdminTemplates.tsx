@@ -9,10 +9,22 @@ import {
   LayoutTemplate,
   ChevronLeft,
   Tag,
+  Clock,
 } from "lucide-react";
 import { templateApi, type Template } from "../api/templateApi";
 import { getIcon } from "../utils/iconMap";
 import SuperAdminNavBar from "../components/SuperAdminNavBar";
+
+// Helper function to get estimated time label
+const getEstimatedTimeLabel = (time: string | undefined): string => {
+  switch (time) {
+    case "quick": return "Quick (~2-3 min)";
+    case "medium": return "Medium (~5-7 min)";
+    case "detailed": return "Detailed (~10-15 min)";
+    case "comprehensive": return "Comprehensive (~20+ min)";
+    default: return "Quick (~2-3 min)";
+  }
+};
 
 export default function SuperAdminTemplates() {
   const navigate = useNavigate();
@@ -112,7 +124,6 @@ export default function SuperAdminTemplates() {
           />
         </div>
 
-        {/* Rest of your component remains the same... */}
         {/* Loading State */}
         {loading && (
           <div className="flex justify-center py-12">
@@ -172,6 +183,13 @@ export default function SuperAdminTemplates() {
                     <p className="text-slate-500 dark:text-slate-400 text-sm line-clamp-2">
                       {template.description}
                     </p>
+                    {/* ✅ ESTIMATED TIME BADGE WITH CLOCK ICON */}
+                    <div className="mt-3 flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-2 py-0.5 rounded-full">
+                        <Clock size={10} />
+                        <span>{getEstimatedTimeLabel(template.estimatedTime)}</span>
+                      </div>
+                    </div>
                     <div className="mt-4 flex items-center justify-between">
                       <span className="text-xs text-slate-400">
                         Used {template.usedCount} times

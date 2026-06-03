@@ -34,7 +34,7 @@ export interface Template {
   category: string;
   usedCount: string;
   gradient: string;
-  icon: string;
+  estimatedTime: string;  // Replaced 'icon' with 'estimatedTime'
   aiPrompt: string;
   previewQuestions: TemplateQuestion[];
   isActive: boolean;

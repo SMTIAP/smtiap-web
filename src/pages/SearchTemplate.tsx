@@ -18,6 +18,7 @@ import {
   Zap,
   ShoppingBag,
   ChevronRight,
+  Clock,
 } from "lucide-react";
 import { templateApi, type Template, type Category } from "../api/templateApi";
 import { getIcon } from "../utils/iconMap";
@@ -29,6 +30,17 @@ const AI_SUGGESTIONS = [
   "University course evaluation survey",
   "Healthcare patient experience questionnaire",
 ];
+
+// Helper function to get estimated time label
+const getEstimatedTimeLabel = (time: string | undefined): string => {
+  switch (time) {
+    case "quick": return "Quick (~2-3 min)";
+    case "medium": return "Medium (~5-7 min)";
+    case "detailed": return "Detailed (~10-15 min)";
+    case "comprehensive": return "Comprehensive (~20+ min)";
+    default: return "Quick (~2-3 min)";
+  }
+};
 
 export default function SearchTemplate() {
   const navigate = useNavigate();
@@ -394,9 +406,16 @@ export default function SearchTemplate() {
                     <p className="text-slate-400 text-sm line-clamp-2">
                       {temp.description}
                     </p>
-                    <p className="text-slate-300 dark:text-slate-500 text-xs mt-2">
-                      Used {temp.usedCount} times
-                    </p>
+                    {/* ✅ ESTIMATED TIME BADGE WITH CLOCK ICON */}
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center gap-1.5 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-2 py-0.5 rounded-full">
+                        <Clock size={10} />
+                        <span>{getEstimatedTimeLabel(temp.estimatedTime)}</span>
+                      </div>
+                      <p className="text-slate-300 dark:text-slate-500 text-xs">
+                        Used {temp.usedCount} times
+                      </p>
+                    </div>
                   </div>
                 </div>
               );
