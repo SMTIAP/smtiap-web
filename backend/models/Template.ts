@@ -52,9 +52,10 @@ const templateSchema = new Schema(
       type: String, 
       required: true 
     },
-    icon: { 
+    estimatedTime: { 
       type: String, 
-      required: true 
+      enum: ["quick", "medium", "detailed", "comprehensive"],
+      default: "quick"
     },
     aiPrompt: { 
       type: String, 
