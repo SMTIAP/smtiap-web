@@ -558,6 +558,25 @@ if (!userId) return; // or handle error
       }
     }
 
+    try {
+        const tenant = survey.tenantId
+          ? await Tenant.findById(survey.tenantId)
+          : null;
+
+        const orgName = tenant?.name ?? "System";
+
+        await createAppNotification({
+          tenant_id: survey.tenantId ? String(survey.tenantId) : "", // or null if schema allows
+          user_id: userId!,
+          type: "SURVEY_STOPPED",
+          channel: "in_app",
+          message: `Survey "${survey.surveyTitle}" has been stopped in ${orgName}`,
+          surveyId: survey._id.toString(),
+          surveyName: survey.surveyTitle,
+        });
+      } catch (err) {
+        console.error("Notification failed but survey will still publish:", err);
+      }
 
     res.json({ message: "Status updated", survey: updated });
   } catch (err) {
