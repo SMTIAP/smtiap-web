@@ -226,6 +226,32 @@ export const createSurvey = async (req: Request, res: Response) => {
 
     await survey.save();
     logAudit(req, "create", survey._id, `Survey "${surveyTitle}" Created`);
+
+    try {
+      const userId = reqUserId(req);
+      if (!userId) return; // or handle error
+
+      const tenant = survey.tenantId
+        ? await Tenant.findById(survey.tenantId)
+        : null;
+
+      const orgName = tenant?.name ?? "System";
+
+      await createAppNotification({
+        
+        tenant_id: survey.tenantId ? String(survey.tenantId) : "", // or null if schema allows
+        user_id: userId!,
+        type: "SURVEY_CREATED",
+        channel: "in_app",
+        message: `Survey "${survey.surveyTitle}" has been created in ${orgName}`,
+        surveyId: survey._id.toString(),
+        surveyName: survey.surveyTitle,
+      });
+    } catch (err) {
+      console.error("Notification failed but survey will still publish:", err);
+    }
+
+    console.log(status);
     res.status(201).json({ message: "Survey created", survey });
   } catch (err) {
     res.status(500).json({ message: String(err) });
@@ -373,7 +399,6 @@ export const updateSurvey = async (req: Request, res: Response) => {
 
     // 🔥 AUDIT: title changed
     if (safeBody.surveyTitle && safeBody.surveyTitle !== oldTitle) {
-          console.log("Reached 2");
       await AuditLog.create({
         tenant_id: survey.tenantId ?? null,
         user_id: reqUserId(req),
