@@ -3,16 +3,37 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import api from "../api/api";
 import resetPasswordImg from "../assets/resetpassword.jpg";
+import { validatePassword } from "../utils/passwordValidation";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [tempPassword, setTempPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [newPasswordError, setNewPasswordError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const handleNewPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setNewPassword(val);
+    if (val.length === 0) {
+      setNewPasswordError("");
+    } else {
+      const result = validatePassword(val);
+      setNewPasswordError(result.valid ? "" : result.message);
+    }
+  };
+
   const handleReset = async () => {
+    // Validate new password before submitting
+    const validation = validatePassword(newPassword);
+    if (!validation.valid) {
+      setNewPasswordError(validation.message);
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
@@ -171,24 +192,28 @@ export default function ResetPassword() {
           >
             New password <span style={{ color: "#5C38E1" }}>*</span>
           </label>
-          <div className="relative mb-5">
+          <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
+              onChange={handleNewPasswordChange}
               placeholder="Enter new password"
-              className="w-full h-11 rounded-xl px-4 pr-11 text-sm outline-none border transition-all"
+              className={`w-full h-11 rounded-xl px-4 pr-11 text-sm outline-none border transition-all ${newPasswordError ? "border-red-400" : ""}`}
               style={{
                 background: "#fff",
-                border: "1.5px solid #D5CCEF",
+                border: newPasswordError ? "1.5px solid #f87171" : "1.5px solid #D5CCEF",
                 color: "#1A1040",
               }}
               onFocus={(e) => {
-                e.target.style.borderColor = "#5C38E1";
+                if (!newPasswordError) {
+                  e.target.style.borderColor = "#5C38E1";
+                }
                 e.target.style.boxShadow = "0 0 0 3px rgba(92,56,225,0.12)";
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = "#D5CCEF";
+                if (!newPasswordError) {
+                  e.target.style.borderColor = "#D5CCEF";
+                }
                 e.target.style.boxShadow = "none";
               }}
             />
@@ -235,6 +260,11 @@ export default function ResetPassword() {
               )}
             </button>
           </div>
+          {newPasswordError && (
+            <p className="text-[11px] text-red-500 font-semibold mt-1.5 mb-4 ml-[2px]">
+              {newPasswordError}
+            </p>
+          )}
 
           {/* Submit */}
           <button
