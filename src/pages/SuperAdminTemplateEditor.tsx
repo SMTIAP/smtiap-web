@@ -29,7 +29,7 @@ const QUESTION_TYPES = [
   { id: "date", label: "Date", icon: Calendar },
 ];
 
-// Preset theme colors (for color swatches)
+// Preset theme colors - 9 colors to fit in one row
 const themeColorPresets = [
   { name: "Orange", value: "#FB923C", gradient: "from-orange-400 to-rose-500" },
   { name: "Pink", value: "#F472B6", gradient: "from-pink-400 to-rose-500" },
@@ -38,10 +38,8 @@ const themeColorPresets = [
   { name: "Emerald", value: "#34D399", gradient: "from-emerald-400 to-teal-500" },
   { name: "Indigo", value: "#818CF8", gradient: "from-indigo-400 to-violet-500" },
   { name: "Yellow", value: "#FACC15", gradient: "from-yellow-400 to-amber-500" },
-  { name: "Cyan", value: "#22D3EE", gradient: "from-blue-400 to-cyan-500" },
   { name: "Purple", value: "#C084FC", gradient: "from-purple-400 to-fuchsia-500" },
   { name: "Rose", value: "#F43F5E", gradient: "from-rose-400 to-pink-500" },
-  { name: "Teal", value: "#2DD4BF", gradient: "from-teal-400 to-cyan-500" },
 ];
 
 // Get gradient class from color value
@@ -429,13 +427,13 @@ export default function SuperAdminTemplateEditor() {
                 </select>
               </div>
 
-              {/* Theme Color Picker - Replaces Gradient Dropdown */}
+              {/* Theme Color Picker - 9 colors in one row */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Theme Color
                 </label>
                 <div className="flex flex-col gap-3">
-                  {/* Color swatches grid */}
+                  {/* Color swatches grid - one row with 9 colors */}
                   <div className="flex flex-wrap gap-2">
                     {themeColorPresets.map((preset) => (
                       <button
