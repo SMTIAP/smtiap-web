@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft, X, Loader2,
-  Monitor, Tablet, Smartphone, FileText, CopyPlus, Calendar
+  Monitor, Tablet, Smartphone, FileText, CopyPlus, Calendar, Clock
 } from "lucide-react";
 import { templateApi, type Template } from "../api/templateApi";
 import { getIcon } from "../utils/iconMap";
@@ -13,6 +13,17 @@ const deviceWidths: Record<DeviceType, string> = {
   desktop: "w-full max-w-2xl",
   tablet: "w-[600px]",
   mobile: "w-[375px] max-h-[600px]",
+};
+
+// Helper function to get estimated time label
+const getEstimatedTimeLabel = (time: string | undefined): string => {
+  switch (time) {
+    case "quick": return "Quick (~2-3 minutes)";
+    case "medium": return "Medium (~5-7 minutes)";
+    case "detailed": return "Detailed (~10-15 minutes)";
+    case "comprehensive": return "Comprehensive (~20+ minutes)";
+    default: return "Quick (~2-3 minutes)";
+  }
 };
 
 // Extract the first color from a Tailwind gradient class
@@ -384,6 +395,11 @@ export default function TemplatePreview() {
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs">
               <FileText size={13} />
               <span>{template.previewQuestions?.length || 0} questions · 1 page</span>
+            </div>
+            {/* ✅ ADD ESTIMATED TIME HERE */}
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs mt-2">
+              <Clock size={13} />
+              <span>⏱️ {getEstimatedTimeLabel(template.estimatedTime)}</span>
             </div>
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs mt-2">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColor }} />
