@@ -232,7 +232,7 @@ export default function SuperAdminTemplateEditor() {
             <select
               value={question.max || 5}
               onChange={(e) => updateQuestion(qIdx, { max: parseInt(e.target.value) })}
-              className="w-32 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-32 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               {[5, 6, 7, 8, 9, 10].map((num) => (
                 <option key={num} value={num}>
@@ -254,7 +254,7 @@ export default function SuperAdminTemplateEditor() {
                 type="number"
                 value={question.min || 0}
                 onChange={(e) => updateQuestion(qIdx, { min: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
             <div>
@@ -265,7 +265,7 @@ export default function SuperAdminTemplateEditor() {
                 type="number"
                 value={question.max || 100}
                 onChange={(e) => updateQuestion(qIdx, { max: parseInt(e.target.value) || 100 })}
-                className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
           </div>
@@ -283,7 +283,7 @@ export default function SuperAdminTemplateEditor() {
               value={question.placeholder || ""}
               onChange={(e) => updateQuestion(qIdx, { placeholder: e.target.value })}
               placeholder="e.g., Enter your answer here..."
-              className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
         );
@@ -302,7 +302,7 @@ export default function SuperAdminTemplateEditor() {
                     type="text"
                     value={opt}
                     onChange={(e) => updateOption(qIdx, optIdx, e.target.value)}
-                    className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                   <button
                     onClick={() => removeOption(qIdx, optIdx)}
@@ -547,7 +547,7 @@ export default function SuperAdminTemplateEditor() {
                     <select
                       value={question.type}
                       onChange={(e) => updateQuestion(qIdx, { type: e.target.value as PreviewQuestion["type"] })}
-                      className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                       {QUESTION_TYPES.map((type) => (
                         <option key={type.id} value={type.id}>
@@ -566,7 +566,7 @@ export default function SuperAdminTemplateEditor() {
                       value={question.label}
                       onChange={(e) => updateQuestion(qIdx, { label: e.target.value })}
                       placeholder="Enter question..."
-                      className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
                 </div>
