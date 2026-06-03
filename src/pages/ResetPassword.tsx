@@ -201,7 +201,9 @@ export default function ResetPassword() {
               className={`w-full h-11 rounded-xl px-4 pr-11 text-sm outline-none border transition-all ${newPasswordError ? "border-red-400" : ""}`}
               style={{
                 background: "#fff",
-                border: newPasswordError ? "1.5px solid #f87171" : "1.5px solid #D5CCEF",
+                border: newPasswordError
+                  ? "1.5px solid #f87171"
+                  : "1.5px solid #D5CCEF",
                 color: "#1A1040",
               }}
               onFocus={(e) => {
