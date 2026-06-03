@@ -14,7 +14,8 @@ interface CreateNotificationPayload {
     | "SURVEY_CREATED"
     | "SURVEY_UPDATE"
     | "SURVEY_PUBLISHED"
-    | "SURVEY_STOPPED";
+    | "SURVEY_STOPPED"
+    | "REGISTERED";
   channel?: "in_app" | "email" | "sms" | "push";
   surveyId?: string;
   surveyName?: string;

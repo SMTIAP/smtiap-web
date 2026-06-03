@@ -53,6 +53,11 @@ interface SurveyStoppedPayload {
   surveyName: string
 }
 
+interface RegisteredPayload {
+  email: string,
+  username: string,
+}
+
 export const formatRole = (role: string) => {
   return role
     .split("_")
@@ -575,6 +580,44 @@ export const notifySurveyStopped = async ({
       </div>
       `
     );
+  } catch (error) {
+    console.error("Survey stopped email error:", error);
+  }
+};
+
+export const notifyRegistered = async ({
+  email,
+  username,
+}: RegisteredPayload): Promise<void> => {
+  try{
+    await sendEmail(
+      email,
+            "Registration Successful",
+   `
+    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #E5E7EB; border-radius: 12px; padding: 24px;">
+
+      <h2 style="color:#5C38E1; text-align:center;">
+        Registration Successful 
+      </h2>
+
+      <p>Hi <strong>${username}</strong>,</p>
+
+      <p>Your account has been successfully created.</p>
+
+      <div style="background:#F3F0FF; padding:14px; border-radius:8px; margin:16px 0;">
+        <p><strong>Username:</strong> ${username}</p>
+        <p><strong>Email:</strong> ${email}</p>
+      </div>
+
+      <p>Welcome aboard! Your account is now verified and ready to use.</p>
+
+      <p style="color:#6B7280; font-size:12px;">
+        If this wasn't you, you can ignore this email.
+      </p>
+
+    </div>
+  `);
+    
   } catch (error) {
     console.error("Survey stopped email error:", error);
   }
