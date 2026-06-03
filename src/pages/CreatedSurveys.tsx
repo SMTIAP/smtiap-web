@@ -805,6 +805,13 @@ export default function CreatedSurveys() {
                       <span>Active Now</span>
                     </div>
                   )}
+                  {/* ✅ ADDED: Show closing date for running surveys */}
+                  {isRunning && survey.scheduledClose && (
+                    <div className="flex items-center gap-1 text-amber-600 text-[10px] font-bold mt-1">
+                      <Calendar size={10} />
+                      <span>Closes: {new Date(survey.scheduledClose).toLocaleDateString()}</span>
+                    </div>
+                  )}
                   {isScheduled && survey.scheduledOpen && (
                     <div className="flex items-center gap-1 text-purple-600 text-[10px] font-bold">
                       <Calendar size={10} />
