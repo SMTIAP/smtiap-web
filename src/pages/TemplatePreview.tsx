@@ -16,69 +16,49 @@ const deviceWidths: Record<DeviceType, string> = {
 };
 
 // Extract the first color from a Tailwind gradient class
-// Example: "from-orange-400 to-rose-500" → "#FB923C" (orange-400)
 const extractColorFromGradient = (gradientClass: string): string => {
   const colorMap: Record<string, string> = {
-    // Orange shades
     'orange-400': '#FB923C',
     'orange-500': '#F97316',
-    // Rose shades
     'rose-500': '#F43F5E',
-    // Pink shades
     'pink-400': '#F472B6',
     'pink-500': '#EC4899',
-    // Blue shades
     'blue-400': '#60A5FA',
     'blue-500': '#3B82F6',
-    // Indigo shades
     'indigo-400': '#818CF8',
     'indigo-500': '#6366F1',
-    // Amber shades
     'amber-400': '#FBBF24',
     'amber-500': '#F59E0B',
-    // Emerald shades
     'emerald-400': '#34D399',
     'emerald-500': '#10B981',
-    // Teal shades
     'teal-400': '#2DD4BF',
     'teal-500': '#14B8A6',
-    // Violet shades
     'violet-400': '#A78BFA',
     'violet-500': '#8B5CF6',
-    // Yellow shades
     'yellow-400': '#FACC15',
     'yellow-500': '#EAB308',
-    // Cyan shades
     'cyan-400': '#22D3EE',
     'cyan-500': '#06B6D4',
-    // Purple shades
     'purple-400': '#C084FC',
     'purple-500': '#A855F7',
-    // Fuchsia shades
     'fuchsia-400': '#E879F9',
     'fuchsia-500': '#D946EF',
-    // Green shades
     'green-400': '#4ADE80',
     'green-500': '#22C55E',
-    // Red shades
     'red-400': '#F87171',
     'red-500': '#EF4444',
-    // Slate shades
     'slate-400': '#94A3B8',
     'slate-500': '#64748B',
-    // Gray shades
     'gray-400': '#9CA3AF',
     'gray-500': '#6B7280',
   };
 
-  // Extract the "from-{color}" part
   const match = gradientClass.match(/from-([\w-]+)/);
   if (match && colorMap[match[1]]) {
     return colorMap[match[1]];
   }
   
-  // Default color if extraction fails
-  return '#6366F1'; // indigo-500
+  return '#6366F1';
 };
 
 const DeviceIcon = ({ device, current, onClick }: { device: DeviceType; current: DeviceType; onClick: () => void }) => {
@@ -242,7 +222,7 @@ export default function TemplatePreview() {
   }
 
   const Icon = getIcon(template.icon);
-  // Extract theme color from gradient - THIS NOW APPLIES TO SURVEY!
+  // Extract theme color from gradient - applies to the survey when created
   const themeColor = extractColorFromGradient(template.gradient);
   const isMobile = device === "mobile";
 
@@ -277,9 +257,9 @@ export default function TemplatePreview() {
           description: template.description,
           status: "Draft",
           pages: surveyPages,
-          primaryColor: themeColor,      // ← APPLY EXTRACTED COLOR HERE
-          themeColor: themeColor,         // ← APPLY EXTRACTED COLOR HERE
-          customizeBranding: true,        // ← Enable branding so color shows
+          primaryColor: themeColor,
+          themeColor: themeColor,
+          customizeBranding: true,
         }),
       });
       
@@ -291,13 +271,11 @@ export default function TemplatePreview() {
       const newSurveyId = data._id || data.survey?._id;
       
       if (newSurveyId) {
-        // ✅ Increment the template usage count
         try {
           await templateApi.incrementUsageCount(template._id);
           console.log("Usage count incremented for template:", template.title);
         } catch (err) {
           console.error("Failed to increment usage count:", err);
-          // Don't block the user - survey was already created
         }
         
         navigate("/add-questions", { 
@@ -342,7 +320,7 @@ export default function TemplatePreview() {
         <div className="flex-1 overflow-y-auto flex flex-col items-center py-6 px-3 relative">
           <div className={`transition-all duration-300 ${deviceWidths[device]} ${isMobile ? 'overflow-y-auto' : ''}`}>
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col max-h-full">
-              {/* Colored header - now uses extracted theme color from gradient */}
+              {/* Colored header - shows theme color that will apply to survey */}
               <div className={`${isMobile ? 'p-5' : 'p-8'} flex items-center gap-3 shrink-0`} style={{ backgroundColor: themeColor }}>
                 <div className={`${isMobile ? 'w-10 h-10' : 'w-14 h-14'} bg-white/20 rounded-2xl flex items-center justify-center shrink-0`}>
                   <Icon size={isMobile ? 20 : 28} className="text-white" />
@@ -358,7 +336,6 @@ export default function TemplatePreview() {
                 <div className={`${isMobile ? 'p-5' : 'p-8'}`}>
                   <p className={`text-slate-400 dark:text-slate-500 ${isMobile ? 'text-xs mb-4' : 'text-sm mb-6'}`}>{template.description}</p>
 
-                  {/* All questions in one scrollable list */}
                   <div className="space-y-6">
                     {template.previewQuestions && template.previewQuestions.length > 0 ? (
                       template.previewQuestions.map((q: any, idx: number) => (
@@ -394,7 +371,7 @@ export default function TemplatePreview() {
       {/* Right Panel */}
       <div className="w-80 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col shrink-0 overflow-y-auto">
         <div className="p-6 flex-1">
-          {/* Template info - now shows actual theme color that will apply */}
+          {/* Template info - shows theme color preview */}
           <div className="h-28 rounded-2xl flex items-center justify-center mb-5" style={{ backgroundColor: themeColor }}>
             <Icon size={44} className="text-white drop-shadow" />
           </div>
@@ -417,12 +394,11 @@ export default function TemplatePreview() {
             </p>
           </div>
 
-          {/* Use template button - now uses extracted theme color */}
+          {/* Use template button - NEUTRAL INDIGO COLOR (not theme color) */}
           <button 
             onClick={handleUseTemplate} 
             disabled={isCreating}
-            className="w-full py-3 rounded-2xl font-black transition-all disabled:opacity-50 flex items-center justify-center gap-2 mb-3"
-            style={{ backgroundColor: themeColor, color: 'white' }}
+            className="w-full py-3 rounded-2xl font-black transition-all disabled:opacity-50 flex items-center justify-center gap-2 mb-3 bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 shadow-lg"
           >
             {isCreating
               ? <><Loader2 size={16} className="animate-spin" /> Creating survey...</>
