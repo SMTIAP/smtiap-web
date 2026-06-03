@@ -29,7 +29,7 @@ const QUESTION_TYPES = [
   { id: "date", label: "Date", icon: Calendar },
 ];
 
-// Gradient options
+// Gradient options - NOW HAS FUNCTIONAL PURPOSE (defines survey theme color)
 const gradientOptions = [
   "from-orange-400 to-rose-500",
   "from-pink-400 to-rose-500",
@@ -410,7 +410,7 @@ export default function SuperAdminTemplateEditor() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Gradient
+                  Gradient <span className="text-indigo-500 text-xs ml-1">(determines survey theme color)</span>
                 </label>
                 <select
                   value={formData.gradient}
@@ -424,6 +424,7 @@ export default function SuperAdminTemplateEditor() {
                   ))}
                 </select>
                 <div className={`mt-2 h-8 rounded-lg bg-gradient-to-br ${formData.gradient}`} />
+                <p className="text-[10px] text-slate-400 mt-1">This color will be applied to surveys created from this template</p>
               </div>
 
               <div>

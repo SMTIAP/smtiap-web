@@ -15,6 +15,72 @@ const deviceWidths: Record<DeviceType, string> = {
   mobile: "w-[375px] max-h-[600px]",
 };
 
+// Extract the first color from a Tailwind gradient class
+// Example: "from-orange-400 to-rose-500" → "#FB923C" (orange-400)
+const extractColorFromGradient = (gradientClass: string): string => {
+  const colorMap: Record<string, string> = {
+    // Orange shades
+    'orange-400': '#FB923C',
+    'orange-500': '#F97316',
+    // Rose shades
+    'rose-500': '#F43F5E',
+    // Pink shades
+    'pink-400': '#F472B6',
+    'pink-500': '#EC4899',
+    // Blue shades
+    'blue-400': '#60A5FA',
+    'blue-500': '#3B82F6',
+    // Indigo shades
+    'indigo-400': '#818CF8',
+    'indigo-500': '#6366F1',
+    // Amber shades
+    'amber-400': '#FBBF24',
+    'amber-500': '#F59E0B',
+    // Emerald shades
+    'emerald-400': '#34D399',
+    'emerald-500': '#10B981',
+    // Teal shades
+    'teal-400': '#2DD4BF',
+    'teal-500': '#14B8A6',
+    // Violet shades
+    'violet-400': '#A78BFA',
+    'violet-500': '#8B5CF6',
+    // Yellow shades
+    'yellow-400': '#FACC15',
+    'yellow-500': '#EAB308',
+    // Cyan shades
+    'cyan-400': '#22D3EE',
+    'cyan-500': '#06B6D4',
+    // Purple shades
+    'purple-400': '#C084FC',
+    'purple-500': '#A855F7',
+    // Fuchsia shades
+    'fuchsia-400': '#E879F9',
+    'fuchsia-500': '#D946EF',
+    // Green shades
+    'green-400': '#4ADE80',
+    'green-500': '#22C55E',
+    // Red shades
+    'red-400': '#F87171',
+    'red-500': '#EF4444',
+    // Slate shades
+    'slate-400': '#94A3B8',
+    'slate-500': '#64748B',
+    // Gray shades
+    'gray-400': '#9CA3AF',
+    'gray-500': '#6B7280',
+  };
+
+  // Extract the "from-{color}" part
+  const match = gradientClass.match(/from-([\w-]+)/);
+  if (match && colorMap[match[1]]) {
+    return colorMap[match[1]];
+  }
+  
+  // Default color if extraction fails
+  return '#6366F1'; // indigo-500
+};
+
 const DeviceIcon = ({ device, current, onClick }: { device: DeviceType; current: DeviceType; onClick: () => void }) => {
   const icons = { desktop: Monitor, tablet: Tablet, mobile: Smartphone };
   const Icon = icons[device];
@@ -176,90 +242,91 @@ export default function TemplatePreview() {
   }
 
   const Icon = getIcon(template.icon);
-  const primaryColor = "#6366F1";
+  // Extract theme color from gradient - THIS NOW APPLIES TO SURVEY!
+  const themeColor = extractColorFromGradient(template.gradient);
   const isMobile = device === "mobile";
 
-const handleUseTemplate = async () => {
-  setIsCreating(true);
-  try {
-    const surveyPages = [{
-      id: `page-${Date.now()}`,
-      title: "Page 1",
-      questions: (template.previewQuestions || []).map((q: any, idx: number) => ({
-        id: `q-${Date.now()}-${idx}`,
-        type: q.type,
-        label: q.label,
-        required: true,
-        placeholder: q.placeholder,
-        options: q.options,
-        max: q.max,
-        min: q.min,
-        branching: undefined,
-      }))
-    }];
+  const handleUseTemplate = async () => {
+    setIsCreating(true);
+    try {
+      const surveyPages = [{
+        id: `page-${Date.now()}`,
+        title: "Page 1",
+        questions: (template.previewQuestions || []).map((q: any, idx: number) => ({
+          id: `q-${Date.now()}-${idx}`,
+          type: q.type,
+          label: q.label,
+          required: true,
+          placeholder: q.placeholder,
+          options: q.options,
+          max: q.max,
+          min: q.min,
+          branching: undefined,
+        }))
+      }];
 
-    const createRes = await fetch("http://localhost:5000/api/surveys", {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      credentials: "include",
-      body: JSON.stringify({
-        surveyTitle: template.title,
-        description: template.description,
-        status: "Draft",
-        pages: surveyPages,
-        primaryColor: "#6366F1",
-        themeColor: "#6366F1",
-        customizeBranding: false,
-      }),
-    });
-    
-    if (!createRes.ok) {
-      throw new Error(`HTTP ${createRes.status}: ${createRes.statusText}`);
-    }
-    
-    const data = await createRes.json();
-    const newSurveyId = data._id || data.survey?._id;
-    
-    if (newSurveyId) {
-      // ✅ Increment the template usage count
-      try {
-        await templateApi.incrementUsageCount(template._id);
-        console.log("Usage count incremented for template:", template.title);
-      } catch (err) {
-        console.error("Failed to increment usage count:", err);
-        // Don't block the user - survey was already created
+      const createRes = await fetch("http://localhost:5000/api/surveys", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          surveyTitle: template.title,
+          description: template.description,
+          status: "Draft",
+          pages: surveyPages,
+          primaryColor: themeColor,      // ← APPLY EXTRACTED COLOR HERE
+          themeColor: themeColor,         // ← APPLY EXTRACTED COLOR HERE
+          customizeBranding: true,        // ← Enable branding so color shows
+        }),
+      });
+      
+      if (!createRes.ok) {
+        throw new Error(`HTTP ${createRes.status}: ${createRes.statusText}`);
       }
       
-      navigate("/add-questions", { 
-        state: { 
-          surveyId: newSurveyId,
-          formData: {
-            surveyTitle: template.title,
-            description: template.description,
-            customizeBranding: false,
-            themeColor: "#6366F1",
-          }
-        } 
-      });
-    } else {
-      throw new Error("No survey ID returned");
+      const data = await createRes.json();
+      const newSurveyId = data._id || data.survey?._id;
+      
+      if (newSurveyId) {
+        // ✅ Increment the template usage count
+        try {
+          await templateApi.incrementUsageCount(template._id);
+          console.log("Usage count incremented for template:", template.title);
+        } catch (err) {
+          console.error("Failed to increment usage count:", err);
+          // Don't block the user - survey was already created
+        }
+        
+        navigate("/add-questions", { 
+          state: { 
+            surveyId: newSurveyId,
+            formData: {
+              surveyTitle: template.title,
+              description: template.description,
+              customizeBranding: true,
+              themeColor: themeColor,
+              primaryColor: themeColor,
+            }
+          } 
+        });
+      } else {
+        throw new Error("No survey ID returned");
+      }
+    } catch (err) {
+      console.error("Failed to create survey from template:", err);
+      alert("Failed to create survey. Please try again.");
+    } finally {
+      setIsCreating(false);
     }
-  } catch (err) {
-    console.error("Failed to create survey from template:", err);
-    alert("Failed to create survey. Please try again.");
-  } finally {
-    setIsCreating(false);
-  }
-};
+  };
+
   return (
     <div className="flex h-screen bg-[#F8FAFC] dark:bg-[#0F172A] overflow-hidden transition-colors duration-300">
-
       {/* Preview Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-
         {/* Top bar */}
         <div className="h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 gap-3 shrink-0">
           <button onClick={() => navigate("/templates")}
@@ -275,8 +342,8 @@ const handleUseTemplate = async () => {
         <div className="flex-1 overflow-y-auto flex flex-col items-center py-6 px-3 relative">
           <div className={`transition-all duration-300 ${deviceWidths[device]} ${isMobile ? 'overflow-y-auto' : ''}`}>
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col max-h-full">
-              {/* Colored header - fixed */}
-              <div className={`bg-gradient-to-br ${template.gradient} ${isMobile ? 'p-5' : 'p-8'} flex items-center gap-3 shrink-0`}>
+              {/* Colored header - now uses extracted theme color from gradient */}
+              <div className={`${isMobile ? 'p-5' : 'p-8'} flex items-center gap-3 shrink-0`} style={{ backgroundColor: themeColor }}>
                 <div className={`${isMobile ? 'w-10 h-10' : 'w-14 h-14'} bg-white/20 rounded-2xl flex items-center justify-center shrink-0`}>
                   <Icon size={isMobile ? 20 : 28} className="text-white" />
                 </div>
@@ -299,7 +366,7 @@ const handleUseTemplate = async () => {
                           key={idx}
                           question={q}
                           index={idx}
-                          primaryColor={primaryColor}
+                          primaryColor={themeColor}
                           deviceType={device}
                         />
                       ))
@@ -327,9 +394,8 @@ const handleUseTemplate = async () => {
       {/* Right Panel */}
       <div className="w-80 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col shrink-0 overflow-y-auto">
         <div className="p-6 flex-1">
-
-          {/* Template info */}
-          <div className={`h-28 bg-gradient-to-br ${template.gradient} rounded-2xl flex items-center justify-center mb-5`}>
+          {/* Template info - now shows actual theme color that will apply */}
+          <div className="h-28 rounded-2xl flex items-center justify-center mb-5" style={{ backgroundColor: themeColor }}>
             <Icon size={44} className="text-white drop-shadow" />
           </div>
 
@@ -342,16 +408,21 @@ const handleUseTemplate = async () => {
               <FileText size={13} />
               <span>{template.previewQuestions?.length || 0} questions · 1 page</span>
             </div>
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs mt-2">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColor }} />
+              <span>Theme color: {themeColor}</span>
+            </div>
             <p className="text-slate-400 dark:text-slate-500 text-xs mt-2">
               You can edit, add, or remove questions after creating.
             </p>
           </div>
 
-          {/* Use template button */}
+          {/* Use template button - now uses extracted theme color */}
           <button 
             onClick={handleUseTemplate} 
             disabled={isCreating}
-            className="w-full py-3 bg-white dark:bg-slate-700 border-2 border-indigo-500 text-indigo-600 dark:text-indigo-400 font-black rounded-2xl hover:bg-indigo-50 dark:hover:bg-slate-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mb-3"
+            className="w-full py-3 rounded-2xl font-black transition-all disabled:opacity-50 flex items-center justify-center gap-2 mb-3"
+            style={{ backgroundColor: themeColor, color: 'white' }}
           >
             {isCreating
               ? <><Loader2 size={16} className="animate-spin" /> Creating survey...</>
