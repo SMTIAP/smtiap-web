@@ -29,21 +29,32 @@ const QUESTION_TYPES = [
   { id: "date", label: "Date", icon: Calendar },
 ];
 
-// Gradient options - NOW HAS FUNCTIONAL PURPOSE (defines survey theme color)
-const gradientOptions = [
-  "from-orange-400 to-rose-500",
-  "from-pink-400 to-rose-500",
-  "from-blue-400 to-indigo-500",
-  "from-orange-400 to-amber-500",
-  "from-amber-400 to-orange-500",
-  "from-emerald-400 to-teal-500",
-  "from-indigo-400 to-violet-500",
-  "from-yellow-400 to-amber-500",
-  "from-blue-400 to-cyan-500",
-  "from-purple-400 to-fuchsia-500",
-  "from-rose-400 to-pink-500",
-  "from-teal-400 to-cyan-500",
+// Preset theme colors (for color swatches)
+const themeColorPresets = [
+  { name: "Orange", value: "#FB923C", gradient: "from-orange-400 to-rose-500" },
+  { name: "Pink", value: "#F472B6", gradient: "from-pink-400 to-rose-500" },
+  { name: "Blue", value: "#60A5FA", gradient: "from-blue-400 to-indigo-500" },
+  { name: "Amber", value: "#FBBF24", gradient: "from-orange-400 to-amber-500" },
+  { name: "Emerald", value: "#34D399", gradient: "from-emerald-400 to-teal-500" },
+  { name: "Indigo", value: "#818CF8", gradient: "from-indigo-400 to-violet-500" },
+  { name: "Yellow", value: "#FACC15", gradient: "from-yellow-400 to-amber-500" },
+  { name: "Cyan", value: "#22D3EE", gradient: "from-blue-400 to-cyan-500" },
+  { name: "Purple", value: "#C084FC", gradient: "from-purple-400 to-fuchsia-500" },
+  { name: "Rose", value: "#F43F5E", gradient: "from-rose-400 to-pink-500" },
+  { name: "Teal", value: "#2DD4BF", gradient: "from-teal-400 to-cyan-500" },
 ];
+
+// Get gradient class from color value
+const getGradientFromColor = (colorValue: string): string => {
+  const preset = themeColorPresets.find(p => p.value === colorValue);
+  return preset?.gradient || "from-indigo-400 to-violet-500";
+};
+
+// Get color value from gradient class
+const getColorFromGradient = (gradientClass: string): string => {
+  const preset = themeColorPresets.find(p => p.gradient === gradientClass);
+  return preset?.value || "#818CF8";
+};
 
 // Icon options
 const iconOptions = [
@@ -69,13 +80,14 @@ export default function SuperAdminTemplateEditor() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState("#818CF8"); // Default indigo
 
   // Form state
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     category: "",
-    gradient: "from-orange-400 to-rose-500",
+    gradient: "from-indigo-400 to-violet-500",
     icon: "Star",
   });
 
@@ -83,7 +95,7 @@ export default function SuperAdminTemplateEditor() {
     { type: "short_text", label: "" },
   ]);
 
-  // Fetch categories - NO DEFAULT AUTO-SET
+  // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -110,6 +122,7 @@ export default function SuperAdminTemplateEditor() {
             gradient: template.gradient,
             icon: template.icon,
           });
+          setSelectedColor(getColorFromGradient(template.gradient));
           setQuestions(template.previewQuestions);
         } catch (err) {
           console.error("Failed to fetch template:", err);
@@ -121,6 +134,14 @@ export default function SuperAdminTemplateEditor() {
       fetchTemplate();
     }
   }, [id, isEditing]);
+
+  const handleColorChange = (colorValue: string) => {
+    setSelectedColor(colorValue);
+    setFormData(prev => ({
+      ...prev,
+      gradient: getGradientFromColor(colorValue)
+    }));
+  };
 
   const addQuestion = () => {
     setQuestions([...questions, { type: "short_text", label: "" }]);
@@ -408,23 +429,52 @@ export default function SuperAdminTemplateEditor() {
                 </select>
               </div>
 
+              {/* Theme Color Picker - Replaces Gradient Dropdown */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Gradient <span className="text-indigo-500 text-xs ml-1">(determines survey theme color)</span>
+                  Theme Color
                 </label>
-                <select
-                  value={formData.gradient}
-                  onChange={(e) => setFormData({ ...formData, gradient: e.target.value })}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  {gradientOptions.map((g) => (
-                    <option key={g} value={g}>
-                      {g.replace("from-", "").replace("to-", " → ")}
-                    </option>
-                  ))}
-                </select>
-                <div className={`mt-2 h-8 rounded-lg bg-gradient-to-br ${formData.gradient}`} />
-                <p className="text-[10px] text-slate-400 mt-1">This color will be applied to surveys created from this template</p>
+                <div className="flex flex-col gap-3">
+                  {/* Color swatches grid */}
+                  <div className="flex flex-wrap gap-2">
+                    {themeColorPresets.map((preset) => (
+                      <button
+                        key={preset.value}
+                        onClick={() => handleColorChange(preset.value)}
+                        className={`w-8 h-8 rounded-full transition-all duration-200 ${
+                          selectedColor === preset.value
+                            ? "ring-2 ring-offset-2 ring-indigo-500 scale-110"
+                            : "hover:scale-105"
+                        }`}
+                        style={{ backgroundColor: preset.value }}
+                        title={preset.name}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* Color picker input for custom color */}
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={selectedColor}
+                      onChange={(e) => handleColorChange(e.target.value)}
+                      className="w-10 h-10 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 p-1"
+                    />
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                      {selectedColor}
+                    </span>
+                  </div>
+                  
+                  {/* Preview of how it will look */}
+                  <div className="mt-2 p-2 rounded-lg" style={{ backgroundColor: selectedColor }}>
+                    <p className="text-xs text-white text-center font-medium">
+                      Preview: This color will be applied to surveys
+                    </p>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    This color will be used as the primary theme for surveys created from this template
+                  </p>
+                </div>
               </div>
 
               <div>
