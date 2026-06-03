@@ -599,7 +599,7 @@ export default function TakeSurvey() {
               <button
                 onClick={handleCaptchaConfirm}
                 className="flex-1 px-4 py-3 text-white rounded-2xl text-sm font-bold hover:opacity-90 transition-all"
-                style={{ backgroundColor: primaryColor }}
+                style={{ backgroundColor: "#6366F1" }} // FIXED: Uses neutral system color, not survey primaryColor
               >
                 Submit ✓
               </button>
