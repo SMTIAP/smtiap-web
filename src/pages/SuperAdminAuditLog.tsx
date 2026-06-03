@@ -1,4 +1,4 @@
-// src/pages/SuperAdminAuditLog.tsx
+
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Download, Eraser, ArrowLeft, RefreshCw, Eye } from "lucide-react";
@@ -184,12 +184,12 @@ export default function SuperAdminAuditLog() {
           <div>
             <button
               onClick={() => navigate("/super-admin-dashboard")}
-              className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 mb-3 text-sm"
+              className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white mb-3 text-sm transition-colors"
             >
               <ArrowLeft size={16} />
               Back to Dashboard
             </button>
-            <h1 className="text-3xl font-black tracking-tight text-[#0D141C] dark:text-white flex items-center gap-3">
+            <h1 className="text-3xl font-black tracking-tight text-slate-800 dark:text-white flex items-center gap-3">
               <Eye size={28} className="text-indigo-500" />
               Super Admin Audit Log
             </h1>
@@ -203,35 +203,35 @@ export default function SuperAdminAuditLog() {
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                 From Date
               </label>
               <input
                 type="date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
-                className="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                 To Date
               </label>
               <input
                 type="date"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
-                className="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                 Action
               </label>
               <select
                 value={actionFilter}
                 onChange={(e) => setActionFilter(e.target.value)}
-                className="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="">All Actions</option>
                 {actions.map((action) => (
@@ -240,13 +240,13 @@ export default function SuperAdminAuditLog() {
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                 Entity
               </label>
               <select
                 value={entityFilter}
                 onChange={(e) => setEntityFilter(e.target.value)}
-                className="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="">All Entities</option>
                 {entities.map((entity) => (
@@ -255,13 +255,13 @@ export default function SuperAdminAuditLog() {
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                 Tenant
               </label>
               <select
                 value={tenantFilter}
                 onChange={(e) => setTenantFilter(e.target.value)}
-                className="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="">All Tenants</option>
                 <option value="__system__">Platform-wide (System)</option>
@@ -275,7 +275,7 @@ export default function SuperAdminAuditLog() {
           <div className="flex justify-end gap-3 mt-6">
             <button
               onClick={handleClear}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
             >
               <Eraser size={16} />
               Clear Filters
@@ -315,18 +315,18 @@ export default function SuperAdminAuditLog() {
               <table className="min-w-full">
                 <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Timestamp</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">User</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Tenant</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Action</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Entity</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Description</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Timestamp</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">User</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Tenant</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Action</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Entity</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Description</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {logs.map((log) => (
-                    <tr key={log._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    <tr key={log._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                      <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200 whitespace-nowrap">
                         {new Date(log.createdAt).toLocaleString()}
                       </td>
                       <td className="px-4 py-3">
@@ -334,11 +334,13 @@ export default function SuperAdminAuditLog() {
                           <p className="text-sm font-medium text-slate-800 dark:text-white">
                             {log.user_id?.username || "System"}
                           </p>
-                          <p className="text-xs text-slate-400">{log.user_id?.email || "system@kernel"}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {log.user_id?.email || "system@kernel"}
+                          </p>
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
                           {log.tenant_id?.name || "🌍 Platform-wide"}
                         </span>
                       </td>
@@ -347,8 +349,8 @@ export default function SuperAdminAuditLog() {
                           {formatAction(log.action)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{log.entity}</td>
-                      <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 max-w-md break-words">{log.description}</td>
+                      <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">{log.entity}</td>
+                      <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300 max-w-md break-words">{log.description}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -362,24 +364,24 @@ export default function SuperAdminAuditLog() {
               <button
                 onClick={() => fetchLogs(pagination.page - 1)}
                 disabled={pagination.page === 1}
-                className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-40 transition-colors"
+                className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white disabled:opacity-40 transition-colors"
               >
                 Previous
               </button>
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-slate-600 dark:text-slate-400">
                 Page {pagination.page} of {pagination.totalPages}
               </span>
               <button
                 onClick={() => fetchLogs(pagination.page + 1)}
                 disabled={pagination.page === pagination.totalPages}
-                className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-40 transition-colors"
+                className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white disabled:opacity-40 transition-colors"
               >
                 Next
               </button>
             </div>
           )}
 
-          <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-700 text-center text-xs text-slate-400">
+          <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-700 text-center text-xs text-slate-500 dark:text-slate-400">
             Total {pagination.totalCount} audit records found
           </div>
         </div>
