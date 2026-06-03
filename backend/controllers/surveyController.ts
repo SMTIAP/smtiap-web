@@ -408,6 +408,52 @@ export const updateSurvey = async (req: Request, res: Response) => {
         description: `Survey title changed from "${oldTitle}" to "${safeBody.surveyTitle}"`,
       });
     }
+
+    await AuditLog.create({
+      tenant_id: survey.tenantId ?? null,
+      user_id: reqUserId(req),
+      action: "update",
+      entity: "Survey",
+      entity_id: survey._id,
+      description: `Survey was Updated`,
+    });
+
+    if (updated?.status === "Draft") {
+      try {
+        const tenant = updated.tenantId
+          ? await Tenant.findById(updated.tenantId)
+          : null;
+
+        const orgName = tenant?.name ?? "System";
+        const userId = reqUserId(req);
+
+        if (userId) {
+          if (safeBody.surveyTitle && safeBody.surveyTitle !== oldTitle) {
+            await createAppNotification({
+              tenant_id: updated.tenantId ? String(updated.tenantId) : "",
+              user_id: userId,
+              type: "SURVEY_UPDATE", // or SURVEY_UPDATED if that already exists
+              channel: "in_app",
+              message: `Survey title has been changed from "${oldTitle}" to "${updated.surveyTitle}" in ${orgName}`,
+              surveyId: updated._id.toString(),
+              surveyName: updated.surveyTitle,
+            });
+          }
+          await createAppNotification({
+              tenant_id: updated.tenantId ? String(updated.tenantId) : "",
+              user_id: userId,
+              type: "SURVEY_UPDATE", // or SURVEY_UPDATED if that already exists
+              channel: "in_app",
+              message: `Survey "${updated.surveyTitle}" has been updated in ${orgName}`,
+              surveyId: updated._id.toString(),
+              surveyName: updated.surveyTitle,
+            });
+        }
+      } catch (err) {
+        console.error("Draft notification failed:", err);
+      }
+    }
+
     res.json({ message: "Survey updated", survey: updated });
   } catch (err) {
     res.status(500).json({ message: String(err) });
