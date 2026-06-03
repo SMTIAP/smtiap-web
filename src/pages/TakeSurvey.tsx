@@ -196,7 +196,7 @@ export default function TakeSurvey() {
 
   if (error || !surveyData)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0F172A]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
         <div className="text-center p-10 rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto" style={{ backgroundColor: backgroundColor || "#FFFFFF", borderColor: getTextColor(backgroundColor, 0.1) }}>
           <p className="text-2xl font-bold mb-2" style={{ color: getTextColor(backgroundColor) }}>
             Survey not found
@@ -215,7 +215,7 @@ export default function TakeSurvey() {
     
     if (now < openDate) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0F172A]">
+        <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
           <div className="text-center p-10 rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto" style={{ backgroundColor: backgroundColor || "#FFFFFF", borderColor: getTextColor(backgroundColor, 0.1) }}>
             <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-100">
               <Calendar size={28} className="text-amber-500" />
@@ -240,7 +240,7 @@ export default function TakeSurvey() {
     
     if (now > closeDate) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0F172A]">
+        <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
           <div className="text-center p-10 rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto" style={{ backgroundColor: backgroundColor || "#FFFFFF", borderColor: getTextColor(backgroundColor, 0.1) }}>
             <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-100">
               <svg width="28" height="28" fill="none" stroke="#F43F5E" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -260,7 +260,7 @@ export default function TakeSurvey() {
 
   if (surveyData.status === "Finished")
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0F172A]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
         <div className="text-center p-10 rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto" style={{ backgroundColor: backgroundColor || "#FFFFFF", borderColor: getTextColor(backgroundColor, 0.1) }}>
           <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-100">
             <svg
@@ -288,7 +288,7 @@ export default function TakeSurvey() {
   // Password gate — blocks access until correct password is entered
   if (surveyData.isPasswordProtected && !passwordVerified)
     return (
-      <div className="min-h-screen flex items-center justify-center px-6 bg-[#F8FAFC] dark:bg-[#0F172A]">
+      <div className="min-h-screen flex items-center justify-center px-6 bg-[#F8FAFC]">
         <div className="rounded-3xl shadow-xl border border-gray-100 p-8 w-full max-w-sm text-center" style={{ backgroundColor: backgroundColor || "#FFFFFF", borderColor: getTextColor(backgroundColor, 0.1) }}>
           <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-100">
             <svg
@@ -347,7 +347,7 @@ export default function TakeSurvey() {
 
   if (submitted)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0F172A]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
         <div className="text-center p-10 rounded-3xl shadow-sm border border-gray-200 max-w-md mx-auto" style={{ backgroundColor: backgroundColor || "#FFFFFF", borderColor: getTextColor(backgroundColor, 0.1) }}>
           <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-100">
             <svg
@@ -533,9 +533,7 @@ export default function TakeSurvey() {
     : null;
 
   return (
-    <div
-      className="min-h-screen py-12 px-6 bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300"
-    >
+    <div className="min-h-screen py-12 px-6 bg-[#F8FAFC]">
       {/* Math captcha modal shown before final form submission */}
       {showCaptcha && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
