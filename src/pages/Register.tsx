@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import PasswordInput from "../components/PasswordInput";
 import axios from "axios";
 import { GoogleIcon, GithubIcon, LinkedInIcon } from "./AuthPage";
+import { validatePassword } from "../utils/passwordValidation";
 
 export default function Register() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -16,7 +18,10 @@ export default function Register() {
 
   useEffect(() => {
     if (resendCountdown > 0) {
-      const timer = setTimeout(() => setResendCountdown((prev) => prev - 1), 1000);
+      const timer = setTimeout(
+        () => setResendCountdown((prev) => prev - 1),
+        1000,
+      );
       return () => clearTimeout(timer);
     }
   }, [resendCountdown]);
@@ -25,20 +30,43 @@ export default function Register() {
     if (resendCountdown > 0) return;
     try {
       setResendLoading(true);
-      const res = await axios.post("http://localhost:5000/api/users/resend-verification", {
-        email: registeredEmail,
-      });
+      const res = await axios.post(
+        "http://localhost:5000/api/users/resend-verification",
+        {
+          email: registeredEmail,
+        },
+      );
       setMessage(res.data.message || "Verification link resent successfully!");
       setResendCountdown(60);
     } catch (err: any) {
-      setMessage(err.response?.data?.message || "Failed to resend verification link.");
+      setMessage(
+        err.response?.data?.message || "Failed to resend verification link.",
+      );
     } finally {
       setResendLoading(false);
     }
   };
 
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setPassword(val);
+    if (val.length === 0) {
+      setPasswordError("");
+    } else {
+      const result = validatePassword(val);
+      setPasswordError(result.valid ? "" : result.message);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Client-side validation before submitting
+    const validation = validatePassword(password);
+    if (!validation.valid) {
+      setPasswordError(validation.message);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -55,7 +83,10 @@ export default function Register() {
       );
 
       setRegisteredEmail(email);
-      setMessage(res.data.message || "Registration successful! Please check your email to verify your account.");
+      setMessage(
+        res.data.message ||
+          "Registration successful! Please check your email to verify your account.",
+      );
       console.log(res.data);
     } catch (err: any) {
       setMessage(err.response?.data?.message || "Registration failed");
@@ -80,27 +111,45 @@ export default function Register() {
     return (
       <div className="w-full flex flex-col items-center text-center animate-[fadeIn_0.5s_ease-out]">
         <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center mb-5 border border-indigo-100 shadow-[0_4px_15px_rgba(123,110,224,0.15)]">
-          <svg className="w-8 h-8 text-[#7b6ee0]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          <svg
+            className="w-8 h-8 text-[#7b6ee0]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
           </svg>
         </div>
-        
+
         <h1 className="text-[24px] font-[900] text-[#1a1a2e] mb-[10px] tracking-[-0.5px]">
           Verify Your Email
         </h1>
-        
+
         <p className="text-[13px] text-[#6B7280] font-semibold leading-relaxed mb-6 max-w-[280px]">
-          We've sent a verification link to <span className="text-[#7b6ee0] font-bold">{registeredEmail}</span>. Please click the link to activate your account.
+          We've sent a verification link to{" "}
+          <span className="text-[#7b6ee0] font-bold">{registeredEmail}</span>.
+          Please click the link to activate your account.
         </p>
 
         <div className="w-full bg-[#f8fafc] border border-slate-100 rounded-2xl p-4 mb-5">
-          <p className="text-[11px] text-[#888] font-medium mb-3">Didn't receive the email?</p>
+          <p className="text-[11px] text-[#888] font-medium mb-3">
+            Didn't receive the email?
+          </p>
           <button
             onClick={handleResend}
             disabled={resendLoading || resendCountdown > 0}
             className="w-full py-2.5 bg-[#7b6ee0] hover:bg-[#5a45b8] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold text-xs tracking-wider rounded-xl transition-all duration-200"
           >
-            {resendLoading ? "Resending..." : resendCountdown > 0 ? `Resend in ${resendCountdown}s` : "Resend Verification Email"}
+            {resendLoading
+              ? "Resending..."
+              : resendCountdown > 0
+                ? `Resend in ${resendCountdown}s`
+                : "Resend Verification Email"}
           </button>
         </div>
 
@@ -167,12 +216,17 @@ export default function Register() {
         />
 
         <PasswordInput
-          className="w-full py-[11px] px-[16px] border-none rounded-[10px] bg-[#f0f1f7] font-nunito text-[14px] font-semibold text-[#333] outline-none mb-[12px] transition-all duration-200 placeholder:text-[#aaa] placeholder:font-medium focus:bg-[#ebebf8] focus:ring-[2.5px] focus:ring-[#7b6ee0]/35"
+          className={`w-full py-[11px] px-[16px] border-none rounded-[10px] bg-[#f0f1f7] font-nunito text-[14px] font-semibold text-[#333] outline-none transition-all duration-200 placeholder:text-[#aaa] placeholder:font-medium focus:bg-[#ebebf8] focus:ring-[2.5px] focus:ring-[#7b6ee0]/35 ${passwordError ? "mb-[2px]" : "mb-[12px]"}`}
           placeholder="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={handlePasswordChange}
           required
         />
+        {passwordError && (
+          <p className="text-[11px] text-red-500 font-semibold mb-[10px] ml-[4px]">
+            {passwordError}
+          </p>
+        )}
 
         <button
           type="submit"
