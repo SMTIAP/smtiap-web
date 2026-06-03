@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { BarChart3, ChevronLeft, StopCircle, X } from "lucide-react";
+import { BarChart3, ChevronLeft, StopCircle, X, Calendar } from "lucide-react";
 import AllResponsesTable from "../components/AllResponsesTable";
 import { useTenant } from "../contexts/TenantContext";
 import { toast } from "sonner";
@@ -64,6 +64,122 @@ const StopConfirmModal = ({
   </div>
 );
 
+// Close Date Modal - for editing closing date of running surveys (with timezone fix)
+const CloseDateModal = ({ 
+  survey, 
+  onClose, 
+  onUpdate 
+}: { 
+  survey: any; 
+  onClose: () => void; 
+  onUpdate: () => void;
+}) => {
+  // Function to convert UTC date from server to local datetime-local format
+  const formatDateForInput = (utcDateString: string | null) => {
+    if (!utcDateString) return "";
+    const date = new Date(utcDateString);
+    // Convert to local timezone and format as YYYY-MM-DDThh:mm
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const [closeDate, setCloseDate] = useState(
+    formatDateForInput(survey.scheduledClose)
+  );
+  const [loading, setLoading] = useState(false);
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const activeTenantId = localStorage.getItem("activeTenantId");
+      
+      // If closeDate is empty, remove the closing date
+      let scheduledCloseISO = null;
+      if (closeDate) {
+        // Convert local datetime to UTC ISO string
+        const localDate = new Date(closeDate);
+        scheduledCloseISO = localDate.toISOString();
+      }
+      
+      const res = await fetch(`http://localhost:5000/api/surveys/${survey._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(activeTenantId && activeTenantId !== "__system__" ? { "x-tenant-id": activeTenantId } : {}),
+        },
+        body: JSON.stringify({
+          scheduledClose: scheduledCloseISO,
+        }),
+      });
+      if (res.ok) {
+        toast.success(scheduledCloseISO ? "Closing date updated" : "Closing date removed");
+        onUpdate();
+        onClose();
+      } else {
+        toast.error("Failed to update closing date");
+      }
+    } catch (err) {
+      toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Format current close date for display in user's local time
+  const formatDisplayDate = (utcDateString: string) => {
+    if (!utcDateString) return null;
+    const date = new Date(utcDateString);
+    return date.toLocaleString();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-700">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">Set Closing Date</h3>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
+            <X size={18} />
+          </button>
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            Closing Date & Time
+          </label>
+          <input
+            type="datetime-local"
+            value={closeDate}
+            onChange={(e) => setCloseDate(e.target.value)}
+            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+          />
+          <p className="text-xs text-slate-400 mt-1">Leave empty for no closing date</p>
+        </div>
+        
+        {survey.scheduledClose && (
+          <div className="mb-4 text-sm text-amber-600 dark:text-amber-400">
+            Current close date: {formatDisplayDate(survey.scheduledClose)}
+          </div>
+        )}
+        
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700">
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={loading} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50">
+            {loading ? "Saving..." : "Save"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function SurveyResults() {
   const { surveyId } = useParams<{ surveyId: string }>();
   const navigate = useNavigate();
@@ -78,6 +194,7 @@ export default function SurveyResults() {
   const [activeResponseIndex, setActiveResponseIndex] = useState(0);
   const [stopping, setStopping] = useState(false);
   const [showStopModal, setShowStopModal] = useState(false);
+  const [showCloseDateModal, setShowCloseDateModal] = useState(false);
   const { activeTenant, isSystemContext } = useTenant();
   const effectiveRole =
     !isSystemContext && activeTenant ? activeTenant.role : null;
@@ -184,6 +301,25 @@ export default function SurveyResults() {
         />
       )}
 
+      {showCloseDateModal && (
+        <CloseDateModal
+          survey={survey}
+          onClose={() => setShowCloseDateModal(false)}
+          onUpdate={() => {
+            // Refresh survey data
+            const fetchSurvey = async () => {
+              const res = await fetch(`http://localhost:5000/api/surveys/${surveyId}`, {
+                headers: authHeaders(),
+                credentials: "include",
+              });
+              const data = await res.json();
+              setSurvey(data);
+            };
+            fetchSurvey();
+          }}
+        />
+      )}
+
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors duration-300">
           <div
@@ -199,23 +335,44 @@ export default function SurveyResults() {
                 <ChevronLeft size={14} /> Back to surveys
               </button>
 
-              {/* Stop button only visible when survey is running and user can modify */}
-              {isRunning && canModify && (
-                <button
-                  onClick={() => setShowStopModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-xl text-xs font-bold hover:bg-red-100 dark:hover:bg-red-900/50 transition-all"
-                >
-                  <StopCircle size={14} />
-                  Stop Survey
-                </button>
-              )}
+              <div className="flex gap-2">
+                {/* Edit/Set Closing Date button - for Running surveys */}
+                {isRunning && canModify && (
+                  <button
+                    onClick={() => setShowCloseDateModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all"
+                  >
+                    <Calendar size={14} />
+                    {survey.scheduledClose ? "Change Close Date" : "Set Close Date"}
+                  </button>
+                )}
 
-              {!isRunning && (
-                <span className="px-4 py-2 bg-rose-50 dark:bg-rose-900/30 text-rose-500 dark:text-rose-400 border border-rose-100 dark:border-rose-800 rounded-xl text-xs font-bold">
-                  ✓ Finished
-                </span>
-              )}
+                {/* Stop button - for Running surveys */}
+                {isRunning && canModify && (
+                  <button
+                    onClick={() => setShowStopModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-xl text-xs font-bold hover:bg-red-100 dark:hover:bg-red-900/50 transition-all"
+                  >
+                    <StopCircle size={14} />
+                    Stop Survey
+                  </button>
+                )}
+
+                {!isRunning && (
+                  <span className="px-4 py-2 bg-rose-50 dark:bg-rose-900/30 text-rose-500 dark:text-rose-400 border border-rose-100 dark:border-rose-800 rounded-xl text-xs font-bold">
+                    ✓ Finished
+                  </span>
+                )}
+              </div>
             </div>
+
+            {/* Show current closing date info for running surveys */}
+            {isRunning && survey.scheduledClose && (
+              <div className="mt-3 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <Calendar size={12} />
+                This survey will close on: {new Date(survey.scheduledClose).toLocaleString()}
+              </div>
+            )}
 
             <h1 className="text-2xl font-black text-slate-900 dark:text-white mt-4">
               {survey.surveyTitle || "Untitled Survey"}
