@@ -805,19 +805,18 @@ export default function CreatedSurveys() {
                       <span>Active Now</span>
                     </div>
                   )}
-                  {/* ✅ ADDED: Show closing date for running surveys */}
+                  {/* ✅ Show closing date for running surveys with time */}
                   {isRunning && survey.scheduledClose && (
                     <div className="flex items-center gap-1 text-amber-600 text-[10px] font-bold mt-1">
                       <Calendar size={10} />
-                      <span>Closes: {new Date(survey.scheduledClose).toLocaleDateString()}</span>
+                      <span>Closes: {new Date(survey.scheduledClose).toLocaleString()}</span>
                     </div>
                   )}
+                  {/* ✅ Show scheduled open date with time */}
                   {isScheduled && survey.scheduledOpen && (
                     <div className="flex items-center gap-1 text-purple-600 text-[10px] font-bold">
                       <Calendar size={10} />
-                      <span>
-                        {new Date(survey.scheduledOpen).toLocaleDateString()}
-                      </span>
+                      <span>Opens: {new Date(survey.scheduledOpen).toLocaleString()}</span>
                     </div>
                   )}
                 </div>

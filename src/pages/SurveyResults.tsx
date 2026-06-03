@@ -64,7 +64,7 @@ const StopConfirmModal = ({
   </div>
 );
 
-// Close Date Modal - for editing closing date of running surveys (with timezone fix)
+// Close Date Modal - for editing closing date of running surveys
 const CloseDateModal = ({ 
   survey, 
   onClose, 
@@ -78,12 +78,22 @@ const CloseDateModal = ({
   const formatDateForInput = (utcDateString: string | null) => {
     if (!utcDateString) return "";
     const date = new Date(utcDateString);
-    // Convert to local timezone and format as YYYY-MM-DDThh:mm
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  // Get current datetime for min attribute (prevents past dates)
+  const getCurrentDateTime = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
@@ -98,12 +108,16 @@ const CloseDateModal = ({
       const token = localStorage.getItem("token");
       const activeTenantId = localStorage.getItem("activeTenantId");
       
-      // If closeDate is empty, remove the closing date
       let scheduledCloseISO = null;
       if (closeDate) {
-        // Convert local datetime to UTC ISO string
-        const localDate = new Date(closeDate);
-        scheduledCloseISO = localDate.toISOString();
+        // Check if selected date is in the past
+        const selectedDate = new Date(closeDate);
+        if (selectedDate < new Date()) {
+          toast.error("Close date cannot be in the past");
+          setLoading(false);
+          return;
+        }
+        scheduledCloseISO = selectedDate.toISOString();
       }
       
       const res = await fetch(`http://localhost:5000/api/surveys/${survey._id}`, {
@@ -131,7 +145,6 @@ const CloseDateModal = ({
     }
   };
 
-  // Format current close date for display in user's local time
   const formatDisplayDate = (utcDateString: string) => {
     if (!utcDateString) return null;
     const date = new Date(utcDateString);
@@ -155,6 +168,7 @@ const CloseDateModal = ({
           <input
             type="datetime-local"
             value={closeDate}
+            min={getCurrentDateTime()}
             onChange={(e) => setCloseDate(e.target.value)}
             className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
           />
@@ -183,37 +197,27 @@ const CloseDateModal = ({
 export default function SurveyResults() {
   const { surveyId } = useParams<{ surveyId: string }>();
   const navigate = useNavigate();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [survey, setSurvey] = useState<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [responses, setResponses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"summary" | "individual" | "all">(
-    "summary",
-  );
+  const [activeTab, setActiveTab] = useState<"summary" | "individual" | "all">("summary");
   const [activeResponseIndex, setActiveResponseIndex] = useState(0);
   const [stopping, setStopping] = useState(false);
   const [showStopModal, setShowStopModal] = useState(false);
   const [showCloseDateModal, setShowCloseDateModal] = useState(false);
   const { activeTenant, isSystemContext } = useTenant();
-  const effectiveRole =
-    !isSystemContext && activeTenant ? activeTenant.role : null;
-  const canModify = effectiveRole
-    ? ["super_admin", "admin", "creator"].includes(effectiveRole)
-    : true;
+  const effectiveRole = !isSystemContext && activeTenant ? activeTenant.role : null;
+  const canModify = effectiveRole ? ["super_admin", "admin", "creator"].includes(effectiveRole) : true;
 
   const token = localStorage.getItem("token");
   const authHeaders = (): Record<string, string> => ({
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(() => {
       const id = localStorage.getItem("activeTenantId");
-      return id && id !== "__system__"
-        ? { "x-tenant-id": id }
-        : ({} as Record<string, string>);
+      return id && id !== "__system__" ? { "x-tenant-id": id } : {};
     })(),
   });
 
-  // Fetches survey structure and all submitted responses in parallel
   useEffect(() => {
     const fetchAll = async () => {
       try {
@@ -235,10 +239,8 @@ export default function SurveyResults() {
       }
     };
     if (surveyId) fetchAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [surveyId]);
 
-  // Changes survey status to Finished, preventing new response submissions
   const handleStopSurvey = async () => {
     setStopping(true);
     try {
@@ -249,14 +251,11 @@ export default function SurveyResults() {
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...(activeTenantId && activeTenantId !== "__system__"
-            ? { "x-tenant-id": activeTenantId }
-            : {}),
+          ...(activeTenantId && activeTenantId !== "__system__" ? { "x-tenant-id": activeTenantId } : {}),
         },
         credentials: "include",
         body: JSON.stringify({ status: "Finished" }),
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setSurvey((prev: any) => ({ ...prev, status: "Finished" }));
       setShowStopModal(false);
       toast.success("Survey Stopped Successfully");
@@ -285,9 +284,7 @@ export default function SurveyResults() {
     );
 
   const primaryColor = survey.primaryColor || survey.themeColor || "#6366F1";
-  const allQuestions: Question[] =
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    survey.pages?.flatMap((p: any) => p.questions) || [];
+  const allQuestions: Question[] = survey.pages?.flatMap((p: any) => p.questions) || [];
   const totalResponses = responses.length;
   const isRunning = survey.status === "Running";
 
@@ -306,7 +303,6 @@ export default function SurveyResults() {
           survey={survey}
           onClose={() => setShowCloseDateModal(false)}
           onUpdate={() => {
-            // Refresh survey data
             const fetchSurvey = async () => {
               const res = await fetch(`http://localhost:5000/api/surveys/${surveyId}`, {
                 headers: authHeaders(),
@@ -321,37 +317,32 @@ export default function SurveyResults() {
       )}
 
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors duration-300">
-          <div
-            className="h-2 w-full"
-            style={{ backgroundColor: primaryColor }}
-          />
+        <div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+          <div className="h-2 w-full" style={{ backgroundColor: primaryColor }} />
           <div className="p-8">
             <div className="flex justify-between items-start">
               <button
                 onClick={() => navigate("/created-surveys")}
-                className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-all"
+                className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
               >
                 <ChevronLeft size={14} /> Back to surveys
               </button>
 
               <div className="flex gap-2">
-                {/* Edit/Set Closing Date button - for Running surveys */}
                 {isRunning && canModify && (
                   <button
                     onClick={() => setShowCloseDateModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all"
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
                   >
                     <Calendar size={14} />
                     {survey.scheduledClose ? "Change Close Date" : "Set Close Date"}
                   </button>
                 )}
 
-                {/* Stop button - for Running surveys */}
                 {isRunning && canModify && (
                   <button
                     onClick={() => setShowStopModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-xl text-xs font-bold hover:bg-red-100 dark:hover:bg-red-900/50 transition-all"
+                    className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-xl text-xs font-bold hover:bg-red-100 dark:hover:bg-red-900/50"
                   >
                     <StopCircle size={14} />
                     Stop Survey
@@ -366,7 +357,6 @@ export default function SurveyResults() {
               </div>
             </div>
 
-            {/* Show current closing date info for running surveys */}
             {isRunning && survey.scheduledClose && (
               <div className="mt-3 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
                 <Calendar size={12} />
@@ -378,12 +368,10 @@ export default function SurveyResults() {
               {survey.surveyTitle || "Untitled Survey"}
             </h1>
             <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">
-              {totalResponses} response{totalResponses !== 1 ? "s" : ""}{" "}
-              collected
+              {totalResponses} response{totalResponses !== 1 ? "s" : ""} collected
             </p>
 
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-              {/* Tab switcher between Summary, Individual and All responses views */}
               <div className="flex gap-2 bg-slate-100 dark:bg-slate-700 p-1 rounded-2xl w-fit">
                 {(["summary", "individual", "all"] as const).map((tab) => (
                   <button
@@ -395,11 +383,7 @@ export default function SurveyResults() {
                         : "text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                     }`}
                   >
-                    {tab === "summary"
-                      ? "📊 Summary"
-                      : tab === "individual"
-                        ? "👤 Individual"
-                        : "🗂 All"}
+                    {tab === "summary" ? "📊 Summary" : tab === "individual" ? "👤 Individual" : "🗂 All"}
                   </button>
                 ))}
               </div>
@@ -407,7 +391,7 @@ export default function SurveyResults() {
               {!isRunning && (
                 <button
                   onClick={() => navigate(`/analytics?surveyId=${surveyId}`)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#2B8CED] hover:bg-[#1A76D2] shadow-sm transition-all"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#2B8CED] hover:bg-[#1A76D2] shadow-sm"
                 >
                   <BarChart3 size={14} />
                   View Analytics
@@ -418,241 +402,143 @@ export default function SurveyResults() {
         </div>
 
         {totalResponses === 0 && (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-16 text-center transition-colors duration-300">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-16 text-center">
             <p className="text-4xl mb-4">📭</p>
             <p className="text-slate-700 dark:text-slate-300 font-bold text-lg">No responses yet</p>
-            <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">
-              Share your survey link to start collecting answers.
-            </p>
+            <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">Share your survey link to start collecting answers.</p>
           </div>
         )}
 
-        {/* Summary tab — shows aggregated charts and counts per question */}
-        {activeTab === "summary" &&
-          totalResponses > 0 &&
-          allQuestions.map((q) => {
-            const answers = responses
-              .map((r) => r.responses?.[q._id])
-              .filter(Boolean);
-            return (
-              <div
-                key={q._id}
-                className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 transition-colors duration-300"
-              >
-                <p className="font-bold text-slate-800 dark:text-white text-base mb-1">
-                  {q.label}
-                </p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">
-                  {answers.length} response{answers.length !== 1 ? "s" : ""}
-                </p>
+        {activeTab === "summary" && totalResponses > 0 && allQuestions.map((q) => {
+          const answers = responses.map((r) => r.responses?.[q._id]).filter(Boolean);
+          return (
+            <div key={q._id} className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6">
+              <p className="font-bold text-slate-800 dark:text-white text-base mb-1">{q.label}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">{answers.length} response{answers.length !== 1 ? "s" : ""}</p>
 
-                {q.type === "multiple_choice" && q.options && (
-                  <div className="space-y-3">
-                    {q.options.map((opt) => {
-                      const count = answers.filter((a) => a === opt).length;
-                      const pct = answers.length
-                        ? Math.round((count / answers.length) * 100)
-                        : 0;
+              {q.type === "multiple_choice" && q.options && (
+                <div className="space-y-3">
+                  {q.options.map((opt) => {
+                    const count = answers.filter((a) => a === opt).length;
+                    const pct = answers.length ? Math.round((count / answers.length) * 100) : 0;
+                    return (
+                      <div key={opt}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-slate-700 dark:text-slate-300 font-medium">{opt}</span>
+                          <span className="text-slate-400 dark:text-slate-500 text-xs">{count} ({pct}%)</span>
+                        </div>
+                        <div className="h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: primaryColor }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {q.type === "checkboxes" && q.options && (
+                <div className="space-y-3">
+                  {q.options.map((opt) => {
+                    const count = answers.filter((a) => {
+                      if (Array.isArray(a)) return a.includes(opt);
+                      if (typeof a === "string") return a.split(",").map((s) => s.trim()).includes(opt);
+                      return false;
+                    }).length;
+                    const pct = answers.length ? Math.round((count / answers.length) * 100) : 0;
+                    return (
+                      <div key={opt}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-slate-700 dark:text-slate-300 font-medium">{opt}</span>
+                          <span className="text-slate-400 dark:text-slate-500 text-xs">{count} ({pct}%)</span>
+                        </div>
+                        <div className="h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: primaryColor }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {q.type === "rating" && (
+                <div>
+                  <p className="text-4xl font-black mb-1" style={{ color: primaryColor }}>
+                    {(answers.reduce((s, a) => s + Number(a), 0) / answers.length).toFixed(1)}
+                    <span className="text-base text-slate-400 dark:text-slate-500 font-normal ml-2"> / {q.max || 5} avg</span>
+                  </p>
+                  <div className="flex gap-2 mt-3">
+                    {Array.from({ length: q.max || 5 }, (_, i) => {
+                      const count = answers.filter((a) => Number(a) === i + 1).length;
+                      const pct = answers.length ? Math.round((count / answers.length) * 100) : 0;
                       return (
-                        <div key={opt}>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-slate-700 dark:text-slate-300 font-medium">
-                              {opt}
-                            </span>
-                            <span className="text-slate-400 dark:text-slate-500 text-xs">
-                              {count} ({pct}%)
-                            </span>
+                        <div key={i} className="flex flex-col items-center gap-1 flex-1">
+                          <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden h-16 flex flex-col-reverse">
+                            <div className="w-full rounded-full transition-all duration-500" style={{ height: `${pct}%`, backgroundColor: primaryColor, opacity: 0.8 }} />
                           </div>
-                          <div className="h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-500"
-                              style={{
-                                width: `${pct}%`,
-                                backgroundColor: primaryColor,
-                              }}
-                            />
-                          </div>
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{i + 1}</span>
+                          <span className="text-xs text-slate-400 dark:text-slate-500">{count}</span>
                         </div>
                       );
                     })}
                   </div>
-                )}
+                </div>
+              )}
 
-                {q.type === "checkboxes" && q.options && (
-                  <div className="space-y-3">
-                    {q.options.map((opt) => {
-                      const count = answers.filter((a) => {
-                        if (Array.isArray(a)) return a.includes(opt);
-                        if (typeof a === "string")
-                          return a
-                            .split(",")
-                            .map((s) => s.trim())
-                            .includes(opt);
-                        return false;
-                      }).length;
-                      const pct = answers.length
-                        ? Math.round((count / answers.length) * 100)
-                        : 0;
-                      return (
-                        <div key={opt}>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-slate-700 dark:text-slate-300 font-medium">
-                              {opt}
-                            </span>
-                            <span className="text-slate-400 dark:text-slate-500 text-xs">
-                              {count} ({pct}%)
-                            </span>
-                          </div>
-                          <div className="h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-500"
-                              style={{
-                                width: `${pct}%`,
-                                backgroundColor: primaryColor,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+              {(q.type === "short_text" || q.type === "long_text" || q.type === "number" || q.type === "date") && (
+                <ul className="space-y-2">
+                  {answers.length === 0 ? (
+                    <p className="text-slate-400 dark:text-slate-500 text-sm italic">No answers yet</p>
+                  ) : (
+                    answers.map((a, i) => (
+                      <li key={i} className="text-sm text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 rounded-xl px-4 py-3 border border-slate-100 dark:border-slate-700">{a}</li>
+                    ))
+                  )}
+                </ul>
+              )}
+            </div>
+          );
+        })}
 
-                {q.type === "rating" && (
-                  <div>
-                    <p
-                      className="text-4xl font-black mb-1"
-                      style={{ color: primaryColor }}
-                    >
-                      {(
-                        answers.reduce((s, a) => s + Number(a), 0) /
-                        answers.length
-                      ).toFixed(1)}
-                      <span className="text-base text-slate-400 dark:text-slate-500 font-normal ml-2">
-                        / {q.max || 5} avg
-                      </span>
-                    </p>
-                    <div className="flex gap-2 mt-3">
-                      {Array.from({ length: q.max || 5 }, (_, i) => {
-                        const count = answers.filter(
-                          (a) => Number(a) === i + 1,
-                        ).length;
-                        const pct = answers.length
-                          ? Math.round((count / answers.length) * 100)
-                          : 0;
-                        return (
-                          <div
-                            key={i}
-                            className="flex flex-col items-center gap-1 flex-1"
-                          >
-                            <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden h-16 flex flex-col-reverse">
-                              <div
-                                className="w-full rounded-full transition-all duration-500"
-                                style={{
-                                  height: `${pct}%`,
-                                  backgroundColor: primaryColor,
-                                  opacity: 0.8,
-                                }}
-                              />
-                            </div>
-                            <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">
-                              {i + 1}
-                            </span>
-                            <span className="text-xs text-slate-400 dark:text-slate-500">
-                              {count}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {(q.type === "short_text" ||
-                  q.type === "long_text" ||
-                  q.type === "number" ||
-                  q.type === "date") && (
-                  <ul className="space-y-2">
-                    {answers.length === 0 ? (
-                      <p className="text-slate-400 dark:text-slate-500 text-sm italic">
-                        No answers yet
-                      </p>
-                    ) : (
-                      answers.map((a, i) => (
-                        <li
-                          key={i}
-                          className="text-sm text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 rounded-xl px-4 py-3 border border-slate-100 dark:border-slate-700"
-                        >
-                          {a}
-                        </li>
-                      ))
-                    )}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
-
-        {/* All tab — renders full response table component */}
         {activeTab === "all" && totalResponses > 0 && (
-          <AllResponsesTable
-            questions={allQuestions}
-            responses={responses}
-            primaryColor={primaryColor}
-          />
+          <AllResponsesTable questions={allQuestions} responses={responses} primaryColor={primaryColor} />
         )}
 
-        {/* Individual tab — browse responses one by one with prev/next navigation */}
         {activeTab === "individual" && totalResponses > 0 && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm px-6 py-4 transition-colors duration-300">
+            <div className="flex justify-between items-center bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm px-6 py-4">
               <button
                 disabled={activeResponseIndex === 0}
                 onClick={() => setActiveResponseIndex((i) => i - 1)}
-                className="px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 ← Prev
               </button>
-              <span className="text-sm font-bold text-slate-500 dark:text-slate-400">
-                Response {activeResponseIndex + 1} of {totalResponses}
-              </span>
+              <span className="text-sm font-bold text-slate-500 dark:text-slate-400">Response {activeResponseIndex + 1} of {totalResponses}</span>
               <button
                 disabled={activeResponseIndex === totalResponses - 1}
                 onClick={() => setActiveResponseIndex((i) => i + 1)}
-                className="px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 Next →
               </button>
             </div>
 
             <p className="text-xs text-slate-400 dark:text-slate-500 text-center">
-              Submitted:{" "}
-              {(() => {
-                const raw =
-                  responses[activeResponseIndex]?.submittedAt ??
-                  responses[activeResponseIndex]?.createdAt;
+              Submitted: {(() => {
+                const raw = responses[activeResponseIndex]?.submittedAt ?? responses[activeResponseIndex]?.createdAt;
                 const d = raw ? new Date(raw) : null;
-                return d && !Number.isNaN(d.getTime())
-                  ? d.toLocaleString()
-                  : "N/A";
+                return d && !Number.isNaN(d.getTime()) ? d.toLocaleString() : "N/A";
               })()}
             </p>
 
             {allQuestions.map((q) => {
               const answer = responses[activeResponseIndex].responses?.[q._id];
               return (
-                <div
-                  key={q._id}
-                  className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 transition-colors duration-300"
-                >
-                  <p className="font-bold text-slate-700 dark:text-slate-300 text-sm mb-2">
-                    {q.label}
-                  </p>
+                <div key={q._id} className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6">
+                  <p className="font-bold text-slate-700 dark:text-slate-300 text-sm mb-2">{q.label}</p>
                   {answer !== undefined && answer !== null && answer !== "" ? (
                     <p className="text-slate-800 dark:text-slate-200 text-base bg-slate-50 dark:bg-slate-900 rounded-xl px-4 py-3 border border-slate-100 dark:border-slate-700">
-                      {Array.isArray(answer)
-                        ? answer.join(", ")
-                        : String(answer)}
+                      {Array.isArray(answer) ? answer.join(", ") : String(answer)}
                     </p>
                   ) : (
                     <p className="text-slate-400 dark:text-slate-500 text-sm italic">No answer</p>
