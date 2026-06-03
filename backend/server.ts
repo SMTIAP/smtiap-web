@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import dotenv from "dotenv";
 
-//Load env FIRST (important for OAuth)
+//load env first (important for OAuth)
 dotenv.config({
   path: path.resolve(process.cwd(), "../.env"),
 });
@@ -34,10 +34,11 @@ import auditRoutes from "./routes/auditRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import superAdminRoutes from "./routes/superAdminRoutes.js";
-import templateRoutes from "./routes/templateRoutes";
+import templateRoutes from "./routes/templateRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import { createDefaultSuperAdmin } from "./utils/createDefaultSuperAdmin.js";
-import { startSurveyStatusJob } from "./jobs/updateSurveyStatus.js"; // ✅ ADD THIS
+import { startSurveyStatusJob } from "./jobs/updateSurveyStatus.js";
+
 
 const ensureCollections = async () => {
   await Promise.all([
@@ -81,7 +82,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(passport.initialize());
 
-app.use(payhereRoutes);
+app.use("/api", payhereRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/surveys", surveyRoutes);
 app.use("/api/role-management", roleManagementRoutes);
@@ -113,7 +114,7 @@ const startServer = async () => {
     await createDefaultSuperAdmin();
 
     startSurveyStatusJob();
-    console.log("✅ Survey status scheduler started");
+    console.log("Survey status scheduler started");
 
     app.listen(env.port, () => {
       console.log(`PayHere backend running at http://localhost:${env.port}`);
