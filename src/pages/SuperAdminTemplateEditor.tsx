@@ -14,6 +14,7 @@ import {
   Hash,
   Calendar,
   FileText,
+  Clock,
 } from "lucide-react";
 import { templateApi, type Template, type Category } from "../api/templateApi";
 import SuperAdminNavBar from "../components/SuperAdminNavBar";
@@ -42,6 +43,14 @@ const themeColorPresets = [
   { name: "Rose", value: "#F43F5E", gradient: "from-rose-400 to-pink-500" },
 ];
 
+// Estimated time options (replaces icon selector)
+const estimatedTimeOptions = [
+  { value: "quick", label: "Quick (~2-3 minutes)", icon: Clock },
+  { value: "medium", label: "Medium (~5-7 minutes)", icon: Clock },
+  { value: "detailed", label: "Detailed (~10-15 minutes)", icon: Clock },
+  { value: "comprehensive", label: "Comprehensive (~20+ minutes)", icon: Clock },
+];
+
 // Get gradient class from color value
 const getGradientFromColor = (colorValue: string): string => {
   const preset = themeColorPresets.find(p => p.value === colorValue);
@@ -53,12 +62,6 @@ const getColorFromGradient = (gradientClass: string): string => {
   const preset = themeColorPresets.find(p => p.gradient === gradientClass);
   return preset?.value || "#818CF8";
 };
-
-// Icon options
-const iconOptions = [
-  "Star", "Users", "Zap", "Utensils", "Coffee", "Heart",
-  "GraduationCap", "Building2", "Mic", "ShoppingBag"
-];
 
 interface PreviewQuestion {
   type: "short_text" | "long_text" | "multiple_choice" | "checkboxes" | "rating" | "number" | "date";
@@ -86,7 +89,7 @@ export default function SuperAdminTemplateEditor() {
     description: "",
     category: "",
     gradient: "from-indigo-400 to-violet-500",
-    icon: "Star",
+    estimatedTime: "quick", // Replaces icon
   });
 
   const [questions, setQuestions] = useState<PreviewQuestion[]>([
@@ -118,7 +121,7 @@ export default function SuperAdminTemplateEditor() {
             description: template.description,
             category: template.category,
             gradient: template.gradient,
-            icon: template.icon,
+            estimatedTime: template.estimatedTime || "quick",
           });
           setSelectedColor(getColorFromGradient(template.gradient));
           setQuestions(template.previewQuestions);
@@ -200,7 +203,7 @@ export default function SuperAdminTemplateEditor() {
         description: formData.description,
         category: formData.category,
         gradient: formData.gradient,
-        icon: formData.icon,
+        estimatedTime: formData.estimatedTime,
         previewQuestions: questions,
         usedCount: isEditing ? undefined : "0+",
       };
@@ -475,21 +478,25 @@ export default function SuperAdminTemplateEditor() {
                 </div>
               </div>
 
+              {/* Estimated Time - Replaces Icon */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Icon
+                  Estimated Time
                 </label>
                 <select
-                  value={formData.icon}
-                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                  value={formData.estimatedTime}
+                  onChange={(e) => setFormData({ ...formData, estimatedTime: e.target.value })}
                   className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
-                  {iconOptions.map((i) => (
-                    <option key={i} value={i}>
-                      {i}
+                  {estimatedTimeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
                     </option>
                   ))}
                 </select>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Helps users know how long the survey will take
+                </p>
               </div>
 
               <div>
