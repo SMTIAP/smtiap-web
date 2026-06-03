@@ -55,12 +55,12 @@ export const createTemplate = async (req: Request, res: Response) => {
       description,
       category,
       gradient,
-      icon,
+      estimatedTime,
       previewQuestions,
     } = req.body;
 
-    // Remove aiPrompt validation
-    if (!title || !description || !category || !gradient || !icon) {
+    // Validate required fields
+    if (!title || !description || !category || !gradient) {
       return res.status(400).json({
         success: false,
         message: "Missing required fields",
@@ -72,7 +72,7 @@ export const createTemplate = async (req: Request, res: Response) => {
       description,
       category,
       gradient,
-      icon,
+      estimatedTime: estimatedTime || "quick",
       previewQuestions: previewQuestions || [],
       createdBy: req.user?._id,
     });
