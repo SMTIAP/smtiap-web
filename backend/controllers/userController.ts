@@ -7,6 +7,7 @@ import sendToken from "../utils/sendToken.js";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { sendEmail } from "../services/emailService.js";
+import { notifyRegistered } from "../services/emailNotificationService.js";
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -311,6 +312,15 @@ export const verifyEmail = async (
     user.verificationToken = null;
     user.verificationTokenExpire = null;
     await user.save();
+
+    try {
+      await notifyRegistered({
+        email: user.email,
+        username: user.username,
+      });
+    } catch (err) {
+      console.error("Registration success email failed:", err);
+    }
 
     res.json({ message: "Email verified successfully! You can now log in." });
   } catch (error: any) {
