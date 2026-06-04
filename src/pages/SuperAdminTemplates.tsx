@@ -152,9 +152,17 @@ export default function SuperAdminTemplates() {
                   key={template._id}
                   className="group bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                 >
-                  <div className={`h-28 bg-gradient-to-br ${template.gradient} flex items-center justify-center relative`}>
-                    {/* Removed the Icon component - just show gradient */}
-                    <div className="absolute top-3 right-3 flex gap-1">
+                  <div className="h-28 relative overflow-hidden flex items-center justify-center bg-slate-100 dark:bg-slate-900">
+                    {template.coverImage ? (
+                      <img
+                        src={template.coverImage}
+                        alt={template.title}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className={`absolute inset-0 bg-gradient-to-br ${template.gradient}`} />
+                    )}
+                    <div className="absolute top-3 right-3 flex gap-1 z-10">
                       <button
                         onClick={() => navigate(`/super-admin/templates/${template._id}/edit`)}
                         className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-all"

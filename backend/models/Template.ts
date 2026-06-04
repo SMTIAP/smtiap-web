@@ -52,6 +52,10 @@ const templateSchema = new Schema(
       type: String, 
       required: true 
     },
+    coverImage: {
+      type: String,
+      default: null
+    },
     estimatedTime: { 
       type: String, 
       enum: ["quick", "medium", "detailed", "comprehensive"],

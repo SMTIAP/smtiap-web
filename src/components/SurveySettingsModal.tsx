@@ -5,6 +5,7 @@ interface SurveySettingsModalProps {
   surveyTitle: string;
   description: string;
   logo: string | null;
+  coverImage: string | null;
   websiteUrl: string;
   themeColor: string;
   backgroundColor: string;
@@ -13,6 +14,7 @@ interface SurveySettingsModalProps {
     surveyTitle: string;
     description: string;
     logo: string | null;
+    coverImage: string | null;
     websiteUrl: string;
     themeColor: string;
     backgroundColor: string;
@@ -45,6 +47,7 @@ export default function SurveySettingsModal({
   surveyTitle,
   description,
   logo,
+  coverImage,
   websiteUrl,
   themeColor,
   backgroundColor,
@@ -55,10 +58,22 @@ export default function SurveySettingsModal({
   const [title, setTitle] = useState(surveyTitle);
   const [desc, setDesc] = useState(description);
   const [logoSrc, setLogoSrc] = useState<string | null>(logo);
+  const [coverImageSrc, setCoverImageSrc] = useState<string | null>(coverImage);
   const [url, setUrl] = useState(websiteUrl);
   const [color, setColor] = useState(themeColor);
   const [bgColor, setBgColor] = useState(backgroundColor);
   const [branding, setBranding] = useState(customizeBranding);
+
+  const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCoverImageSrc(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -76,6 +91,7 @@ export default function SurveySettingsModal({
       surveyTitle: title.trim() || "Untitled Survey",
       description: desc,
       logo: logoSrc,
+      coverImage: coverImageSrc,
       websiteUrl: url,
       themeColor: color,
       backgroundColor: bgColor,
@@ -141,6 +157,39 @@ export default function SurveySettingsModal({
                   {logoSrc ? "Click to change" : "PNG, JPG up to 2MB"}
                 </span>
               </label>
+
+              {/* Cover Image */}
+              <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-lg p-3 bg-white dark:bg-slate-800 gap-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors aspect-video w-full overflow-hidden">
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleCoverImageUpload}
+                />
+                {coverImageSrc && coverImageSrc.startsWith("data:") ? (
+                  <img
+                    src={coverImageSrc}
+                    alt="Cover"
+                    className="w-full h-full object-cover rounded"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-gray-400 dark:text-slate-500">
+                    <Upload size={18} />
+                    <p className="text-xs font-medium">Upload Cover Image</p>
+                  </div>
+                )}
+                <span className="text-[10px] text-gray-500 dark:text-slate-400">
+                  {coverImageSrc ? "Click to change" : "Recommended 16:9"}
+                </span>
+              </label>
+              {coverImageSrc && (
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCoverImageSrc(null); }}
+                  className="text-[10px] text-red-500 hover:underline font-bold self-center block mx-auto -mt-2 mb-2"
+                >
+                  Remove Cover Image
+                </button>
+              )}
 
               {/* Website URL */}
               <div className="flex flex-col gap-1">

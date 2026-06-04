@@ -36,6 +36,7 @@ const surveySchema = new mongoose.Schema(
     description: { type: String, default: "" },
     websiteUrl: { type: String, default: "" },
     logo: { type: String, default: null },
+    coverImage: { type: String, default: null },
     themeColor: { type: String, default: "#6366F1" },
     primaryColor: { type: String, default: "#6366F1" },
     backgroundColor: { type: String, default: "#F8FAFC" },

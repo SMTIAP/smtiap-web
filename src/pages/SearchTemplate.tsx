@@ -363,13 +363,22 @@ export default function SearchTemplate() {
                   }
                   className="group cursor-pointer bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                 >
-                  {/* Clean gradient header - NO ICON, NO EMOJI */}
+                  {/* Cover Image or Gradient Header */}
                   <div
-                    className={`h-32 bg-gradient-to-br ${temp.gradient} relative overflow-hidden`}
+                    className="h-32 relative overflow-hidden flex items-center justify-center bg-slate-100 dark:bg-slate-900"
                   >
-                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {temp.coverImage ? (
+                      <img
+                        src={temp.coverImage}
+                        alt={temp.title}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className={`absolute inset-0 bg-gradient-to-br ${temp.gradient}`} />
+                    )}
+                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity z-10" />
                     {isGenerating && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-20">
                         <Loader2 size={28} className="text-white animate-spin" />
                       </div>
                     )}
