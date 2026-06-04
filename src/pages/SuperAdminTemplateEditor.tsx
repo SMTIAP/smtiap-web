@@ -30,14 +30,14 @@ const QUESTION_TYPES = [
   { id: "date", label: "Date", icon: Calendar },
 ];
 
-// Preset theme colors - 9 colors to fit in one row
+// Preset theme colors - Indigo moved to first position as default
 const themeColorPresets = [
+  { name: "Indigo", value: "#6366F1", gradient: "from-indigo-500 to-purple-600" },
   { name: "Orange", value: "#FB923C", gradient: "from-orange-400 to-rose-500" },
   { name: "Pink", value: "#F472B6", gradient: "from-pink-400 to-rose-500" },
   { name: "Blue", value: "#60A5FA", gradient: "from-blue-400 to-indigo-500" },
   { name: "Amber", value: "#FBBF24", gradient: "from-orange-400 to-amber-500" },
   { name: "Emerald", value: "#34D399", gradient: "from-emerald-400 to-teal-500" },
-  { name: "Indigo", value: "#818CF8", gradient: "from-indigo-400 to-violet-500" },
   { name: "Yellow", value: "#FACC15", gradient: "from-yellow-400 to-amber-500" },
   { name: "Purple", value: "#C084FC", gradient: "from-purple-400 to-fuchsia-500" },
   { name: "Rose", value: "#F43F5E", gradient: "from-rose-400 to-pink-500" },
@@ -54,13 +54,13 @@ const estimatedTimeOptions = [
 // Get gradient class from color value
 const getGradientFromColor = (colorValue: string): string => {
   const preset = themeColorPresets.find(p => p.value === colorValue);
-  return preset?.gradient || "from-indigo-400 to-violet-500";
+  return preset?.gradient || "from-indigo-500 to-purple-600";
 };
 
 // Get color value from gradient class
 const getColorFromGradient = (gradientClass: string): string => {
   const preset = themeColorPresets.find(p => p.gradient === gradientClass);
-  return preset?.value || "#818CF8";
+  return preset?.value || "#6366F1";
 };
 
 interface PreviewQuestion {
@@ -81,15 +81,15 @@ export default function SuperAdminTemplateEditor() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedColor, setSelectedColor] = useState("#818CF8"); // Default indigo
+  const [selectedColor, setSelectedColor] = useState("#6366F1"); // Default indigo
 
   // Form state
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     category: "",
-    gradient: "from-indigo-400 to-violet-500",
-    estimatedTime: "quick", // Replaces icon
+    gradient: "from-indigo-500 to-purple-600",
+    estimatedTime: "quick",
   });
 
   const [questions, setQuestions] = useState<PreviewQuestion[]>([
@@ -430,13 +430,12 @@ export default function SuperAdminTemplateEditor() {
                 </select>
               </div>
 
-              {/* Theme Color Picker - 9 colors in one row */}
+              {/* Theme Color Picker */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Theme Color
                 </label>
                 <div className="flex flex-col gap-3">
-                  {/* Color swatches grid - one row with 9 colors */}
                   <div className="flex flex-wrap gap-2">
                     {themeColorPresets.map((preset) => (
                       <button
@@ -453,7 +452,6 @@ export default function SuperAdminTemplateEditor() {
                     ))}
                   </div>
                   
-                  {/* Color picker input for custom color */}
                   <div className="flex items-center gap-3">
                     <input
                       type="color"
@@ -466,7 +464,6 @@ export default function SuperAdminTemplateEditor() {
                     </span>
                   </div>
                   
-                  {/* Preview of how it will look */}
                   <div className="mt-2 p-2 rounded-lg" style={{ backgroundColor: selectedColor }}>
                     <p className="text-xs text-white text-center font-medium">
                       Preview: This color will be applied to surveys
@@ -478,7 +475,7 @@ export default function SuperAdminTemplateEditor() {
                 </div>
               </div>
 
-              {/* Estimated Time - Replaces Icon */}
+              {/* Estimated Time */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Estimated Time
@@ -578,7 +575,6 @@ export default function SuperAdminTemplateEditor() {
                   </div>
                 </div>
 
-                {/* Render type-specific fields */}
                 {renderQuestionTypeFields(question, qIdx)}
               </div>
             ))}
