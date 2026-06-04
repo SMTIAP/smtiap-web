@@ -224,6 +224,7 @@ export default function ReviewAndPublish() {
   const backgroundColor = location.state?.backgroundColor || "#F8FAFC";
   const surveyId = location.state?.surveyId;
   const logo = location.state?.logo || null;
+  const coverImage = location.state?.coverImage || null;
   const websiteUrl = location.state?.websiteUrl || "";
   const customizeBranding = location.state?.customizeBranding || false;
 
@@ -240,7 +241,7 @@ export default function ReviewAndPublish() {
   const handleFinalize = async (status: "Running" | "Draft" | "Scheduled") => {
     try {
       const payload = {
-        surveyTitle, description, logo, websiteUrl, customizeBranding,
+        surveyTitle, description, logo, coverImage, websiteUrl, customizeBranding,
         primaryColor, themeColor: primaryColor, backgroundColor,
         pages, status,
         scheduledOpen: scheduledOpen || null,
@@ -309,7 +310,7 @@ export default function ReviewAndPublish() {
           <button
             onClick={() => {
               if (surveyId) {
-                navigate("/add-questions", { state: { surveyId, formData: { surveyTitle, description, logo, websiteUrl, customizeBranding, themeColor: primaryColor, backgroundColor } } });
+                navigate("/add-questions", { state: { surveyId, formData: { surveyTitle, description, logo, coverImage, websiteUrl, customizeBranding, themeColor: primaryColor, backgroundColor } } });
               } else { navigate(-1); }
             }}
             className="flex items-center gap-2 text-gray-500 dark:text-slate-400 text-sm font-medium hover:text-gray-800 dark:hover:text-white transition-colors"

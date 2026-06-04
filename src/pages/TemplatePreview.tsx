@@ -269,6 +269,7 @@ export default function TemplatePreview() {
           primaryColor: themeColor,
           themeColor: themeColor,
           customizeBranding: true,
+          coverImage: template.coverImage || null,
         }),
       });
       
@@ -296,6 +297,7 @@ export default function TemplatePreview() {
               customizeBranding: true,
               themeColor: themeColor,
               primaryColor: themeColor,
+              coverImage: template.coverImage || null,
             }
           } 
         });
@@ -329,11 +331,26 @@ export default function TemplatePreview() {
         <div className="flex-1 overflow-y-auto flex flex-col items-center py-6 px-3 relative">
           <div className={`transition-all duration-300 ${deviceWidths[device]} ${isMobile ? 'overflow-y-auto' : ''}`}>
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col max-h-full">
-              {/* Colored header - NO ICON */}
-              <div className={`${isMobile ? 'p-5' : 'p-8'} shrink-0`} style={{ backgroundColor: themeColor }}>
-                <div className="flex-1 min-w-0">
+              {/* Cover Image / Gradient Banner */}
+              <div className={`relative ${isMobile ? 'h-32' : 'h-44'} w-full overflow-hidden shrink-0`}>
+                {template.coverImage ? (
+                  <img
+                    src={template.coverImage}
+                    alt="Cover banner"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div 
+                    className="w-full h-full opacity-90"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColor} 0%, #4f46e5 100%)`
+                    }}
+                  />
+                )}
+                {/* Overlay text */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-5 flex flex-col justify-end">
                   <h2 className={`text-white font-black ${isMobile ? 'text-base' : 'text-xl'} leading-tight break-words`}>{template.title}</h2>
-                  <p className={`text-white/70 ${isMobile ? 'text-[10px]' : 'text-sm'} mt-0.5`}>{template.category}</p>
+                  <p className={`text-white/70 ${isMobile ? 'text-[10px]' : 'text-xs'} mt-0.5`}>{template.category}</p>
                 </div>
               </div>
 

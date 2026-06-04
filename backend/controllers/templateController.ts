@@ -55,6 +55,7 @@ export const createTemplate = async (req: Request, res: Response) => {
       description,
       category,
       gradient,
+      coverImage,
       estimatedTime,
       previewQuestions,
     } = req.body;
@@ -72,6 +73,7 @@ export const createTemplate = async (req: Request, res: Response) => {
       description,
       category,
       gradient,
+      coverImage,
       estimatedTime: estimatedTime || "quick",
       previewQuestions: previewQuestions || [],
       createdBy: req.user?._id,

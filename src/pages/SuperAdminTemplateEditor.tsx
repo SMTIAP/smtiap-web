@@ -15,6 +15,7 @@ import {
   Calendar,
   FileText,
   Clock,
+  Upload,
 } from "lucide-react";
 import { templateApi, type Template, type Category } from "../api/templateApi";
 import SuperAdminNavBar from "../components/SuperAdminNavBar";
@@ -90,6 +91,7 @@ export default function SuperAdminTemplateEditor() {
     category: "",
     gradient: "from-indigo-500 to-purple-600",
     estimatedTime: "quick",
+    coverImage: "",
   });
 
   const [questions, setQuestions] = useState<PreviewQuestion[]>([
@@ -122,6 +124,7 @@ export default function SuperAdminTemplateEditor() {
             category: template.category,
             gradient: template.gradient,
             estimatedTime: template.estimatedTime || "quick",
+            coverImage: template.coverImage || "",
           });
           setSelectedColor(getColorFromGradient(template.gradient));
           setQuestions(template.previewQuestions);
@@ -142,6 +145,17 @@ export default function SuperAdminTemplateEditor() {
       ...prev,
       gradient: getGradientFromColor(colorValue)
     }));
+  };
+
+  const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({ ...prev, coverImage: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const addQuestion = () => {
@@ -203,6 +217,7 @@ export default function SuperAdminTemplateEditor() {
         description: formData.description,
         category: formData.category,
         gradient: formData.gradient,
+        coverImage: formData.coverImage || undefined,
         estimatedTime: formData.estimatedTime,
         previewQuestions: questions,
         usedCount: isEditing ? undefined : "0+",
@@ -506,6 +521,47 @@ export default function SuperAdminTemplateEditor() {
                   disabled
                   className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-400 cursor-not-allowed"
                 />
+              </div>
+
+              {/* Cover Image Section */}
+              <div className="md:col-span-2 border-t border-slate-100 dark:border-slate-700 pt-4 mt-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Cover Image
+                </label>
+                <div className="flex flex-col md:flex-row gap-4 items-start">
+                  <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-4 bg-slate-50 dark:bg-slate-900/50 w-full md:w-64 aspect-video cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={handleCoverImageUpload} 
+                    />
+                    {formData.coverImage ? (
+                      <img 
+                        src={formData.coverImage} 
+                        alt="Cover preview" 
+                        className="w-full h-full object-cover rounded-lg" 
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 text-slate-400">
+                        <Upload size={24} />
+                        <span className="text-xs font-bold">Upload Cover Image</span>
+                      </div>
+                    )}
+                  </label>
+                  {formData.coverImage && (
+                    <button
+                      onClick={() => setFormData(prev => ({ ...prev, coverImage: "" }))}
+                      className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors self-end md:self-auto"
+                    >
+                      <Trash2 size={12} />
+                      Remove Image
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2">
+                  Recommended aspect ratio 16:9 or banner style. This will be shown at the top of surveys.
+                </p>
               </div>
             </div>
           </div>

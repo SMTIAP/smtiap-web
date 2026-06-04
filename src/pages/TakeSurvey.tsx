@@ -87,6 +87,7 @@ export default function TakeSurvey() {
     isPasswordProtected?: boolean;
     surveyTitle?: string;
     description?: string;
+    coverImage?: string;
     _id?: string;
     scheduledOpen?: string;
     scheduledClose?: string;
@@ -612,23 +613,40 @@ export default function TakeSurvey() {
       <div className="max-w-2xl mx-auto">
         {/* Survey header with custom background color and contrast text */}
         <div 
-          className="rounded-3xl shadow-md border border-gray-200 overflow-hidden mb-6 transition-all duration-300"
+          className="relative rounded-3xl shadow-md border border-gray-200 overflow-hidden mb-6 transition-all duration-300"
           style={{ backgroundColor: backgroundColor || "#FFFFFF", borderColor: getTextColor(backgroundColor, 0.1) }}
         >
-          <div
-            className="h-2 w-full transition-colors duration-300"
-            style={{ backgroundColor: primaryColor }}
-          />
-          <div className="p-8">
-            {Boolean(surveyData?.logo) && (
-              <div className="flex justify-center mb-4">
-                <img
-                  src={surveyData!.logo as string}
-                  alt="Survey logo"
-                  className="max-h-20 object-contain rounded"
-                />
-              </div>
+          {/* Cover Image Banner */}
+          <div className="h-44 w-full relative overflow-hidden bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 shrink-0">
+            {surveyData?.coverImage ? (
+              <img
+                src={surveyData.coverImage}
+                alt="Cover banner"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div 
+                className="w-full h-full opacity-90"
+                style={{
+                  background: `linear-gradient(135deg, ${primaryColor} 0%, #4f46e5 100%)`
+                }}
+              />
             )}
+          </div>
+
+          {/* Overlapping Logo */}
+          {Boolean(surveyData?.logo) && (
+            <div className="absolute left-8 top-32 w-24 h-24 rounded-full bg-white p-1 border border-slate-100 shadow-md flex items-center justify-center overflow-hidden z-10 transition-all">
+              <img
+                src={surveyData!.logo as string}
+                alt="Survey logo"
+                className="max-w-full max-h-full object-contain rounded-full"
+              />
+            </div>
+          )}
+
+          {/* Header text info */}
+          <div className={`p-8 ${Boolean(surveyData?.logo) ? 'pt-16' : 'pt-6'}`}>
             <h1 className="text-2xl font-black mb-1" style={{ color: getTextColor(backgroundColor) }}>
               {surveyData.surveyTitle || "Untitled Survey"}
             </h1>

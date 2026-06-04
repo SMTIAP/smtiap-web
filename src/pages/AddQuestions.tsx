@@ -86,7 +86,8 @@ interface SetupFormData {
   surveyTitle?: string;
   description?: string;
   websiteUrl?: string;
-  logo?: string;
+  logo?: string | null;
+  coverImage?: string | null;
 }
 
 interface RouteState {
@@ -854,6 +855,9 @@ export default function AddQuestions() {
   const [showAiModifier, setShowAiModifier] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [logo, setLogo] = useState<string | null>(setupData?.logo || null);
+  const [coverImage, setCoverImage] = useState<string | null>(
+    setupData?.coverImage || null,
+  );
   const [description, setDescription] = useState(setupData?.description || "");
   const [websiteUrl, setWebsiteUrl] = useState(setupData?.websiteUrl || "");
   const [customizeBranding, setCustomizeBranding] = useState(
@@ -1108,6 +1112,7 @@ export default function AddQuestions() {
             );
             setBackgroundColor(data?.backgroundColor || "#F8FAFC");
             setLogo(data?.logo || null);
+            setCoverImage(data?.coverImage || null);
             setDescription(data?.description || "");
             setWebsiteUrl(data?.websiteUrl || "");
             setCustomizeBranding(data?.customizeBranding || false);
@@ -1501,6 +1506,7 @@ export default function AddQuestions() {
                       surveyTitle,
                       description: description,
                       logo: logo,
+                      coverImage: coverImage,
                       websiteUrl: websiteUrl,
                       customizeBranding: customizeBranding,
                       primaryColor,
@@ -1620,6 +1626,7 @@ export default function AddQuestions() {
                         surveyTitle,
                         description: description,
                         logo: logo,
+                        coverImage: coverImage,
                         websiteUrl: websiteUrl,
                         customizeBranding: customizeBranding,
                         primaryColor,
@@ -1642,6 +1649,7 @@ export default function AddQuestions() {
                       surveyTitle,
                       description: description,
                       logo,
+                      coverImage,
                       websiteUrl: websiteUrl,
                       customizeBranding: customizeBranding,
                       primaryColor,
@@ -1736,17 +1744,33 @@ export default function AddQuestions() {
                     className="rounded-3xl shadow-xl border border-gray-200 dark:border-slate-700 overflow-hidden min-h-150 flex flex-col transition-colors duration-300"
                     style={{ backgroundColor: backgroundColor || "#FFFFFF" }}
                   >
-                    <div
-                      style={{ backgroundColor: primaryColor }}
-                      className="h-2"
-                    />
-                    {/* Content area - no white background, shows the bg color */}
-                    <div className="p-10 flex-1">
-                      {logo && (
-                        <div className="flex justify-center mb-6">
-                          <img src={logo} alt="Survey logo" className="max-h-20 object-contain rounded" />
-                        </div>
+                    {/* Cover Image Banner */}
+                    <div className="h-32 w-full relative overflow-hidden bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 shrink-0">
+                      {coverImage ? (
+                        <img
+                          src={coverImage}
+                          alt="Cover banner"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div 
+                          className="w-full h-full opacity-90"
+                          style={{
+                            background: `linear-gradient(135deg, ${primaryColor} 0%, #4f46e5 100%)`
+                          }}
+                        />
                       )}
+                    </div>
+                    
+                    {/* Overlapping Logo */}
+                    {logo && (
+                      <div className="absolute left-8 top-24 w-16 h-16 rounded-full bg-white p-1 border border-slate-100 shadow-md flex items-center justify-center overflow-hidden z-10">
+                        <img src={logo} alt="Survey logo" className="max-w-full max-h-full object-contain rounded-full" />
+                      </div>
+                    )}
+
+                    {/* Content area - no white background, shows the bg color */}
+                    <div className={`p-8 flex-1 ${logo ? 'pt-14' : 'pt-6'}`}>
                       <h1 className="text-2xl font-bold mb-2" style={{ color: getTextColor(backgroundColor) }}>
                         {surveyTitle}
                       </h1>
@@ -1890,6 +1914,7 @@ export default function AddQuestions() {
           surveyTitle={surveyTitle}
           description={description}
           logo={logo}
+          coverImage={coverImage}
           websiteUrl={websiteUrl}
           themeColor={primaryColor || "#6366F1"}
           backgroundColor={backgroundColor || "#F8FAFC"}
@@ -1898,6 +1923,7 @@ export default function AddQuestions() {
             setSurveyTitle(settings.surveyTitle);
             setDescription(settings.description);
             setLogo(settings.logo);
+            setCoverImage(settings.coverImage);
             setWebsiteUrl(settings.websiteUrl);
             setPrimaryColor(settings.themeColor);
             setBackgroundColor(settings.backgroundColor);

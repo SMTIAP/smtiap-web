@@ -12,6 +12,7 @@ export default function CreateNewSurvey() {
   interface SurveyFormData {
     customizeBranding: boolean;
     logo: string | null;
+    coverImage: string | null;
     websiteUrl: string;
     themeColor: string;
     backgroundColor: string;
@@ -23,6 +24,7 @@ export default function CreateNewSurvey() {
   const [formData, setFormData] = useState<SurveyFormData>({
     customizeBranding: false,
     logo: null,
+    coverImage: null,
     websiteUrl: "",
     themeColor: "#6366F1",
     backgroundColor: "#FFFFFF", // Changed from #94A3B8 to #FFFFFF
@@ -46,6 +48,17 @@ export default function CreateNewSurvey() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData((prev) => ({ ...prev, logo: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({ ...prev, coverImage: reader.result as string }));
       };
       reader.readAsDataURL(file);
     }
@@ -144,6 +157,30 @@ export default function CreateNewSurvey() {
                         {formData.logo ? "Change" : "Upload"}
                       </span>
                     </label>
+
+                    {/* Cover Image Upload */}
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[#1E293B] dark:text-white text-xs font-bold uppercase text-left">Cover Image</label>
+                      <label className="flex flex-col items-center justify-center border-2 border-dashed border-[#CBD5E1] dark:border-slate-600 rounded-lg p-6 bg-[#F8FAFC] dark:bg-slate-900 gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors aspect-video w-full max-w-md mx-auto overflow-hidden">
+                        <input type="file" className="hidden" accept="image/*" onChange={handleCoverImageUpload} />
+                        {formData.coverImage ? (
+                          <img src={formData.coverImage} alt="Cover preview" className="w-full h-full object-cover rounded" />
+                        ) : (
+                          <p className="text-[#1E293B] dark:text-white font-bold text-sm">Add Cover Image</p>
+                        )}
+                        <span className="mt-1 px-6 py-2 bg-[#E2E8F0] dark:bg-slate-700 text-[#1E293B] dark:text-white text-xs font-bold rounded-md">
+                          {formData.coverImage ? "Change" : "Upload"}
+                        </span>
+                      </label>
+                      {formData.coverImage && (
+                        <button
+                          onClick={(e) => { e.preventDefault(); setFormData((prev) => ({ ...prev, coverImage: null })); }}
+                          className="text-xs text-red-500 hover:underline font-bold mt-1 self-center"
+                        >
+                          Remove Cover Image
+                        </button>
+                      )}
+                    </div>
 
                     <div className="grid grid-cols-1 gap-6 text-left">
                       <div className="flex flex-col gap-2">
