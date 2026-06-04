@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { BarChart3, ChevronLeft, StopCircle, X, Calendar } from "lucide-react";
+import { BarChart3, ChevronLeft, StopCircle, X, Calendar, Globe } from "lucide-react";
 import AllResponsesTable from "../components/AllResponsesTable";
 import { useTenant } from "../contexts/TenantContext";
 import { toast } from "sonner";
@@ -11,6 +11,168 @@ interface Question {
   label: string;
   options?: string[];
   max?: number;
+}
+
+// Schedule Modal Component (same style as ReviewAndPublish)
+interface ScheduleModalProps {
+  scheduledClose: string | null;
+  onSave: (close: string | null) => void;
+  onClose: () => void;
+}
+
+const convertTo24Hour = (time: string, ampm: string): string => {
+  let [hours, minutes] = time.split(":");
+  let hour = parseInt(hours);
+  if (ampm === "PM" && hour !== 12) hour += 12;
+  if (ampm === "AM" && hour === 12) hour = 0;
+  return `${hour.toString().padStart(2, "0")}:${minutes}`;
+};
+
+function ScheduleModal({ scheduledClose, onSave, onClose }: ScheduleModalProps) {
+  const [enableClose, setEnableClose] = useState(!!scheduledClose);
+  const [closeDate, setCloseDate] = useState(
+    scheduledClose ? new Date(scheduledClose).toISOString().split("T")[0] : ""
+  );
+  const [closeHour, setCloseHour] = useState(() => {
+    if (scheduledClose) {
+      let hour = parseInt(new Date(scheduledClose).toTimeString().slice(0, 2));
+      if (hour === 0) hour = 12;
+      if (hour > 12) hour -= 12;
+      return hour.toString().padStart(2, "0");
+    }
+    return "05";
+  });
+  const [closeMinute, setCloseMinute] = useState(() =>
+    scheduledClose ? new Date(scheduledClose).toTimeString().slice(3, 5) : "00"
+  );
+  const [closeAmPm, setCloseAmPm] = useState(() => {
+    if (scheduledClose) {
+      const hour = parseInt(new Date(scheduledClose).toTimeString().slice(0, 2));
+      return hour >= 12 ? "PM" : "AM";
+    }
+    return "PM";
+  });
+
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const today = new Date().toISOString().split("T")[0];
+
+  const handleSave = () => {
+    let closeDateTime: string | null = null;
+    const now = new Date();
+
+    if (enableClose && closeDate) {
+      const time24 = convertTo24Hour(`${closeHour}:${closeMinute}`, closeAmPm);
+      const localDate = new Date(`${closeDate}T${time24}:00`);
+      if (localDate < now) {
+        toast.error("Please select a future time for closing");
+        return;
+      }
+      closeDateTime = localDate.toISOString();
+    }
+
+    onSave(closeDateTime);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/30 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 w-full max-w-md">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Set Closing Date</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-600 transition-all">
+            <X size={18} className="text-slate-500 dark:text-slate-400" />
+          </button>
+        </div>
+
+        {/* Timezone Info */}
+        <div className="mb-5 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg flex items-center gap-2">
+          <Globe size={14} className="text-slate-400" />
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            Time zone: <span className="font-mono font-semibold">{timezone}</span>
+          </span>
+        </div>
+
+        {/* Close Date */}
+        <div className="pb-2">
+          <label className="flex items-center justify-between cursor-pointer mb-3">
+            <div>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Set cut-off date</span>
+              <p className="text-xs text-slate-400">Close the survey on</p>
+            </div>
+            <div
+              onClick={() => setEnableClose((v) => !v)}
+              className={`w-10 h-5 flex items-center rounded-full p-1 transition-colors cursor-pointer ${enableClose ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-600"}`}
+            >
+              <div className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform ${enableClose ? "translate-x-5" : ""}`} />
+            </div>
+          </label>
+
+          {enableClose && (
+            <div className="space-y-2 ml-2">
+              <input 
+                type="date" 
+                value={closeDate} 
+                min={today}
+                onChange={(e) => setCloseDate(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+              <div className="flex gap-1 items-center">
+                <input 
+                  type="number" 
+                  value={closeHour} 
+                  min="1" 
+                  max="12"
+                  onChange={(e) => { 
+                    let v = parseInt(e.target.value); 
+                    if (isNaN(v)) v = 1; 
+                    v = Math.min(12, Math.max(1, v)); 
+                    setCloseHour(v.toString().padStart(2, "0")); 
+                  }}
+                  className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 text-center"
+                />
+                <span className="text-lg font-medium text-slate-600 dark:text-slate-400">:</span>
+                <input 
+                  type="number" 
+                  value={closeMinute} 
+                  min="0" 
+                  max="59"
+                  onChange={(e) => { 
+                    let v = parseInt(e.target.value); 
+                    if (isNaN(v)) v = 0; 
+                    v = Math.min(59, Math.max(0, v)); 
+                    setCloseMinute(v.toString().padStart(2, "0")); 
+                  }}
+                  className="w-20 px-2 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 text-center"
+                />
+                <select 
+                  value={closeAmPm} 
+                  onChange={(e) => setCloseAmPm(e.target.value)}
+                  className="px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button 
+            onClick={onClose}
+            className="flex-1 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={handleSave}
+            className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-all"
+          >
+            Save Schedule
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Confirmation modal shown before stopping a running survey
@@ -64,136 +226,6 @@ const StopConfirmModal = ({
   </div>
 );
 
-// Close Date Modal - for editing closing date of running surveys
-const CloseDateModal = ({ 
-  survey, 
-  onClose, 
-  onUpdate 
-}: { 
-  survey: any; 
-  onClose: () => void; 
-  onUpdate: () => void;
-}) => {
-  // Function to convert UTC date from server to local datetime-local format
-  const formatDateForInput = (utcDateString: string | null) => {
-    if (!utcDateString) return "";
-    const date = new Date(utcDateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
-
-  // Get current datetime for min attribute (prevents past dates)
-  const getCurrentDateTime = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
-
-  const [closeDate, setCloseDate] = useState(
-    formatDateForInput(survey.scheduledClose)
-  );
-  const [loading, setLoading] = useState(false);
-
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const activeTenantId = localStorage.getItem("activeTenantId");
-      
-      let scheduledCloseISO = null;
-      if (closeDate) {
-        // Check if selected date is in the past
-        const selectedDate = new Date(closeDate);
-        if (selectedDate < new Date()) {
-          toast.error("Close date cannot be in the past");
-          setLoading(false);
-          return;
-        }
-        scheduledCloseISO = selectedDate.toISOString();
-      }
-      
-      const res = await fetch(`http://localhost:5000/api/surveys/${survey._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...(activeTenantId && activeTenantId !== "__system__" ? { "x-tenant-id": activeTenantId } : {}),
-        },
-        body: JSON.stringify({
-          scheduledClose: scheduledCloseISO,
-        }),
-      });
-      if (res.ok) {
-        toast.success(scheduledCloseISO ? "Closing date updated" : "Closing date removed");
-        onUpdate();
-        onClose();
-      } else {
-        toast.error("Failed to update closing date");
-      }
-    } catch (err) {
-      toast.error("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatDisplayDate = (utcDateString: string) => {
-    if (!utcDateString) return null;
-    const date = new Date(utcDateString);
-    return date.toLocaleString();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-700">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white">Set Closing Date</h3>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
-            <X size={18} />
-          </button>
-        </div>
-        
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Closing Date & Time
-          </label>
-          <input
-            type="datetime-local"
-            value={closeDate}
-            min={getCurrentDateTime()}
-            onChange={(e) => setCloseDate(e.target.value)}
-            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-          />
-          <p className="text-xs text-slate-400 mt-1">Leave empty for no closing date</p>
-        </div>
-        
-        {survey.scheduledClose && (
-          <div className="mb-4 text-sm text-amber-600 dark:text-amber-400">
-            Current close date: {formatDisplayDate(survey.scheduledClose)}
-          </div>
-        )}
-        
-        <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700">
-            Cancel
-          </button>
-          <button onClick={handleSave} disabled={loading} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50">
-            {loading ? "Saving..." : "Save"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export default function SurveyResults() {
   const { surveyId } = useParams<{ surveyId: string }>();
   const navigate = useNavigate();
@@ -204,7 +236,7 @@ export default function SurveyResults() {
   const [activeResponseIndex, setActiveResponseIndex] = useState(0);
   const [stopping, setStopping] = useState(false);
   const [showStopModal, setShowStopModal] = useState(false);
-  const [showCloseDateModal, setShowCloseDateModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const { activeTenant, isSystemContext } = useTenant();
   const effectiveRole = !isSystemContext && activeTenant ? activeTenant.role : null;
   const canModify = effectiveRole ? ["super_admin", "admin", "creator"].includes(effectiveRole) : true;
@@ -266,6 +298,40 @@ export default function SurveyResults() {
     }
   };
 
+  const handleUpdateCloseDate = async (closeDateTime: string | null) => {
+    try {
+      const token = localStorage.getItem("token");
+      const activeTenantId = localStorage.getItem("activeTenantId");
+      
+      const res = await fetch(`http://localhost:5000/api/surveys/${surveyId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(activeTenantId && activeTenantId !== "__system__" ? { "x-tenant-id": activeTenantId } : {}),
+        },
+        body: JSON.stringify({
+          scheduledClose: closeDateTime,
+        }),
+      });
+      
+      if (res.ok) {
+        toast.success(closeDateTime ? "Closing date updated" : "Closing date removed");
+        // Refresh survey data
+        const surveyRes = await fetch(`http://localhost:5000/api/surveys/${surveyId}`, {
+          headers: authHeaders(),
+          credentials: "include",
+        });
+        const surveyData = await surveyRes.json();
+        setSurvey(surveyData);
+      } else {
+        toast.error("Failed to update closing date");
+      }
+    } catch (err) {
+      toast.error("Something went wrong");
+    }
+  };
+
   if (loading)
     return (
       <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0F172A] flex items-center justify-center">
@@ -298,21 +364,14 @@ export default function SurveyResults() {
         />
       )}
 
-      {showCloseDateModal && (
-        <CloseDateModal
-          survey={survey}
-          onClose={() => setShowCloseDateModal(false)}
-          onUpdate={() => {
-            const fetchSurvey = async () => {
-              const res = await fetch(`http://localhost:5000/api/surveys/${surveyId}`, {
-                headers: authHeaders(),
-                credentials: "include",
-              });
-              const data = await res.json();
-              setSurvey(data);
-            };
-            fetchSurvey();
+      {showScheduleModal && (
+        <ScheduleModal
+          scheduledClose={survey.scheduledClose}
+          onSave={(closeDateTime) => {
+            handleUpdateCloseDate(closeDateTime);
+            setShowScheduleModal(false);
           }}
+          onClose={() => setShowScheduleModal(false)}
         />
       )}
 
@@ -331,7 +390,7 @@ export default function SurveyResults() {
               <div className="flex gap-2">
                 {isRunning && canModify && (
                   <button
-                    onClick={() => setShowCloseDateModal(true)}
+                    onClick={() => setShowScheduleModal(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
                   >
                     <Calendar size={14} />
