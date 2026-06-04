@@ -12,7 +12,6 @@ import {
   Clock,
 } from "lucide-react";
 import { templateApi, type Template } from "../api/templateApi";
-import { getIcon } from "../utils/iconMap";
 import SuperAdminNavBar from "../components/SuperAdminNavBar";
 
 // Helper function to get estimated time label
@@ -148,14 +147,13 @@ export default function SuperAdminTemplates() {
         {!loading && !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredTemplates.map((template) => {
-              const Icon = getIcon(template.icon);
               return (
                 <div
                   key={template._id}
                   className="group bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                 >
                   <div className={`h-28 bg-gradient-to-br ${template.gradient} flex items-center justify-center relative`}>
-                    <Icon size={44} className="text-white drop-shadow" />
+                    {/* Removed the Icon component - just show gradient */}
                     <div className="absolute top-3 right-3 flex gap-1">
                       <button
                         onClick={() => navigate(`/super-admin/templates/${template._id}/edit`)}
@@ -183,7 +181,6 @@ export default function SuperAdminTemplates() {
                     <p className="text-slate-500 dark:text-slate-400 text-sm line-clamp-2">
                       {template.description}
                     </p>
-                    {/* ✅ ESTIMATED TIME BADGE WITH CLOCK ICON */}
                     <div className="mt-3 flex items-center gap-1.5">
                       <div className="flex items-center gap-1.5 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-2 py-0.5 rounded-full">
                         <Clock size={10} />

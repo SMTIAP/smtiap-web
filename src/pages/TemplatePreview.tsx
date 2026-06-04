@@ -5,7 +5,6 @@ import {
   Monitor, Tablet, Smartphone, FileText, CopyPlus, Calendar, Clock
 } from "lucide-react";
 import { templateApi, type Template } from "../api/templateApi";
-import { getIcon } from "../utils/iconMap";
 
 type DeviceType = "desktop" | "tablet" | "mobile";
 
@@ -232,7 +231,6 @@ export default function TemplatePreview() {
     );
   }
 
-  const Icon = getIcon(template.icon);
   // Extract theme color from gradient - applies to the survey when created
   const themeColor = extractColorFromGradient(template.gradient);
   const isMobile = device === "mobile";
@@ -331,11 +329,8 @@ export default function TemplatePreview() {
         <div className="flex-1 overflow-y-auto flex flex-col items-center py-6 px-3 relative">
           <div className={`transition-all duration-300 ${deviceWidths[device]} ${isMobile ? 'overflow-y-auto' : ''}`}>
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col max-h-full">
-              {/* Colored header - shows theme color that will apply to survey */}
-              <div className={`${isMobile ? 'p-5' : 'p-8'} flex items-center gap-3 shrink-0`} style={{ backgroundColor: themeColor }}>
-                <div className={`${isMobile ? 'w-10 h-10' : 'w-14 h-14'} bg-white/20 rounded-2xl flex items-center justify-center shrink-0`}>
-                  <Icon size={isMobile ? 20 : 28} className="text-white" />
-                </div>
+              {/* Colored header - NO ICON */}
+              <div className={`${isMobile ? 'p-5' : 'p-8'} shrink-0`} style={{ backgroundColor: themeColor }}>
                 <div className="flex-1 min-w-0">
                   <h2 className={`text-white font-black ${isMobile ? 'text-base' : 'text-xl'} leading-tight break-words`}>{template.title}</h2>
                   <p className={`text-white/70 ${isMobile ? 'text-[10px]' : 'text-sm'} mt-0.5`}>{template.category}</p>
@@ -382,9 +377,9 @@ export default function TemplatePreview() {
       {/* Right Panel */}
       <div className="w-80 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col shrink-0 overflow-y-auto">
         <div className="p-6 flex-1">
-          {/* Template info - shows theme color preview */}
-          <div className="h-28 rounded-2xl flex items-center justify-center mb-5" style={{ backgroundColor: themeColor }}>
-            <Icon size={44} className="text-white drop-shadow" />
+          {/* Template info - NO ICON, just color swatch */}
+          <div className="h-20 rounded-2xl flex items-center justify-center mb-5" style={{ backgroundColor: themeColor }}>
+            <span className="text-white text-xs font-bold opacity-70">PREVIEW</span>
           </div>
 
           <h2 className="text-[#0F172A] dark:text-white font-black text-xl leading-tight mb-2">{template.title}</h2>
@@ -396,7 +391,6 @@ export default function TemplatePreview() {
               <FileText size={13} />
               <span>{template.previewQuestions?.length || 0} questions · 1 page</span>
             </div>
-            {/* ✅ ESTIMATED TIME WITHOUT EMOJI */}
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs mt-2">
               <Clock size={13} />
               <span>{getEstimatedTimeLabel(template.estimatedTime)}</span>
@@ -410,7 +404,7 @@ export default function TemplatePreview() {
             </p>
           </div>
 
-          {/* Use template button - NEUTRAL INDIGO COLOR (not theme color) */}
+          {/* Use template button */}
           <button 
             onClick={handleUseTemplate} 
             disabled={isCreating}
