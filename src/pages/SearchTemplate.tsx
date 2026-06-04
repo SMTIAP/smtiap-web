@@ -7,21 +7,10 @@ import {
   Loader2,
   X,
   ArrowLeft,
-  Utensils,
-  Coffee,
-  Heart,
-  GraduationCap,
-  Users,
-  Star,
-  Building2,
-  Mic,
-  Zap,
-  ShoppingBag,
   ChevronRight,
   Clock,
 } from "lucide-react";
 import { templateApi, type Template, type Category } from "../api/templateApi";
-import { getIcon } from "../utils/iconMap";
 
 const AI_SUGGESTIONS = [
   "A customer satisfaction survey for a coffee shop",
@@ -308,7 +297,6 @@ export default function SearchTemplate() {
               <span className="text-slate-400 text-xs sm:text-sm">
                 {filteredTemplates.length} templates
               </span>
-              {/* Circular Back Button - Top Right */}
               <button
                 onClick={() => navigate(-1)}
                 className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
@@ -361,9 +349,8 @@ export default function SearchTemplate() {
               </div>
             </div>
 
-            {/* Template Cards */}
+            {/* Template Cards - CLEAN GRADIENT HEADER ONLY */}
             {filteredTemplates.map((temp) => {
-              const Icon = getIcon(temp.icon);
               const isGenerating = loadingTemplateId === temp._id;
               return (
                 <div
@@ -376,22 +363,15 @@ export default function SearchTemplate() {
                   }
                   className="group cursor-pointer bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                 >
+                  {/* Clean gradient header - NO ICON, NO EMOJI */}
                   <div
-                    className={`h-40 bg-gradient-to-br ${temp.gradient} flex items-center justify-center relative overflow-hidden`}
+                    className={`h-32 bg-gradient-to-br ${temp.gradient} relative overflow-hidden`}
                   >
                     <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    {isGenerating ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <Loader2
-                          size={36}
-                          className="text-white animate-spin"
-                        />
-                        <span className="text-white/80 text-xs font-bold uppercase tracking-widest">
-                          Generating...
-                        </span>
+                    {isGenerating && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <Loader2 size={28} className="text-white animate-spin" />
                       </div>
-                    ) : (
-                      <Icon size={40} className="text-white drop-shadow" />
                     )}
                   </div>
                   <div className="p-4">
@@ -406,7 +386,6 @@ export default function SearchTemplate() {
                     <p className="text-slate-400 text-sm line-clamp-2">
                       {temp.description}
                     </p>
-                    {/* ✅ ESTIMATED TIME BADGE WITH CLOCK ICON */}
                     <div className="flex items-center justify-between mt-3">
                       <div className="flex items-center gap-1.5 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-2 py-0.5 rounded-full">
                         <Clock size={10} />
