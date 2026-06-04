@@ -636,36 +636,39 @@ export default function TakeSurvey() {
 
           {/* Overlapping Logo */}
           {Boolean(surveyData?.logo) && (
-            <div className="absolute left-8 top-32 w-24 h-24 rounded-full bg-white p-1 border border-slate-100 shadow-md flex items-center justify-center overflow-hidden z-10 transition-all">
+            <div className="absolute left-1/2 -translate-x-1/2 top-28 w-36 h-36 rounded-full bg-white p-1 border-4 border-white shadow-md flex items-center justify-center overflow-hidden z-10 transition-all">
               <img
                 src={surveyData!.logo as string}
                 alt="Survey logo"
-                className="max-w-full max-h-full object-contain rounded-full"
+                className="w-full h-full object-cover rounded-full"
               />
             </div>
           )}
 
           {/* Header text info */}
-          <div className={`p-8 ${Boolean(surveyData?.logo) ? 'pt-16' : 'pt-6'}`}>
-            <h1 className="text-2xl font-black mb-1" style={{ color: getTextColor(backgroundColor) }}>
+          <div className={`p-8 pb-6 flex flex-col items-start ${Boolean(surveyData?.logo) ? 'pt-24' : 'pt-6'}`}>
+            {(surveyData?.customizeBranding as unknown as boolean) &&
+              (surveyData?.websiteUrl as string) && (
+                <div className="flex justify-center w-full">
+                  <a
+                    href={surveyData?.websiteUrl as string}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block text-[11px] font-bold hover:underline mb-4 text-center"
+                    style={{ color: getTextColor(backgroundColor) }}
+                  >
+                    {surveyData?.websiteUrl as string}
+                  </a>
+                </div>
+              )}
+            <h1 className="text-2xl font-black mb-1 font-serif text-left" style={{ color: getTextColor(backgroundColor) }}>
               {surveyData.surveyTitle || "Untitled Survey"}
             </h1>
             {surveyData.description && (
-              <p className="text-sm mb-1" style={{ color: getTextColor(backgroundColor, 0.7) }}>
+              <p className="text-sm mb-1 font-serif text-left" style={{ color: getTextColor(backgroundColor, 0.7) }}>
                 {surveyData.description}
               </p>
             )}
-            {(surveyData?.customizeBranding as unknown as boolean) &&
-              (surveyData?.websiteUrl as string) && (
-                <a
-                  href={surveyData?.websiteUrl as string}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block text-xs text-blue-500 hover:text-blue-700 underline mb-2"
-                >
-                  {surveyData?.websiteUrl as string}
-                </a>
-              )}
             {totalQuestions > 0 && (
               <div className="flex items-center gap-2 mt-4">
                 {flattenedQuestions.map((_, i: number) => (
