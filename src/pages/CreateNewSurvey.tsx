@@ -25,7 +25,7 @@ export default function CreateNewSurvey() {
     logo: null,
     websiteUrl: "",
     themeColor: "#6366F1",
-    backgroundColor: "#94A3B8",
+    backgroundColor: "#FFFFFF", // Changed from #94A3B8 to #FFFFFF
     surveyTitle: "",
     description: "",
     isAnonymous: false,
@@ -69,7 +69,7 @@ export default function CreateNewSurvey() {
   };
 
   const colorPresets = ["#6366F1", "#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#8B5CF6"];
-  const bgColorPresets = ["#FFFFFF", "#94A3B8", "#93C5FD", "#86EFAC", "#FCA5A5", "#D8B4FE", "#FCD34D"];
+  const bgColorPresets = ["#FFFFFF", "#94A3B8", "#93C5FD", "#86EFAC", "#FCA5A5", "#D8B4FE", "#FCD34D"]; // White moved to first position
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
