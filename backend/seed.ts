@@ -1,8 +1,6 @@
 import dotenv from "dotenv";
 import path from "path";
 import mongoose from "mongoose";
-import { connectDb } from "./config/db.js";
-import { createDefaultSuperAdmin } from "./utils/createDefaultSuperAdmin.js";
 import Category from "./models/Category.js";
 import Template from "./models/Template.js";
 import User from "./models/User.js";
@@ -30,10 +28,16 @@ const seedCategoriesAndTemplates = async (superAdminId: any) => {
       console.log(`  ✓ Created category: ${name}`);
       createdCount++;
     } else {
-      console.log(`  ⏭️ Category already exists: ${name}`);
+      if (existing.isActive === false) {
+        await Category.updateOne({ name }, { $set: { isActive: true } });
+        console.log(`  ✓ Reactivated category: ${name}`);
+        createdCount++;
+      } else {
+        console.log(`  ⏭️ Category already exists: ${name}`);
+      }
     }
   }
-  console.log(`✅ Categories: ${createdCount} new, ${categoryNames.length - createdCount} existing`);
+  console.log(`✅ Categories: ${createdCount} new/reactivated, ${categoryNames.length - createdCount} existing`);
 
   console.log("\n📄 Seeding templates...");
 
@@ -182,30 +186,36 @@ const seedCategoriesAndTemplates = async (superAdminId: any) => {
 
 const runSeed = async (): Promise<void> => {
   try {
-    await connectDb();
+    // Use MONGO_URI from .env file instead of connectDb()
+    const mongoURI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/smtiap";
+    await mongoose.connect(mongoURI);
+    console.log("MongoDB Connected.");
+    console.log(`Database: ${mongoose.connection.db?.databaseName}`);
     
     // Find super admin directly from database
-    const superAdmin = await User.findOne({ role: "super_admin" });
+    let superAdmin = await User.findOne({ role: "super_admin" });
     
     if (!superAdmin) {
       console.log("No super admin found. Creating one...");
       const bcrypt = await import("bcryptjs");
       const hashedPassword = await bcrypt.hash("Admin123!", 10);
       
-      const newSuperAdmin = await User.create({
+      superAdmin = await User.create({
         email: "superadmin@smtiap.com",
         username: "SuperAdmin",
         password: hashedPassword,
         role: "super_admin",
         isVerified: true,
       });
-      console.log("Super admin created:", newSuperAdmin.email);
-      
-      await seedCategoriesAndTemplates(newSuperAdmin._id);
+      console.log("✅ Super admin created:", superAdmin.email);
     } else {
-      console.log("Super admin found:", superAdmin.email);
-      await seedCategoriesAndTemplates(superAdmin._id);
+      console.log("✅ Super admin found:", superAdmin.email);
     }
+    
+    await seedCategoriesAndTemplates(superAdmin._id);
+    
+    console.log("\n✅ Seeding completed!");
+    
   } catch (error: unknown) {
     console.error(
       "Error while seeding:",
