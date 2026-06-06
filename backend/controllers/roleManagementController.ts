@@ -67,10 +67,6 @@ export const getAllUsers = async (req: Request, res: Response) => {
 
 export const getAllTenants = async (req: Request, res: Response) => {
   try {
-    // Return only the active tenant (the one the user has currently switched to).
-    // If in system context (no active tenant), return all tenants the user belongs to
-    // so the dropdown can still be populated.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const activeTenantId = (req as any).activeTenantId as string | null;
     const tenantIds = reqTenantIds(req);
 
@@ -79,8 +75,6 @@ export const getAllTenants = async (req: Request, res: Response) => {
       return;
     }
 
-    // For the role-management / org admin page, scope to active tenant only
-    // so a user only manages the org they're currently acting in.
     const idsToFetch = activeTenantId ? [activeTenantId] : tenantIds;
     const tenants = await Tenant.find({ _id: { $in: idsToFetch } });
     res.status(200).json(tenants);
