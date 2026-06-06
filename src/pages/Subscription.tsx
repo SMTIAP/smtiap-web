@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, AlertCircle, ArrowLeft } from "lucide-react";
 import { usePayHere } from "../hooks/usePayHere";
+import api from "../api/api"; 
 
 interface PricingPlan {
   name: string;
@@ -43,14 +44,51 @@ export default function Subscription() {
   const [isGeneratingHash, setIsGeneratingHash] = useState(false);
   const { startPayment, paymentStatus, isLoading: isPaymentLoading } = usePayHere();
 
-  //universal disabled flag for buttons
-  const isUiDisabled = isPaymentLoading || isGeneratingHash;
+  //profile data hooks
+  const [currentUser, setCurrentUser] = useState<{ username: string; email: string } | null>(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    api
+      .get("/me") 
+      .then((res) => {
+        if (!mounted || !res.data) return;
+
+        console.log("--- SUBSCRIPTION COMPONENT FETCH USER DATA ---", res.data);
+
+        //fail safe - checks nested data structures else to fallback objects
+        if (res.data.user) {
+          setCurrentUser({
+            username: res.data.user.username || "Registered User",
+            email: res.data.user.email || "customer@smtiap.com",
+          });
+        } else {
+          setCurrentUser({
+            username: res.data.username || "Registered User",
+            email: res.data.email || "customer@smtiap.com",
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("Subscription screen failed to pull account details safely:", err);
+      })
+      .finally(() => {
+        if (mounted) {
+          setIsUserLoading(false);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const isUiDisabled = isPaymentLoading || isGeneratingHash || isUserLoading;
 
   const handlePayment = async (plan: PricingPlan) => {
-    if (plan.monthlyPrice === 0) {
-      console.log("Selected free plan");
-      return;
-    }
+    if (plan.monthlyPrice === 0) return;
 
     const price = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
     const billingPeriod = isYearly ? "yearly" : "monthly";
@@ -58,57 +96,50 @@ export default function Subscription() {
     const itemDescription = `${plan.name} Subscription`;
     const formattedAmount = price.toFixed(2);
 
-    const userDetails = {
-      first_name: "Test",
-      last_name: "User",
-      email: "user@example.com",
-      phone: "0771234567",
-    };
-
-    const requestPayload = {
-      order_id: orderId,
-      amount: price,
-      currency: "LKR",
-      items: itemDescription,
-    };
+    //fallback consts if values are missing
+    const liveUsername = currentUser?.username || "Registered User";
+    const liveEmail = currentUser?.email || "customer@smtiap.com";
 
     try {
       setIsGeneratingHash(true);
 
-      //1 fetch secure signature parameters from your express backend
       const response = await fetch("http://localhost:5000/api/payments/generate-hash", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestPayload),
+        body: JSON.stringify({
+          order_id: orderId,
+          amount: price,
+          currency: "LKR",
+          items: itemDescription,
+        }),
       });
 
       if (!response.ok) throw new Error("Failed to fetch secure signature verification.");
       
       const { merchant_id, hash } = await response.json();
 
-      //2 fire the payHere pipeline hook launcher
       startPayment({
         sandbox: true,
         merchant_id: merchant_id,
-        return_url: "http://127.0.0.1:5173/subscription/success",
-        cancel_url: "http://127.0.0.1:5173/subscription/cancel",
+        return_url: "http://localhost:5173/subscription/success",
+        cancel_url: "http://localhost:5173/subscription/cancel",
         notify_url: "http://localhost:5000/payhere-notify",
         order_id: orderId,
         items: itemDescription,
         amount: formattedAmount,
         currency: "LKR",
-        hash: hash, 
-        first_name: userDetails.first_name,
-        last_name: userDetails.last_name,
-        email: userDetails.email,
-        phone: userDetails.phone,
-        address: "Colombo",
-        city: "Colombo",
-        country: "Sri Lanka",
+        hash: hash,
+        first_name: liveUsername, 
+        last_name: "Account",      
+        email: liveEmail,         
+        phone: "0719021938",      
+        address: "Colombo",       
+        city: "Colombo",          
+        country: "Sri Lanka",     
       });
 
     } catch (err) {
-      console.error("Payment initialization failed:", err);
+      console.error("Payment starting failed:", err);
     } finally {
       setIsGeneratingHash(false);
     }
@@ -157,7 +188,7 @@ export default function Subscription() {
             </div>
           )}
 
-          {/*billing switcher - properly handle disabled styles */}
+          {/* Billing Switcher */}
           <div className="flex p-1.5 bg-[#F2F2F5] dark:bg-slate-800 rounded-xl mb-8 w-full max-w-[320px]">
             <button
               onClick={() => setIsYearly(false)}
@@ -175,15 +206,7 @@ export default function Subscription() {
             </button>
           </div>
 
-          {isYearly && (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-300 flex items-center gap-2 mb-8">
-              <span className="bg-blue-500 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-sm">
-                Save LKR1,000 with yearly billing
-              </span>
-            </div>
-          )}
-
-          {/* Pricing grid */}
+          {/* Pricing Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
             {plans.map((plan) => (
               <div
@@ -204,7 +227,6 @@ export default function Subscription() {
                   </div>
                 </div>
                 
-                {/*checkout buttons - has configured disabled states */}
                 <button
                   onClick={() => handlePayment(plan)}
                   disabled={isUiDisabled || plan.monthlyPrice === 0}
@@ -216,7 +238,7 @@ export default function Subscription() {
                         : "bg-[#F2F2F5] dark:bg-slate-700 text-[#141217] dark:text-white hover:bg-gray-200 dark:hover:bg-slate-600"
                   } ${isUiDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                  {isUiDisabled ? "Processing..." : plan.buttonText}
+                  {isUserLoading ? "Verifying Session..." : isUiDisabled ? "Processing..." : plan.buttonText}
                 </button>
                 
                 <div className="space-y-4">
