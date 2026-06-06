@@ -45,6 +45,7 @@ import SuperAdminTemplateEditor from "./pages/SuperAdminTemplateEditor";
 import SuperAdminCategories from "./pages/SuperAdminCategories";
 import VoiceAI from "./components/VoiceAI.tsx";
 import { TenantProvider } from "./contexts/TenantContext";
+import Reports from "./pages/Reports.tsx";
 
 // Dark mode context
 export const DarkModeContext = createContext({
@@ -300,6 +301,14 @@ export default function App() {
                   element={
                     <ProtectedRoute>
                       <Audit />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/reports"
+                  element={
+                    <ProtectedRoute>
+                      <Reports />
                     </ProtectedRoute>
                   }
                 />
