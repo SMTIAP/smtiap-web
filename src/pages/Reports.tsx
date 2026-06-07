@@ -1,0 +1,360 @@
+import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { jwtDecode } from "jwt-decode";
+import { Search, LineChart, Download, ArrowLeft } from "lucide-react";
+
+interface User {
+  _id: string;
+  username: string;
+  email: string;
+  role: string;
+}
+
+interface Tenant {
+  _id: string;
+  name: string;
+  createdBy: string;
+  status: string;
+  domain: string;
+  plan: string;
+  created_at: string;
+}
+
+interface UserTenantRole {
+  _id: string;
+  role: string;
+  userId: { _id: string; username: string; email: string };
+  tenantId: { _id: string; name: string };
+  status: "active" | "inactive";
+  lastLogin: string | null;
+}
+
+export default function Reports() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [users, setUsers] = useState<User[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("tenants");
+
+  const [selectedTenantId, setSelectedTenantId] = useState<string>("");
+  const [orgUsers, setOrgUsers] = useState<UserTenantRole[]>([]);
+
+  const token = localStorage.getItem("token");
+  const authHeaders = (): Record<string, string> => {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    const id = localStorage.getItem("activeTenantId");
+    if (id && id !== "__system__") headers["x-tenant-id"] = id;
+    return headers;
+  };
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/role-management",
+          {
+            headers: authHeaders(),
+            credentials: "include",
+          },
+        );
+        const data = await response.json();
+        setUsers(data);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+    fetchUsers();
+  }, [location.key]);
+
+  useEffect(() => {
+    const fetchTenants = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/reports/tenants/my",
+          {
+            headers: authHeaders(),
+            credentials: "include",
+          },
+        );
+        const data = await response.json();
+        setTenants(data);
+      } catch (error) {
+        console.error("Error fetching tenants:", error);
+      }
+    };
+    fetchTenants();
+  }, [location.key]);
+
+    useEffect(() => {
+    const fetchOrganizationData = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/reports/user-tenant", {
+          headers: authHeaders(),
+          credentials: "include",
+        });
+        const data = await response.json();
+        setOrgUsers(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchOrganizationData();
+  }, [location.key]);
+
+  const currentUserId: string | null = (() => {
+    if (!token) return null;
+    try {
+      return (jwtDecode<any>(token) as any)?.id ?? null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const isActiveTenantAdmin = (tenantId: string) =>
+    orgUsers.some(
+      (u) =>
+        u.tenantId._id === tenantId &&
+        u.userId._id === currentUserId &&
+        u.role === "admin" &&
+        u.status === "active",
+    );
+
+  const filteredUsers = searchTerm.trim()
+    ? users.filter(
+        (user) =>
+          user.role !== "super_admin" &&
+          user.email.toLowerCase().includes(searchTerm.toLowerCase()),
+      )
+    : [];
+
+  const filteredOrganizations = tenants.filter((tenant) =>
+    orgUsers.some(
+      (u) =>
+        u.tenantId._id === tenant._id &&
+        u.userId._id === currentUserId &&
+        u.status === "active",
+    ),
+  );
+
+  return (
+    <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
+      {/* Top Gradient */}
+      <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+
+      <div className="w-full max-w-6xl px-6 py-10 flex flex-col gap-8">
+        {/* HEADER */}
+        <div className="flex justify-between items-center w-full">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600">
+              <LineChart className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-3xl font-black text-[#0D141C] dark:text-white">
+              Reports
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate(-1)}
+              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center"
+            >
+              <ArrowLeft size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* TABS + EXPORT */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Tabs */}
+          <div className="flex gap-3 flex-wrap">
+            {["tenants", "users", "activity"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 border ${
+                  activeTab === tab
+                    ? "flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-[13px] border-indigo-600 shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
+                    : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
+                }`}
+              >
+                {tab === "tenants" && "Tenant Registrations"}
+                {tab === "users" && "Tenant Users"}
+                {tab === "activity" && "Tenant Activity"}
+              </button>
+            ))}
+          </div>
+
+          {/* Export Button */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => console.log("Export CSV")}
+              className="flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
+            >
+              <Download size={16} />
+              Export CSV
+            </button>
+
+            <button
+              onClick={() => console.log("Export PDF")}
+              className="flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 text-white font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
+            >
+              <Download size={16} />
+              Export PDF
+            </button>
+          </div>
+        </div>
+        {/* TABLE SECTION */}
+        <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+          {/* TENANTS */}
+          {activeTab === "tenants" && (
+            <table className="min-w-full">
+              <thead className="bg-slate-100 dark:bg-slate-900">
+                <tr className="bg-slate-100 dark:bg-slate-900">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Company
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Domain
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Subscription
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Created Date
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {tenants.map((tenant) => (
+                  <tr
+                    key={tenant._id}
+                    className="border-b border-slate-100 dark:border-slate-700"
+                  >
+                    <td className="px-6 py-3 text-slate-800 dark:text-slate-200 font-medium">
+                      {tenant.name}
+                    </td>
+
+                    <td className="px-6 py-3">{tenant.domain}</td>
+
+                    <td className="px-6 py-3">{tenant.plan}</td>
+
+                    <td className="px-6 py-3">
+                      {new Date(tenant.created_at).toLocaleDateString("en-GB")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {activeTab === "users" && (
+            <table className="min-w-full">
+              <thead className="bg-slate-100 dark:bg-slate-900">
+                <tr className="bg-slate-100 dark:bg-slate-900">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Username
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Tenant
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Email
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Role
+                  </th>
+                   <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Last Login
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {orgUsers.map((orgUser) => (
+                  <tr
+                    key={orgUser._id}
+                    className="border-b border-slate-100 dark:border-slate-700"
+                  >
+                    <td className="px-6 py-3 text-slate-800 dark:text-slate-200 font-medium">
+                      {orgUser.userId.username}
+                    </td>
+
+                    <td className="px-6 py-3">{orgUser.tenantId.name}</td>
+
+                    <td className="px-6 py-3">{orgUser.userId.email}</td>
+
+                    <td className="px-6 py-3">{orgUser.role}</td>
+
+                    <td>
+                      {orgUser.lastLogin
+                        ? new Date(orgUser.lastLogin).toLocaleDateString("en-GB")
+                        : "N/A"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {activeTab === "activity" && (
+            <table className="min-w-full">
+              <thead className="bg-slate-100 dark:bg-slate-900">
+                <tr className="bg-slate-100 dark:bg-slate-900">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Company Name
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Total Surveys
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Drafts
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Scheduled
+                  </th>
+                   <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Published
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Stopped
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Responses
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* {orgUsers.map((orgUser) => (
+                  <tr
+                    key={orgUser._id}
+                    className="border-b border-slate-100 dark:border-slate-700"
+                  >
+                    <td className="px-6 py-3 text-slate-800 dark:text-slate-200 font-medium">
+                      {orgUser.userId.username}
+                    </td>
+
+                    <td className="px-6 py-3">{orgUser.tenantId.name}</td>
+
+                    <td className="px-6 py-3">{orgUser.userId.email}</td>
+
+                    <td className="px-6 py-3">{orgUser.role}</td>
+
+                    <td>
+                      {orgUser.lastLogin
+                        ? new Date(orgUser.lastLogin).toLocaleDateString("en-GB")
+                        : "Never"}
+                    </td>
+                  </tr>
+                ))} */}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

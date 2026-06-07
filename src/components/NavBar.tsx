@@ -19,6 +19,7 @@ import {
   Menu,
   X,
   type LucideIcon,
+  LineChart,
 } from "lucide-react";
 import NotificationBell from "./NotificationBell";
 import api from "../api/api";
@@ -36,6 +37,7 @@ const roleLinks: Record<
     { to: "/analytics", label: "Analytics", icon: BarChart3 },
     { to: "/subscription", label: "Subscription", icon: CreditCard },
     { to: "/role-management", label: "Employees", icon: Users },
+    { to: "/reports", label: "Reports", icon: LineChart },
   ],
   admin: [
     { to: "/admin", label: "Dashboard", icon: LayoutGrid },
@@ -44,6 +46,7 @@ const roleLinks: Record<
     { to: "/analytics", label: "Analytics", icon: BarChart3 },
     { to: "/subscription", label: "Subscription", icon: CreditCard },
     { to: "/role-management", label: "Employees", icon: Users },
+    { to: "/reports", label: "Reports", icon: LineChart },
   ],
   creator: [
     { to: "/admin", label: "Dashboard", icon: LayoutGrid },

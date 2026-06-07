@@ -38,6 +38,7 @@ import templateRoutes from "./routes/templateRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import { createDefaultSuperAdmin } from "./utils/createDefaultSuperAdmin.js";
 import { startSurveyStatusJob } from "./jobs/updateSurveyStatus.js";
+import reportsRoutes from "./routes/reportsRoutes.js";
 
 
 const ensureCollections = async () => {
@@ -95,6 +96,7 @@ app.use("/api/templates", templateRoutes);
 app.use("/api/ai", aiRoutes);
 app.use(analyticsRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/reports", reportsRoutes);
 app.use(errorHandler);
 
 app.get("/", (req, res) => {

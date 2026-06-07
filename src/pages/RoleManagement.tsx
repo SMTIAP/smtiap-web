@@ -484,7 +484,7 @@ export default function RoleManagement() {
             className={`flex items-center gap-1.5 px-4 h-[40px] rounded-lg text-white font-semibold text-[13px] shadow-md transition-all duration-200 shrink-0 ${
               !selectedTenantId || !canManageTenantId(selectedTenantId)
                 ? "bg-gray-400 cursor-not-allowed opacity-70"
-                : "bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700"
+                : "bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700"
             }`}
           >
             <Trash2 size={16} /> Delete Organization
@@ -632,7 +632,7 @@ export default function RoleManagement() {
                                 </button>
                                 <button
                                   onClick={() => handleRemoveOrgUser(item)}
-                                  className="px-3 py-1.5 text-sm rounded-lg font-medium bg-rose-500 hover:bg-rose-600 text-white transition"
+                                  className="px-3 py-1.5 text-sm rounded-lg font-medium bg-gradient-to-r from-rose-500 to-pink-600 text-white transition"
                                 >
                                   Remove
                                 </button>
