@@ -466,7 +466,7 @@ export default function CreatedSurveys() {
         try {
           const errData = await response.json();
           msg = errData.message || msg;
-        } catch {}
+        } catch { }
         setDeleteError(msg);
         return;
       }
@@ -526,9 +526,13 @@ export default function CreatedSurveys() {
 
       <div className="fixed top-[70px] left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 z-50" />
 
-      <div className="fixed inset-0 opacity-5 pointer-events-none">
+      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-400/30 dark:bg-indigo-600/20 blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-400/30 dark:bg-purple-600/20 blur-[120px] animate-pulse" style={{ animationDuration: '10s' }} />
+        <div className="absolute top-[30%] left-[50%] w-[40%] h-[40%] rounded-full bg-pink-400/20 dark:bg-pink-600/10 blur-[120px] animate-pulse" style={{ animationDuration: '12s' }} />
+
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 opacity-[0.04] dark:opacity-[0.02]"
           style={{
             backgroundImage:
               "radial-gradient(circle at 2px 2px, rgb(99 102 241) 1px, transparent 1px)",
@@ -579,100 +583,103 @@ export default function CreatedSurveys() {
         </div>
 
         {/* Premium Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-10">
           {[
             {
-              label: "Total",
+              label: "Total Surveys",
               value: surveys.length,
               icon: Layout,
-              gradient: "from-indigo-500 to-indigo-600",
-              bg: "from-indigo-50 to-indigo-100 dark:from-indigo-950/30 dark:to-indigo-900/30",
+              color: "text-indigo-600 dark:text-indigo-400",
+              bg: "bg-indigo-50 dark:bg-indigo-900/30",
+              border: "border-indigo-100 dark:border-indigo-800/30"
             },
             {
               label: "Running",
               value: surveys.filter((s) => s.status === "Running").length,
               icon: Activity,
-              gradient: "from-emerald-500 to-emerald-600",
-              bg: "from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/30",
+              color: "text-emerald-600 dark:text-emerald-400",
+              bg: "bg-emerald-50 dark:bg-emerald-900/30",
+              border: "border-emerald-100 dark:border-emerald-800/30"
             },
             {
               label: "Draft",
               value: surveys.filter((s) => s.status === "Draft").length,
               icon: Clock,
-              gradient: "from-amber-500 to-amber-600",
-              bg: "from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/30",
+              color: "text-amber-600 dark:text-amber-400",
+              bg: "bg-amber-50 dark:bg-amber-900/30",
+              border: "border-amber-100 dark:border-amber-800/30"
             },
             {
               label: "Scheduled",
               value: surveys.filter((s) => s.status === "Scheduled").length,
               icon: Calendar,
-              gradient: "from-purple-500 to-purple-600",
-              bg: "from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30",
+              color: "text-purple-600 dark:text-purple-400",
+              bg: "bg-purple-50 dark:bg-purple-900/30",
+              border: "border-purple-100 dark:border-purple-800/30"
             },
             {
               label: "Finished",
               value: surveys.filter((s) => s.status === "Finished").length,
               icon: CheckCircle2,
-              gradient: "from-rose-500 to-rose-600",
-              bg: "from-rose-50 to-rose-100 dark:from-rose-950/30 dark:to-rose-900/30",
+              color: "text-rose-600 dark:text-rose-400",
+              bg: "bg-rose-50 dark:bg-rose-900/30",
+              border: "border-rose-100 dark:border-rose-800/30"
             },
           ].map((stat) => (
             <div
               key={stat.label}
-              className="group relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl p-4 border border-slate-200 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300 hover:shadow-lg"
+              className={`group relative bg-white/70 dark:bg-slate-800/60 backdrop-blur-2xl rounded-3xl p-6 border border-white/60 dark:border-slate-700/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-500 overflow-hidden shadow-sm`}
             >
-              <div className="flex items-center justify-between">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/0 dark:from-white/5 dark:to-white/0 pointer-events-none" />
+              <div className="relative z-10 flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-xs font-medium uppercase tracking-wide">
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px] font-bold uppercase tracking-widest mb-1.5">
                     {stat.label}
                   </p>
-                  <p className="text-2xl font-bold text-slate-800 dark:text-white mt-1">
+                  <p className="text-4xl font-black text-slate-800 dark:text-white tracking-tight">
                     {stat.value}
                   </p>
                 </div>
                 <div
-                  className={`w-10 h-10 rounded-lg bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}
+                  className={`w-14 h-14 rounded-2xl ${stat.bg} flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500 shadow-inner`}
                 >
-                  <stat.icon size={16} className="text-white" />
+                  <stat.icon size={24} className={stat.color} />
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Premium Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8 border-b border-slate-200 dark:border-slate-800 pb-0">
-          {["All", "Running", "Draft", "Scheduled", "Finished"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`relative px-5 py-2.5 text-sm font-medium rounded-t-lg transition-all ${
-                activeTab === tab
-                  ? "text-indigo-600 dark:text-indigo-400"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-              }`}
-            >
-              {tab}
-              <span
-                className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                  activeTab === tab
-                    ? "bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                }`}
+        {/* Modern Tabs */}
+        <div className="flex items-center justify-between mb-10">
+          <div className="flex flex-wrap gap-1.5 p-1.5 bg-white/50 dark:bg-slate-800/50 backdrop-blur-2xl rounded-2xl border border-white/60 dark:border-slate-700/50 shadow-[0_4px_20px_rgb(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgb(0,0,0,0.1)]">
+            {["All", "Running", "Draft", "Scheduled", "Finished"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`relative px-5 py-2.5 text-sm font-bold rounded-xl transition-all duration-300 flex items-center gap-2.5 ${activeTab === tab
+                  ? "bg-white/90 dark:bg-slate-700/90 text-slate-900 dark:text-white shadow-md border border-white/50 dark:border-slate-600/50 scale-[1.02]"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-slate-700/40 border border-transparent"
+                  }`}
               >
-                {tab === "All"
-                  ? surveys.length
-                  : surveys.filter((s) => s.status === tab).length}
-              </span>
-              {activeTab === tab && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
-              )}
-            </button>
-          ))}
+                {tab}
+                <span
+                  className={`px-2.5 py-0.5 text-[10px] rounded-lg font-black tracking-wide ${activeTab === tab
+                    ? "bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 shadow-sm border border-indigo-100/50 dark:border-indigo-800/30"
+                    : "bg-slate-200/60 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400"
+                    }`}
+                >
+                  {tab === "All"
+                    ? surveys.length
+                    : surveys.filter((s) => s.status === tab).length}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Survey Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
           {filteredSurveys.map((survey) => {
             const isRunning = survey.status === "Running";
             const isDraft = survey.status === "Draft";
@@ -682,149 +689,152 @@ export default function CreatedSurveys() {
             const isCopied = copiedSurveyId === survey._id;
 
             const getStatusColor = () => {
-              if (isRunning) return "from-emerald-500 to-emerald-600";
-              if (isDraft) return "from-amber-500 to-amber-600";
-              if (isScheduled) return "from-purple-500 to-purple-600";
-              return "from-rose-500 to-rose-600";
+              if (isRunning) return "bg-emerald-500";
+              if (isDraft) return "bg-amber-500";
+              if (isScheduled) return "bg-purple-500";
+              return "bg-rose-500";
             };
 
             const getIconBg = () => {
               if (isRunning)
-                return "bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-900/40 dark:to-emerald-800/40 text-emerald-600";
+                return "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
               if (isDraft)
-                return "bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/40 text-amber-600";
+                return "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400";
               if (isScheduled)
-                return "bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/40 dark:to-purple-800/40 text-purple-600";
-              return "bg-gradient-to-br from-rose-100 to-rose-200 dark:from-rose-900/40 dark:to-rose-800/40 text-rose-600";
+                return "bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400";
+              return "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400";
             };
 
-            const getIcon = () => {
-              if (isRunning) return <Activity size={28} />;
-              if (isDraft) return <Clock size={28} />;
-              if (isScheduled) return <Calendar size={28} />;
-              return <CheckCircle2 size={28} />;
-            };
-
-            const getBadgeClass = () => {
+            const getBadgeColors = () => {
               if (isRunning)
-                return "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md";
+                return "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30";
               if (isDraft)
-                return "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md";
+                return "bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300 border-amber-200 dark:border-amber-500/30";
               if (isScheduled)
-                return "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md";
-              return "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-md";
+                return "bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 border-purple-200 dark:border-purple-500/30";
+              return "bg-rose-50 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300 border-rose-200 dark:border-rose-500/30";
+            }
+
+            const getIcon = (size = 24) => {
+              if (isRunning) return <Activity size={size} />;
+              if (isDraft) return <Clock size={size} />;
+              if (isScheduled) return <Calendar size={size} />;
+              return <CheckCircle2 size={size} />;
             };
 
             return (
               <div
                 key={survey._id}
                 onClick={() => handleCardClick(survey)}
-                className="group relative flex flex-col items-center p-8 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-2xl shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden"
+                className="group relative flex flex-col bg-white/70 dark:bg-slate-800/70 backdrop-blur-2xl rounded-3xl border border-white/60 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.3)] transition-all duration-500 hover:-translate-y-1.5 cursor-pointer overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl -z-10"></div>
-                <div className="absolute inset-[1px] bg-white/90 dark:bg-slate-800/90 rounded-2xl -z-5"></div>
-
+                <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/0 dark:from-white/5 dark:to-white/0 pointer-events-none" />
                 <div
-                  className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${getStatusColor()}`}
+                  className={`absolute top-0 left-0 w-full h-1.5 ${getStatusColor()} opacity-90`}
                 />
 
-                <div className="flex justify-between items-center w-full mb-6">
-                  <span className="text-slate-500 text-[10px] font-extrabold bg-white/80 dark:bg-slate-700/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm border border-slate-100 dark:border-slate-600">
-                    {new Date(survey.createdAt).toLocaleDateString("en-GB")}
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    {(isRunning || isScheduled) && (
-                      <button
-                        type="button"
-                        onClick={(e) => handleShareClick(e, survey)}
-                        className="w-8 h-8 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all flex items-center justify-center shadow-sm hover:shadow-md"
-                        title="Share survey"
-                      >
-                        <Share2 size={13} />
-                      </button>
-                    )}
-
-                    {isScheduled && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/survey-settings/${survey._id}`);
-                        }}
-                        className="w-8 h-8 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all flex items-center justify-center shadow-sm hover:shadow-md"
-                        title="Survey Settings"
-                      >
-                        <Settings size={13} />
-                      </button>
-                    )}
-
-                    {canCreate && (
-                      <button
-                        type="button"
-                        onClick={(e) => handleCopyClick(e, survey)}
-                        disabled={isCopying}
-                        className="w-8 h-8 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-violet-600 hover:border-violet-200 hover:bg-violet-50 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-                        title="Make a copy"
-                      >
-                        {isCopied ? (
-                          <Check size={13} className="text-emerald-500" />
-                        ) : isCopying ? (
-                          <div className="w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <CopyPlus size={13} />
-                        )}
-                      </button>
-                    )}
-
-                    {canCreate && (
-                      <button
-                        type="button"
-                        onClick={(e) => handleDeleteClick(e, survey)}
-                        disabled={deletingSurveyId === survey._id}
-                        className="w-8 h-8 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 hover:text-rose-500 hover:border-rose-200 hover:bg-rose-50 transition-all flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-                        title="Delete survey"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
+                <div className="relative z-10 p-7 flex flex-col h-full">
+                  <div className="flex justify-between items-start mb-5">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${getIconBg()}`}>
+                      {getIcon(24)}
+                    </div>
+                    <div className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${getBadgeColors()}`}>
+                      {survey.status}
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex flex-col items-center justify-center flex-grow text-center w-full">
-                  <div
-                    className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-4 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 shadow-lg ${getIconBg()}`}
-                  >
-                    {getIcon()}
+                  <div className="flex-grow">
+                    <h3 className="text-slate-900 dark:text-white font-bold text-lg leading-snug line-clamp-2 mb-4 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                      {survey.surveyTitle || "Untitled Survey"}
+                    </h3>
+
+                    <div className="space-y-2 mb-4">
+                      {isRunning && (
+                        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+                          <Activity size={14} />
+                          <span>Active Now</span>
+                        </div>
+                      )}
+                      {isRunning && survey.scheduledClose && (
+                        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-medium">
+                          <Calendar size={14} />
+                          <span>Closes: {new Date(survey.scheduledClose).toLocaleString()}</span>
+                        </div>
+                      )}
+                      {isScheduled && survey.scheduledOpen && (
+                        <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-xs font-semibold">
+                          <Calendar size={14} />
+                          <span>Opens: {new Date(survey.scheduledOpen).toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
+                        <Clock size={14} />
+                        <span>Created: {new Date(survey.createdAt).toLocaleDateString("en-GB")}</span>
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="text-slate-800 dark:text-white font-bold text-base leading-tight line-clamp-2 transition-colors duration-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 mb-2">
-                    {survey.surveyTitle || "Untitled Survey"}
-                  </h3>
-                  {isRunning && (
-                    <div className="flex items-center gap-1 text-emerald-600 text-[10px] font-bold">
-                      <Activity size={10} />
-                      <span>Active Now</span>
-                    </div>
-                  )}
-                  {/* ✅ Show closing date for running surveys with time */}
-                  {isRunning && survey.scheduledClose && (
-                    <div className="flex items-center gap-1 text-amber-600 text-[10px] font-bold mt-1">
-                      <Calendar size={10} />
-                      <span>Closes: {new Date(survey.scheduledClose).toLocaleString()}</span>
-                    </div>
-                  )}
-                  {/* ✅ Show scheduled open date with time */}
-                  {isScheduled && survey.scheduledOpen && (
-                    <div className="flex items-center gap-1 text-purple-600 text-[10px] font-bold">
-                      <Calendar size={10} />
-                      <span>Opens: {new Date(survey.scheduledOpen).toLocaleString()}</span>
-                    </div>
-                  )}
-                </div>
 
-                <div
-                  className={`mt-4 px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${getBadgeClass()}`}
-                >
-                  {survey.status}
+                  <div className="pt-4 mt-auto border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
+                    <span className="text-slate-400 text-[10px] font-semibold">
+                      {survey.pages?.length || 0} Pages
+                    </span>
+                    <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                      {(isRunning || isScheduled) && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleShareClick(e, survey)}
+                          className="w-8 h-8 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors flex items-center justify-center"
+                          title="Share survey"
+                        >
+                          <Share2 size={16} />
+                        </button>
+                      )}
+
+                      {isScheduled && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/survey-settings/${survey._id}`);
+                          }}
+                          className="w-8 h-8 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors flex items-center justify-center"
+                          title="Survey Settings"
+                        >
+                          <Settings size={16} />
+                        </button>
+                      )}
+
+                      {canCreate && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleCopyClick(e, survey)}
+                          disabled={isCopying}
+                          className="w-8 h-8 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors flex items-center justify-center disabled:opacity-50"
+                          title="Make a copy"
+                        >
+                          {isCopied ? (
+                            <Check size={16} className="text-emerald-500" />
+                          ) : isCopying ? (
+                            <div className="w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <CopyPlus size={16} />
+                          )}
+                        </button>
+                      )}
+
+                      {canCreate && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteClick(e, survey)}
+                          disabled={deletingSurveyId === survey._id}
+                          className="w-8 h-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors flex items-center justify-center disabled:opacity-50"
+                          title="Delete survey"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             );
@@ -832,31 +842,29 @@ export default function CreatedSurveys() {
         </div>
 
         {filteredSurveys.length === 0 && (
-          <div className="text-center py-20">
-            <div className="relative w-32 h-32 mx-auto mb-8">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 blur-2xl opacity-20"></div>
-              <div className="relative w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center shadow-xl">
-                <Layout
-                  size={48}
-                  className="text-slate-300 dark:text-slate-600"
-                />
+          <div className="relative text-center py-24 bg-white/40 dark:bg-slate-800/40 rounded-[2.5rem] border border-white/60 dark:border-slate-700/50 mt-10 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/0 dark:from-white/5 dark:to-white/0 pointer-events-none" />
+            <div className="relative z-10 w-24 h-24 mx-auto mb-6">
+              <div className="absolute inset-0 rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 animate-ping"></div>
+              <div className="relative w-24 h-24 mx-auto rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 dark:text-indigo-400">
+                <Layout size={40} />
               </div>
             </div>
-            <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300 mb-2">
+            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">
               No surveys found
             </h3>
-            <p className="text-slate-400 text-sm mb-6">
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-8 max-w-sm mx-auto">
               {activeTab === "All"
-                ? "You haven't created any surveys yet."
+                ? "You haven't created any surveys yet. Get started by creating your first survey."
                 : `No ${activeTab.toLowerCase()} surveys available.`}
             </p>
             {canCreate && activeTab !== "Finished" && (
               <button
                 onClick={() => navigate("/templates")}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all"
               >
-                <Plus size={16} />
-                Create your first survey
+                <Plus size={18} />
+                Create Survey
               </button>
             )}
           </div>
