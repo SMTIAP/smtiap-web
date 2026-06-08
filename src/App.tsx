@@ -7,6 +7,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { createContext, useContext, useEffect, useState } from "react";
+import { jwtDecode } from "jwt-decode";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Toaster } from "sonner";
@@ -64,13 +65,23 @@ function ThemeSync() {
   const location = useLocation();
 
   useEffect(() => {
-    const hasToken = !!localStorage.getItem("token");
-    const savedTheme = localStorage.getItem("theme");
-    if (hasToken && savedTheme === "dark") {
-      setDarkMode(true);
-    } else {
-      setDarkMode(false);
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded = jwtDecode<{ id?: string }>(token);
+        const userId = decoded?.id;
+        if (userId) {
+          const savedTheme = localStorage.getItem(`theme_${userId}`);
+          if (savedTheme === "dark") {
+            setDarkMode(true);
+            return;
+          }
+        }
+      } catch {
+        // ignore
+      }
     }
+    setDarkMode(false);
   }, [location.pathname, setDarkMode]);
 
   return null;
@@ -88,8 +99,19 @@ function Layout() {
 
 export default function App() {
   const [darkMode, setDarkMode] = useState(() => {
-    const hasToken = !!localStorage.getItem("token");
-    return hasToken && localStorage.getItem("theme") === "dark";
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded = jwtDecode<{ id?: string }>(token);
+        const userId = decoded?.id;
+        if (userId) {
+          return localStorage.getItem(`theme_${userId}`) === "dark";
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return false;
   });
 
   useEffect(() => {
@@ -103,7 +125,18 @@ export default function App() {
   const toggleDarkMode = () =>
     setDarkMode((prev) => {
       const next = !prev;
-      localStorage.setItem("theme", next ? "dark" : "light");
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const decoded = jwtDecode<{ id?: string }>(token);
+          const userId = decoded?.id;
+          if (userId) {
+            localStorage.setItem(`theme_${userId}`, next ? "dark" : "light");
+          }
+        } catch {
+          // ignore
+        }
+      }
       return next;
     });
 
