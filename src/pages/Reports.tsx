@@ -89,7 +89,7 @@ export default function Reports() {
     fetchTenants();
   }, [location.key]);
 
-    useEffect(() => {
+  useEffect(() => {
     const fetchOrganizationData = async () => {
       try {
         const response = await fetch("http://localhost:5000/api/reports/user-tenant", {
@@ -125,10 +125,10 @@ export default function Reports() {
 
   const filteredUsers = searchTerm.trim()
     ? users.filter(
-        (user) =>
-          user.role !== "super_admin" &&
-          user.email.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
+      (user) =>
+        user.role !== "super_admin" &&
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()),
+    )
     : [];
 
   const filteredOrganizations = tenants.filter((tenant) =>
@@ -160,7 +160,7 @@ export default function Reports() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate(-1)}
-              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center"
+              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300"
             >
               <ArrowLeft size={16} />
             </button>
@@ -175,11 +175,10 @@ export default function Reports() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 border ${
-                  activeTab === tab
+                className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 border ${activeTab === tab
                     ? "flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-[13px] border-indigo-600 shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
                     : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
-                }`}
+                  }`}
               >
                 {tab === "tenants" && "Tenant Registrations"}
                 {tab === "users" && "Tenant Users"}
@@ -214,16 +213,16 @@ export default function Reports() {
             <table className="min-w-full">
               <thead className="bg-slate-100 dark:bg-slate-900">
                 <tr className="bg-slate-100 dark:bg-slate-900">
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Company
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Domain
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Subscription
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Created Date
                   </th>
                 </tr>
@@ -238,11 +237,11 @@ export default function Reports() {
                       {tenant.name}
                     </td>
 
-                    <td className="px-6 py-3">{tenant.domain}</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{tenant.domain}</td>
 
-                    <td className="px-6 py-3">{tenant.plan}</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{tenant.plan}</td>
 
-                    <td className="px-6 py-3">
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
                       {new Date(tenant.created_at).toLocaleDateString("en-GB")}
                     </td>
                   </tr>
@@ -254,19 +253,19 @@ export default function Reports() {
             <table className="min-w-full">
               <thead className="bg-slate-100 dark:bg-slate-900">
                 <tr className="bg-slate-100 dark:bg-slate-900">
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Username
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Tenant
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Email
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Role
                   </th>
-                   <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Last Login
                   </th>
                 </tr>
@@ -281,13 +280,13 @@ export default function Reports() {
                       {orgUser.userId.username}
                     </td>
 
-                    <td className="px-6 py-3">{orgUser.tenantId.name}</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{orgUser.tenantId.name}</td>
 
-                    <td className="px-6 py-3">{orgUser.userId.email}</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{orgUser.userId.email}</td>
 
-                    <td className="px-6 py-3">{orgUser.role}</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{orgUser.role}</td>
 
-                    <td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
                       {orgUser.lastLogin
                         ? new Date(orgUser.lastLogin).toLocaleDateString("en-GB")
                         : "N/A"}
@@ -301,55 +300,33 @@ export default function Reports() {
             <table className="min-w-full">
               <thead className="bg-slate-100 dark:bg-slate-900">
                 <tr className="bg-slate-100 dark:bg-slate-900">
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Company Name
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Total Surveys
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Drafts
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Scheduled
                   </th>
-                   <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Published
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Stopped
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Responses
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Status
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {/* {orgUsers.map((orgUser) => (
-                  <tr
-                    key={orgUser._id}
-                    className="border-b border-slate-100 dark:border-slate-700"
-                  >
-                    <td className="px-6 py-3 text-slate-800 dark:text-slate-200 font-medium">
-                      {orgUser.userId.username}
-                    </td>
-
-                    <td className="px-6 py-3">{orgUser.tenantId.name}</td>
-
-                    <td className="px-6 py-3">{orgUser.userId.email}</td>
-
-                    <td className="px-6 py-3">{orgUser.role}</td>
-
-                    <td>
-                      {orgUser.lastLogin
-                        ? new Date(orgUser.lastLogin).toLocaleDateString("en-GB")
-                        : "Never"}
-                    </td>
-                  </tr>
-                ))} */}
               </tbody>
             </table>
           )}
