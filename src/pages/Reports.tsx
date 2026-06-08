@@ -29,6 +29,19 @@ interface UserTenantRole {
   lastLogin: string | null;
 }
 
+interface AuditLog {
+  _id: string;
+  action: string;
+  createdAt: string;
+  userId?: string;
+}
+
+export const formatRole = (role: string) => {
+  return role
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
 export default function Reports() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,8 +50,9 @@ export default function Reports() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("tenants");
 
-  const [selectedTenantId, setSelectedTenantId] = useState<string>("");
+  // const [selectedTenantId, setSelectedTenantId] = useState<string>("");
   const [orgUsers, setOrgUsers] = useState<UserTenantRole[]>([]);
+  const [auditLogs, setauditLogs] = useState<AuditLog[]>([]);
 
   const token = localStorage.getItem("token");
   const authHeaders = (): Record<string, string> => {
@@ -47,28 +61,10 @@ export default function Reports() {
     };
     if (token) headers["Authorization"] = `Bearer ${token}`;
     const id = localStorage.getItem("activeTenantId");
-    if (id && id !== "__system__") headers["x-tenant-id"] = id;
+    if (id && id !== "system") headers["x-tenant-id"] = id;
     return headers;
   };
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:5000/api/role-management",
-          {
-            headers: authHeaders(),
-            credentials: "include",
-          },
-        );
-        const data = await response.json();
-        setUsers(data);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-    fetchUsers();
-  }, [location.key]);
 
   useEffect(() => {
     const fetchTenants = async () => {
@@ -81,6 +77,7 @@ export default function Reports() {
           },
         );
         const data = await response.json();
+        console.log("API RESULT 1:", data); // 👈 add this
         setTenants(data);
       } catch (error) {
         console.error("Error fetching tenants:", error);
@@ -97,7 +94,14 @@ export default function Reports() {
           credentials: "include",
         });
         const data = await response.json();
-        setOrgUsers(data);
+        console.log("API RESULT 2:", data); // 👈 add this
+        console.log("AUDIT LOGS:", data.auditLogs); // 👈 THIS is what you want
+        // setOrgUsers(Array.isArray(data) ? data : []);
+        setOrgUsers(data.users ?? []);
+setauditLogs(data.auditLogs ?? []);
+console.log("ORG USERS:", orgUsers);
+
+        // setauditLogs([]);
       } catch (error) {
         console.error(error);
       }
@@ -114,31 +118,63 @@ export default function Reports() {
     }
   })();
 
-  const isActiveTenantAdmin = (tenantId: string) =>
-    orgUsers.some(
-      (u) =>
-        u.tenantId._id === tenantId &&
-        u.userId._id === currentUserId &&
-        u.role === "admin" &&
-        u.status === "active",
-    );
+useEffect(() => {
+  const fetchTenantActivity = async () => {
+    try {
+      const response = await fetch(
+        "https://localhost:5000/api/reports/tenant-activity",
+        {
+          headers: authHeaders(),
+          credentials: "include",
+        }
+      );
 
-  const filteredUsers = searchTerm.trim()
-    ? users.filter(
-      (user) =>
-        user.role !== "super_admin" &&
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()),
-    )
-    : [];
+      const data = await response.json();
 
-  const filteredOrganizations = tenants.filter((tenant) =>
-    orgUsers.some(
-      (u) =>
-        u.tenantId._id === tenant._id &&
-        u.userId._id === currentUserId &&
-        u.status === "active",
-    ),
-  );
+      console.log("TENANT ACTIVITY DATA:", data); // 👈 SEE DATA HERE
+
+      // setActivityData(data); // if you have state
+    } catch (error) {
+      console.error("Error fetching activity:", error);
+    }
+  };
+
+  fetchTenantActivity();
+}, [location.key]);
+
+//   const getLastLogin = (userId: string) => {
+//   const logs = auditLogs
+//     .filter((log) => log.userId === userId && log.action === "login")
+//     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+//   return logs[0]?.createdAt ?? null;
+// };
+
+  // const isActiveTenantAdmin = (tenantId: string) =>
+  //   orgUsers.some(
+  //     (u) =>
+  //       u.tenantId._id === tenantId &&
+  //       u.userId._id === currentUserId &&
+  //       u.role === "admin" &&
+  //       u.status === "active",
+  //   );
+
+  // const filteredUsers = searchTerm.trim()
+  //   ? users.filter(
+  //     (user) =>
+  //       user.role !== "super_admin" &&
+  //       user.email.toLowerCase().includes(searchTerm.toLowerCase()),
+  //   )
+  //   : [];
+
+  // const filteredOrganizations = tenants.filter((tenant) =>
+  //   orgUsers.some(
+  //     (u) =>
+  //       u.tenantId._id === tenant._id &&
+  //       u.userId._id === currentUserId &&
+  //       u.status === "active",
+  //   ),
+  // );
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
@@ -277,19 +313,20 @@ export default function Reports() {
                     className="border-b border-slate-100 dark:border-slate-700"
                   >
                     <td className="px-6 py-3 text-slate-800 dark:text-slate-200 font-medium">
-                      {orgUser.userId.username}
+                      {orgUser.userId?.username}
                     </td>
 
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{orgUser.tenantId.name}</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{orgUser.tenantId?.name}</td>
 
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{orgUser.userId.email}</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{orgUser.userId?.email}</td>
 
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{orgUser.role}</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{formatRole(orgUser.role)}</td>
 
                     <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
                       {orgUser.lastLogin
-                        ? new Date(orgUser.lastLogin).toLocaleDateString("en-GB")
-                        : "N/A"}
+                          ? new Date(orgUser.lastLogin).toLocaleString("en-GB")
+                          : "NEVER"
+                      }
                     </td>
                   </tr>
                 ))}
@@ -327,6 +364,35 @@ export default function Reports() {
                 </tr>
               </thead>
               <tbody>
+                {orgUsers.map((orgUser) => (
+                  <tr
+                    key={orgUser._id}
+                    className="border-b border-slate-100 dark:border-slate-700"
+                  >
+                    <td className="px-6 py-3 text-slate-800 dark:text-slate-200 font-medium">
+                      -
+                    </td>
+
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">-</td>
+
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">-</td>
+
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">-</td>
+
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                      -
+                    </td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                      -
+                    </td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                      -
+                    </td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                      -
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           )}

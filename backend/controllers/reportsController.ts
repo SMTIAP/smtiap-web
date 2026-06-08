@@ -3,6 +3,8 @@ import Tenant from "../models/Tenant.js";
 import { IUser } from "../models/User.js";
 import UserTenantRole from "../models/UserTenantRole.js";
 import Audit from "../models/AuditLog.js";
+import mongoose from "mongoose";
+import Survey from "../models/Survey.js";
 
 interface AuthRequest extends Request {
   user?: IUser;
@@ -13,6 +15,9 @@ const reqAny = (req: Request): Record<string, any> =>
 
 const reqTenantIds = (req: Request): string[] =>
   (reqAny(req).tenantIds as string[]) ?? [];
+
+const reqSurveyIds = (req: Request): string[] =>
+  (reqAny(req).surveyIds as string[]) ?? [];
 
 export const getAllTenants = async (req: Request, res: Response) => {
   try {
@@ -37,58 +42,114 @@ export const getAllTenants = async (req: Request, res: Response) => {
 
 export const getUserTenantData = async (req: Request, res: Response) => {
   try {
-    const tenantIds = reqTenantIds(req);
+    const tenantIds = (req as any).tenantIds ?? [];
 
     if (tenantIds.length === 0) {
-      return res.status(200).json([]);
+      return res.status(200).json({
+        users: [],
+        auditLogs: [],
+      });
     }
 
-    // 1. Get tenant users
+    // 1. Get users
     const userTenantRoles = await UserTenantRole.find({
       tenantId: { $in: tenantIds },
       status: "active",
     })
       .populate("userId", "username email")
-      .populate("tenantId", "name");
+      .populate("tenantId", "name")
+      .lean();
 
-    // 2. Extract user IDs
-    const userIds = userTenantRoles.map(u => u.userId._id);
-
-    // 3. Get last login ONLY for those users
-    const lastLogins = await Audit.aggregate([
-      {
-        $match: {
-          action: "LOGIN",
-          userId: { $in: userIds }
-        }
-      },
+    // 2. Get audit logs (latest login per user)
+    const auditLogs = await Audit.aggregate([
+      { $match: { action: "login" } },
       { $sort: { createdAt: -1 } },
       {
         $group: {
-          _id: "$userId",
-          lastLogin: { $first: "$createdAt" }
-        }
-      }
+          _id: "$user_id",
+          lastLogin: { $first: "$createdAt" },
+        },
+      },
     ]);
+    console.log("🔥 RAW AUDIT AGGREGATION RESULT:", auditLogs);
 
+    // 3. Convert to lookup map
     const loginMap = new Map(
-      lastLogins.map(l => [l._id.toString(), l.lastLogin])
+      auditLogs.map((log) => [String(log._id), log.lastLogin])
     );
 
-    // 4. Merge into response
-    const result = userTenantRoles.map(u => {
-      const obj = u.toObject();
-      return {
-        ...obj,
-        lastLogin: loginMap.get(u.userId._id.toString()) || null
-      };
-    });
+    // 4. Merge lastLogin into users
+    const mergedUsers = userTenantRoles.map((u: any) => ({
+      ...u,
+      lastLogin: loginMap.get(String(u.userId._id)) || null,
+    }));
+console.log("USER IDS:");
+console.log(userTenantRoles.map(u => String(u.userId._id)));
 
-    return res.status(200).json(result);
-
-  } catch (error: unknown) {
-    return res.status(500).json({
-      message: error instanceof Error ? error.message : "Server Error",
+console.log("AUDIT IDS:");
+console.log(auditLogs.map(a => String(a._id)));
+    return res.status(200).json({
+      users: mergedUsers,
+      auditLogs,
     });
+  } catch (error: any) {
+    console.error(error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const getTenantActivity = async (req: Request, res: Response) => {
+  try {
+    const surveyIds = (req as any).surveyIds ?? [];
+    const tenantIds = (req as any).tenantIds ?? [];
+
+    // If nothing available
+    if (tenantIds.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // Get surveys for those tenants
+    const surveys = await Survey.find({
+      tenantId: { $in: tenantIds }
+    }).lean();
+
+    // Group analytics per tenant
+    const activityMap = new Map();
+
+    for (const survey of surveys) {
+      const tenantId = String(survey.tenantId);
+
+      if (!activityMap.has(tenantId)) {
+        activityMap.set(tenantId, {
+          tenantId,
+          totalSurveys: 0,
+          drafts: 0,
+          scheduled: 0,
+          published: 0,
+          stopped: 0,
+          responses: 0,
+          status: "active",
+        });
+      }
+
+      const item = activityMap.get(tenantId);
+
+      item.totalSurveys++;
+
+      // status breakdown (adjust based on your schema)
+      if (survey.status === "Draft") item.drafts++;
+      if (survey.status === "Scheduled") item.scheduled++;
+      if (survey.status === "Running") item.published++;
+      if (survey.status === "Finished") item.stopped++;
+
+      // if you have responses field
+      // item.responses += survey.responsesCount || 0;
+    }
+
+    return res.status(200).json(Array.from(activityMap.values()));
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server Error" });
   }
 };
