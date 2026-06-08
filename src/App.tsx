@@ -4,6 +4,7 @@ import {
   Route,
   Outlet,
   Navigate,
+  useLocation,
 } from "react-router-dom";
 import { createContext, useContext, useEffect, useState } from "react";
 import { ToastContainer } from "react-toastify";
@@ -50,12 +51,29 @@ import Reports from "./pages/Reports.tsx";
 // Dark mode context
 export const DarkModeContext = createContext({
   darkMode: false,
-  toggleDarkMode: () => {},
-  setDarkMode: (value: boolean) => {},
+  toggleDarkMode: () => { },
+  setDarkMode: (value: boolean) => { },
 });
 
 export function useDarkMode() {
   return useContext(DarkModeContext);
+}
+
+function ThemeSync() {
+  const { setDarkMode } = useDarkMode();
+  const location = useLocation();
+
+  useEffect(() => {
+    const hasToken = !!localStorage.getItem("token");
+    const savedTheme = localStorage.getItem("theme");
+    if (hasToken && savedTheme === "dark") {
+      setDarkMode(true);
+    } else {
+      setDarkMode(false);
+    }
+  }, [location.pathname, setDarkMode]);
+
+  return null;
 }
 
 function Layout() {
@@ -77,19 +95,23 @@ export default function App() {
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
     } else {
       document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
     }
   }, [darkMode]);
 
-  const toggleDarkMode = () => setDarkMode((prev) => !prev);
+  const toggleDarkMode = () =>
+    setDarkMode((prev) => {
+      const next = !prev;
+      localStorage.setItem("theme", next ? "dark" : "light");
+      return next;
+    });
 
   return (
     <DarkModeContext.Provider value={{ darkMode, toggleDarkMode, setDarkMode }}>
       <div className="min-h-screen bg-white dark:bg-[#0F172A] transition-colors duration-300">
         <BrowserRouter>
+          <ThemeSync />
           <TenantProvider>
             <Routes>
               <Route path="/take-survey/:surveyId" element={<TakeSurvey />} />
@@ -141,14 +163,14 @@ export default function App() {
                 }
               />
 
-<Route
-  path="/super-admin/audit-log"
-  element={
-    <ProtectedRoute allowedRoles={["super_admin"]}>
-      <SuperAdminAuditLog />
-    </ProtectedRoute>
-  }
-/>
+              <Route
+                path="/super-admin/audit-log"
+                element={
+                  <ProtectedRoute allowedRoles={["super_admin"]}>
+                    <SuperAdminAuditLog />
+                  </ProtectedRoute>
+                }
+              />
 
 
               <Route element={<Layout />}>
