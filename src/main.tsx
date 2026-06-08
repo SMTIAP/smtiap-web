@@ -5,8 +5,11 @@ import App from './App.tsx'
 
 // Apply saved theme before render to avoid flash
 const savedTheme = localStorage.getItem("theme");
-if (savedTheme === "dark") {
+const hasToken = !!localStorage.getItem("token");
+if (savedTheme === "dark" && hasToken) {
   document.documentElement.classList.add("dark");
+} else {
+  document.documentElement.classList.remove("dark");
 }
 
 createRoot(document.getElementById('root')!).render(

@@ -51,6 +51,7 @@ import Reports from "./pages/Reports.tsx";
 export const DarkModeContext = createContext({
   darkMode: false,
   toggleDarkMode: () => {},
+  setDarkMode: (value: boolean) => {},
 });
 
 export function useDarkMode() {
@@ -69,7 +70,8 @@ function Layout() {
 
 export default function App() {
   const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem("theme") === "dark";
+    const hasToken = !!localStorage.getItem("token");
+    return hasToken && localStorage.getItem("theme") === "dark";
   });
 
   useEffect(() => {
@@ -85,7 +87,7 @@ export default function App() {
   const toggleDarkMode = () => setDarkMode((prev) => !prev);
 
   return (
-    <DarkModeContext.Provider value={{ darkMode, toggleDarkMode }}>
+    <DarkModeContext.Provider value={{ darkMode, toggleDarkMode, setDarkMode }}>
       <div className="min-h-screen bg-white dark:bg-[#0F172A] transition-colors duration-300">
         <BrowserRouter>
           <TenantProvider>
