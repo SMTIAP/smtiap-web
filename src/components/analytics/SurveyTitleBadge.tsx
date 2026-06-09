@@ -3,13 +3,13 @@ interface SurveyTitleBadgeProps {
   surveyTitle: string;
 }
 
-// Renders a blue rounded badge containing the survey title.
+// Renders the survey name as a page title (not a button).
 export default function SurveyTitleBadge({
   surveyTitle,
 }: SurveyTitleBadgeProps) {
   return (
-    <div className="flex py-2 px-6 justify-center items-center rounded-lg bg-[#2B8CED]">
-      <p className="text-[#F7FAFC] text-sm font-bold">{surveyTitle}</p>
-    </div>
+    <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+      {surveyTitle}
+    </h1>
   );
 }
