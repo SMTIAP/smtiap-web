@@ -103,11 +103,21 @@ export const getTenantActivity = async (req: Request, res: Response) => {
     const surveyIds = (req as any).surveyIds ?? [];
     const tenantIds = (req as any).tenantIds ?? [];
 
-    // If nothing available
+
     if (tenantIds.length === 0) {
       return res.status(200).json([]);
     }
 
+    // 1. Fetch tenants (for names)
+    const tenants = await Tenant.find({
+      _id: { $in: tenantIds },
+    })
+      .select("_id name")
+      .lean();
+
+    const tenantMap = new Map(
+      tenants.map((t) => [String(t._id), t.name])
+    );
     // Get surveys for those tenants
     const surveys = await Survey.find({
       tenantId: { $in: tenantIds }
@@ -122,6 +132,7 @@ export const getTenantActivity = async (req: Request, res: Response) => {
       if (!activityMap.has(tenantId)) {
         activityMap.set(tenantId, {
           tenantId,
+          tenantName: tenantMap.get(tenantId) ?? "Unknown",
           totalSurveys: 0,
           drafts: 0,
           scheduled: 0,
