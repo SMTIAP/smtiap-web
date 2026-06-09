@@ -30,17 +30,19 @@ export default function AiInsightsSection({ runAnalysis, isAnalyzing, aiError, s
           <Sparkles size={20} className="text-yellow-500" />
           <h2 className="text-lg font-bold dark:text-white">AI Insights</h2>
         </div>
-        <button
-          onClick={runAnalysis}
-          disabled={isAnalyzing}
-          className="flex items-center gap-2 px-4 py-2 bg-[#2B8CED] hover:bg-[#1A76D2] disabled:opacity-60 text-white rounded-lg font-bold text-sm transition-all shadow-sm"
-        >
-          {isAnalyzing ? (
-            <><Loader2 size={16} className="animate-spin" /><span>Analyzing...</span></>
-          ) : (
-            <><Sparkles size={16} /><span>Run AI Analysis</span></>
-          )}
-        </button>
+        <span data-export-hidden="true">
+          <button
+            onClick={runAnalysis}
+            disabled={isAnalyzing}
+            className="flex items-center gap-2 px-4 py-2 bg-[#2B8CED] hover:bg-[#1A76D2] disabled:opacity-60 text-white rounded-lg font-bold text-sm transition-all shadow-sm"
+          >
+            {isAnalyzing ? (
+              <><Loader2 size={16} className="animate-spin" /><span>Analyzing...</span></>
+            ) : (
+              <><Sparkles size={16} /><span>Run AI Analysis</span></>
+            )}
+          </button>
+        </span>
       </div>
 
       {aiError && (

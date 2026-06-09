@@ -66,7 +66,7 @@ export default function AnalyticsChartsSection({
   getQuestionId, buildOptionChartData, optionChartOptions,
 }: AnalyticsChartsSectionProps) {
   return (
-    <div id="analytics-export-area">
+    <div>
       {/* Stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <StatCard label="Total Responses" value={String(totalResponses)} />

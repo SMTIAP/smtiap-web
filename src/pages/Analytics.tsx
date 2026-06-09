@@ -133,29 +133,32 @@ export default function Analytics() {
             setToDate={setToDate}
           />
 
-          {/* Component - stat cards + chart sections */}
-          <AnalyticsChartsSection
-            totalResponses={filteredTotalResponses}
-            completionRate={completionRate}
-            averageRating={averageRating}
-            ratingQuestions={ratingQuestions}
-            ratingData={ratingData}
-            ratingOptions={ratingOptions}
-            multipleChoiceQuestions={multipleChoiceQuestions}
-            checkboxQuestions={checkboxQuestions}
-            getQuestionId={(q) => String(q._id ?? q.id ?? "").trim()}
-            buildOptionChartData={buildOptionChartData}
-            optionChartOptions={optionChartOptions}
-          />
+          {/* Export-aware wrapper */}
+          <div id="analytics-export-area">
+            {/* Component - stat cards + chart sections */}
+            <AnalyticsChartsSection
+              totalResponses={filteredTotalResponses}
+              completionRate={completionRate}
+              averageRating={averageRating}
+              ratingQuestions={ratingQuestions}
+              ratingData={ratingData}
+              ratingOptions={ratingOptions}
+              multipleChoiceQuestions={multipleChoiceQuestions}
+              checkboxQuestions={checkboxQuestions}
+              getQuestionId={(q) => String(q._id ?? q.id ?? "").trim()}
+              buildOptionChartData={buildOptionChartData}
+              optionChartOptions={optionChartOptions}
+            />
 
-          {/* Component - AI insights card */}
-          <AiInsightsSection
-            runAnalysis={runAnalysis}
-            isAnalyzing={isAnalyzing}
-            aiError={aiError}
-            summary={summary}
-            keywords={keywords}
-          />
+            {/* Component - AI insights card */}
+            <AiInsightsSection
+              runAnalysis={runAnalysis}
+              isAnalyzing={isAnalyzing}
+              aiError={aiError}
+              summary={summary}
+              keywords={keywords}
+            />
+          </div>
         </div>
       </main>
     </div>
