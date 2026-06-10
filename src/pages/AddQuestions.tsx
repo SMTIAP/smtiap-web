@@ -1766,7 +1766,7 @@ export default function AddQuestions() {
                       )}
                       
                       <h1 
-                        className="text-2xl font-bold mb-2 font-serif text-left w-full break-words whitespace-normal" 
+                        className="text-2xl font-bold mb-2  text-left w-full break-words whitespace-normal" 
                         style={{ color: getTextColor(backgroundColor) }}
                       >
                         {surveyTitle}
@@ -1774,7 +1774,7 @@ export default function AddQuestions() {
                       
                       {description && (
                         <p 
-                          className="text-sm mb-1 font-serif text-left w-full break-words whitespace-normal" 
+                          className="text-sm mb-1  text-left w-full break-words whitespace-normal" 
                           style={{ color: getTextColor(backgroundColor, 0.7) }}
                         >
                           {description}
@@ -1782,7 +1782,7 @@ export default function AddQuestions() {
                       )}
                       
                       <p 
-                        className="mb-8 font-serif text-left w-full break-words whitespace-normal" 
+                        className="mb-8  text-left w-full break-words whitespace-normal" 
                         style={{ color: getTextColor(backgroundColor, 0.6) }}
                       >
                         {activePage.title}
