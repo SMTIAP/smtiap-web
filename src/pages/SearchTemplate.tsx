@@ -9,6 +9,9 @@ import {
   ArrowLeft,
   ChevronRight,
   Clock,
+  Crown,
+  Trophy,
+  Medal,
 } from "lucide-react";
 import { templateApi, type Template, type Category } from "../api/templateApi";
 
@@ -28,6 +31,50 @@ const getEstimatedTimeLabel = (time: string | undefined): string => {
     case "detailed": return "Detailed (~10-15 min)";
     case "comprehensive": return "Comprehensive (~20+ min)";
     default: return "Quick (~2-3 min)";
+  }
+};
+
+// Helper to parse used count from string like "15" or "15+" to number
+const parseUsedCount = (usedCountStr: string | undefined): number => {
+  if (!usedCountStr) return 0;
+  const match = usedCountStr.match(/\d+/);
+  if (match) {
+    return parseInt(match[0].replace(/,/g, ""));
+  }
+  return 0;
+};
+
+// Get rank styling based on position
+const getRankStyles = (rank: number) => {
+  switch (rank) {
+    case 1:
+      return {
+        borderClass: "border-yellow-400 ring-2 ring-yellow-400/50",
+        badgeClass: "bg-gradient-to-r from-yellow-500 to-amber-500",
+        badgeText: "Most Popular",
+        icon: Crown,
+      };
+    case 2:
+      return {
+        borderClass: "border-gray-300 ring-2 ring-gray-300/50 dark:border-gray-500",
+        badgeClass: "bg-gradient-to-r from-gray-400 to-gray-500",
+        badgeText: "2nd Most Popular",
+        icon: Trophy,
+      };
+    case 3:
+      return {
+        borderClass: "border-amber-600 ring-2 ring-amber-600/30 dark:border-amber-500",
+        badgeClass: "bg-gradient-to-r from-amber-600 to-orange-600",
+        badgeText: "3rd Most Popular",
+        icon: Medal,
+      };
+    default:
+      return {
+        borderClass: "",
+        badgeClass: "bg-slate-500",
+        badgeText: `#${rank} Popular`,
+        icon: null,
+      };
   }
 };
 
@@ -72,7 +119,23 @@ export default function SearchTemplate() {
     fetchData();
   }, []);
 
+  // Get top 5 most popular templates (highest used count)
+  const mostPopularTemplates = useMemo(() => {
+    const templatesWithUsedCount = templates.map(t => ({
+      ...t,
+      numericUsedCount: parseUsedCount(t.usedCount)
+    }));
+    
+    const sorted = [...templatesWithUsedCount].sort((a, b) => 
+      b.numericUsedCount - a.numericUsedCount
+    );
+    
+    return sorted.slice(0, 5);
+  }, [templates]);
+
+  // Handle category selection with mutual exclusion for Most Popular
   const toggleCategory = (cat: string) => {
+    // Handle "All" category
     if (cat === "All") {
       if (selectedCategories.includes("All")) {
         setSelectedCategories([]);
@@ -82,20 +145,45 @@ export default function SearchTemplate() {
       return;
     }
 
+    // Handle "Most Popular" category - when clicked, clear all other categories and select only Most Popular
+    if (cat === "Most Popular") {
+      if (selectedCategories.includes("Most Popular")) {
+        setSelectedCategories([]);
+      } else {
+        setSelectedCategories(["Most Popular"]);
+      }
+      return;
+    }
+
+    // Handle regular categories
     setSelectedCategories((prev) => {
-      const withoutAll = prev.filter((c) => c !== "All");
+      // If "Most Popular" is currently selected, clear it first
+      const withoutMostPopular = prev.filter((c) => c !== "Most Popular");
+      const withoutAll = withoutMostPopular.filter((c) => c !== "All");
 
       if (withoutAll.includes(cat)) {
+        // Remove the category
         const newSelection = withoutAll.filter((c) => c !== cat);
         return newSelection;
       } else {
+        // Add the category
         return [...withoutAll, cat];
       }
     });
   };
 
+  // Check if "Most Popular" is selected
+  const isMostPopularSelected = selectedCategories.includes("Most Popular");
+
+  // Filter templates based on selected category
   const filteredTemplates = useMemo(() => {
-    return templates.filter((t) => {
+    // If "Most Popular" is selected, return top 5 templates sorted by usage
+    if (isMostPopularSelected) {
+      return mostPopularTemplates;
+    }
+    
+    // Otherwise filter by regular categories
+    let filtered = templates.filter((t) => {
       const matchesCategory =
         selectedCategories.length === 0 ||
         selectedCategories.includes("All") ||
@@ -107,9 +195,14 @@ export default function SearchTemplate() {
         t.category.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [templates, selectedCategories, searchQuery]);
+    
+    // Sort A-Z for regular categories
+    return filtered.sort((a, b) => 
+      a.title.toLowerCase().localeCompare(b.title.toLowerCase())
+    );
+  }, [templates, selectedCategories, searchQuery, mostPopularTemplates, isMostPopularSelected]);
 
-  const generateAndSave = async (title: string, prompt: string) => {
+  const generateAndSave = async (title: string, prompt: string, templateId?: string) => {
     const aiRes = await fetch("http://localhost:5000/api/ai/generate-survey", {
       method: "POST",
       headers: {
@@ -133,7 +226,32 @@ export default function SearchTemplate() {
       body: JSON.stringify({ surveyTitle, status: "Draft", pages }),
     });
     const created = await createRes.json();
-    return created?._id || created?.survey?._id;
+    const newSurveyId = created?._id || created?.survey?._id;
+    
+    // Increment usage count for template
+    if (templateId) {
+      try {
+        await templateApi.incrementUsageCount(templateId);
+        // Update local state to reflect new count
+        setTemplates(prevTemplates => 
+          prevTemplates.map(t => {
+            if (t._id === templateId) {
+              const currentCount = parseUsedCount(t.usedCount);
+              const newCount = currentCount + 1;
+              return {
+                ...t,
+                usedCount: newCount.toString()
+              };
+            }
+            return t;
+          })
+        );
+      } catch (err) {
+        console.error("Failed to increment usage count:", err);
+      }
+    }
+    
+    return newSurveyId;
   };
 
   const handleUseTemplate = async (templateId: string) => {
@@ -144,6 +262,7 @@ export default function SearchTemplate() {
       const newSurveyId = await generateAndSave(
         template.title,
         template.aiPrompt,
+        templateId
       );
       if (newSurveyId)
         navigate("/add-questions", { state: { surveyId: newSurveyId } });
@@ -169,6 +288,79 @@ export default function SearchTemplate() {
     } finally {
       setAiLoading(false);
     }
+  };
+
+  // Render template card with rank styling for Most Popular
+  const renderTemplateCard = (temp: Template, index: number) => {
+    const isGenerating = loadingTemplateId === temp._id;
+    const rank = isMostPopularSelected ? index + 1 : null;
+    const rankStyles = rank ? getRankStyles(rank) : null;
+    const RankIcon = rankStyles?.icon;
+    
+    return (
+      <div
+        key={temp._id}
+        onClick={() =>
+          !isGenerating &&
+          navigate("/template-preview", {
+            state: { templateId: temp._id },
+          })
+        }
+        className={`group cursor-pointer bg-white dark:bg-slate-800 border rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ${
+          rankStyles?.borderClass || "border-slate-200 dark:border-slate-700"
+        }`}
+      >
+        {/* Cover Image or Gradient Header */}
+        <div className="h-32 relative overflow-hidden flex items-center justify-center bg-slate-100 dark:bg-slate-900">
+          {temp.coverImage ? (
+            <img
+              src={temp.coverImage}
+              alt={temp.title}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className={`absolute inset-0 bg-gradient-to-br ${temp.gradient}`} />
+          )}
+          
+          {/* Rank Badge - Only show for Most Popular category */}
+          {isMostPopularSelected && rank && (
+            <div className={`absolute top-3 left-3 z-20 ${rankStyles?.badgeClass} px-2 py-1 rounded-lg shadow-lg flex items-center gap-1.5`}>
+              {RankIcon && <RankIcon size={12} className="text-white" />}
+              <span className="text-[10px] font-bold text-white">{rankStyles?.badgeText}</span>
+            </div>
+          )}
+          
+          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity z-10" />
+          {isGenerating && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-20">
+              <Loader2 size={28} className="text-white animate-spin" />
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <h3 className="text-[#0F172A] dark:text-white font-black text-base leading-tight">
+              {temp.title}
+            </h3>
+            <span className="shrink-0 text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 dark:text-slate-400 px-2 py-0.5 rounded-full whitespace-nowrap">
+              {temp.category}
+            </span>
+          </div>
+          <p className="text-slate-400 text-sm line-clamp-2">
+            {temp.description}
+          </p>
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center gap-1.5 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-2 py-0.5 rounded-full">
+              <Clock size={10} />
+              <span>{getEstimatedTimeLabel(temp.estimatedTime)}</span>
+            </div>
+            <p className="text-slate-300 dark:text-slate-500 text-xs">
+              Used {temp.usedCount || "0"} times
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -251,6 +443,33 @@ export default function SearchTemplate() {
               </span>
             </button>
 
+            {/* Most Popular Category Button */}
+            <button
+              onClick={() => toggleCategory("Most Popular")}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all w-full text-left group ${
+                selectedCategories.includes("Most Popular")
+                  ? "bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              <span
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                  selectedCategories.includes("Most Popular")
+                    ? "border-indigo-500 bg-indigo-500"
+                    : "border-slate-300 dark:border-slate-600 group-hover:border-indigo-400"
+                }`}
+              >
+                {selectedCategories.includes("Most Popular") && (
+                  <ChevronRight size={11} className="text-white" />
+                )}
+              </span>
+              <span className="flex-1">Most Popular</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">
+                Top 5
+              </span>
+            </button>
+
+            {/* Regular Categories */}
             {categories.map((cat) => {
               const isSelected = selectedCategories.includes(cat.name);
               const count = templates.filter(
@@ -291,7 +510,7 @@ export default function SearchTemplate() {
         <main className="flex-1 pt-0 lg:pt-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2">
             <h1 className="text-[#0F172A] dark:text-white text-2xl sm:text-3xl font-black tracking-tight">
-              Explore Templates
+              {isMostPopularSelected ? "Most Popular Templates" : "Explore Templates"}
             </h1>
             <div className="flex items-center gap-3 self-end sm:self-auto">
               <span className="text-slate-400 text-xs sm:text-sm">
@@ -307,107 +526,60 @@ export default function SearchTemplate() {
             </div>
           </div>
 
+          {isMostPopularSelected && (
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+              Showing top 5 most used templates across all categories
+            </p>
+          )}
+
           {/* Template Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {/* New Empty */}
-            <div
-              onClick={() => navigate("/create-new-survey")}
-              className="group cursor-pointer bg-white dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-500"
-            >
-              <div className="h-40 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
-                <Plus
-                  size={44}
-                  className="text-slate-400 group-hover:text-slate-600 group-hover:scale-110 transition-all"
-                />
-              </div>
-              <div className="p-4">
-                <h3 className="text-[#0F172A] dark:text-white font-black text-base">
-                  New Empty Survey
-                </h3>
-                <p className="text-slate-400 text-sm mt-1">
-                  Start from scratch with a blank canvas.
-                </p>
-              </div>
-            </div>
-
-            {/* AI Custom */}
-            <div
-              onClick={() => setShowAiModal(true)}
-              className="group cursor-pointer bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-            >
-              <div className="h-40 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <Sparkles size={44} className="text-white drop-shadow" />
-              </div>
-              <div className="p-4">
-                <h3 className="text-[#0F172A] dark:text-white font-black text-base">
-                  AI Custom Survey
-                </h3>
-                <p className="text-slate-400 text-sm mt-1">
-                  Describe your survey and AI builds it instantly.
-                </p>
-              </div>
-            </div>
-
-            {/* Template Cards - CLEAN GRADIENT HEADER ONLY */}
-            {filteredTemplates.map((temp) => {
-              const isGenerating = loadingTemplateId === temp._id;
-              return (
-                <div
-                  key={temp._id}
-                  onClick={() =>
-                    !isGenerating &&
-                    navigate("/template-preview", {
-                      state: { templateId: temp._id },
-                    })
-                  }
-                  className="group cursor-pointer bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-                >
-                  {/* Cover Image or Gradient Header */}
-                  <div
-                    className="h-32 relative overflow-hidden flex items-center justify-center bg-slate-100 dark:bg-slate-900"
-                  >
-                    {temp.coverImage ? (
-                      <img
-                        src={temp.coverImage}
-                        alt={temp.title}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className={`absolute inset-0 bg-gradient-to-br ${temp.gradient}`} />
-                    )}
-                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity z-10" />
-                    {isGenerating && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-20">
-                        <Loader2 size={28} className="text-white animate-spin" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <h3 className="text-[#0F172A] dark:text-white font-black text-base leading-tight">
-                        {temp.title}
-                      </h3>
-                      <span className="shrink-0 text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 dark:text-slate-400 px-2 py-0.5 rounded-full whitespace-nowrap">
-                        {temp.category}
-                      </span>
-                    </div>
-                    <p className="text-slate-400 text-sm line-clamp-2">
-                      {temp.description}
-                    </p>
-                    <div className="flex items-center justify-between mt-3">
-                      <div className="flex items-center gap-1.5 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-2 py-0.5 rounded-full">
-                        <Clock size={10} />
-                        <span>{getEstimatedTimeLabel(temp.estimatedTime)}</span>
-                      </div>
-                      <p className="text-slate-300 dark:text-slate-500 text-xs">
-                        Used {temp.usedCount} times
-                      </p>
-                    </div>
-                  </div>
+            {/* New Empty - Hide when Most Popular is selected */}
+            {!isMostPopularSelected && (
+              <div
+                onClick={() => navigate("/create-new-survey")}
+                className="group cursor-pointer bg-white dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-500"
+              >
+                <div className="h-40 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
+                  <Plus
+                    size={44}
+                    className="text-slate-400 group-hover:text-slate-600 group-hover:scale-110 transition-all"
+                  />
                 </div>
-              );
-            })}
+                <div className="p-4">
+                  <h3 className="text-[#0F172A] dark:text-white font-black text-base">
+                    New Empty Survey
+                  </h3>
+                  <p className="text-slate-400 text-sm mt-1">
+                    Start from scratch with a blank canvas.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* AI Custom - Hide when Most Popular is selected */}
+            {!isMostPopularSelected && (
+              <div
+                onClick={() => setShowAiModal(true)}
+                className="group cursor-pointer bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+              >
+                <div className="h-40 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Sparkles size={44} className="text-white drop-shadow" />
+                </div>
+                <div className="p-4">
+                  <h3 className="text-[#0F172A] dark:text-white font-black text-base">
+                    AI Custom Survey
+                  </h3>
+                  <p className="text-slate-400 text-sm mt-1">
+                    Describe your survey and AI builds it instantly.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Template Cards */}
+            {filteredTemplates.map((temp, idx) => renderTemplateCard(temp, idx))}
           </div>
 
           {filteredTemplates.length === 0 && (

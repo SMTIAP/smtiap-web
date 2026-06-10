@@ -9,7 +9,7 @@ import {
   createCategory,
   deleteCategory,
   incrementUsageCount,
-} from "../controllers/templateController";
+} from "../controllers/templateController.js";
 import { protect } from "../middleware/auth.js";
 import { authorizeRoles } from "../middleware/role.js";
 

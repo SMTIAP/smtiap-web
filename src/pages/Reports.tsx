@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
-import { Search, LineChart, Download, ArrowLeft } from "lucide-react";
+import { LineChart, Download, ArrowLeft } from "lucide-react";
 
 interface User {
   _id: string;
@@ -36,6 +36,16 @@ interface AuditLog {
   userId?: string;
 }
 
+interface TenantActivity {
+  _id: string;
+  totalSurveys: number;
+  drafts: number;
+  tenantName: string
+  scheduled: number;
+  published: number;
+  stopped: number;
+}
+
 export const formatRole = (role: string) => {
   return role
     .split("_")
@@ -53,6 +63,7 @@ export default function Reports() {
   // const [selectedTenantId, setSelectedTenantId] = useState<string>("");
   const [orgUsers, setOrgUsers] = useState<UserTenantRole[]>([]);
   const [auditLogs, setauditLogs] = useState<AuditLog[]>([]);
+  const [activityData, setActivityData] = useState<TenantActivity[]>([]);
 
   const token = localStorage.getItem("token");
   const authHeaders = (): Record<string, string> => {
@@ -121,8 +132,7 @@ console.log("ORG USERS:", orgUsers);
 useEffect(() => {
   const fetchTenantActivity = async () => {
     try {
-      const response = await fetch(
-        "https://localhost:5000/api/reports/tenant-activity",
+      const response = await fetch("http://localhost:5000/api/reports/tenant-activity", 
         {
           headers: authHeaders(),
           credentials: "include",
@@ -132,6 +142,14 @@ useEffect(() => {
       const data = await response.json();
 
       console.log("TENANT ACTIVITY DATA:", data); // 👈 SEE DATA HERE
+      setActivityData(
+  Array.isArray(data)
+    ? data
+    : Array.isArray(data.activityData)
+      ? data.activityData
+      : []
+);
+      //  setActivityData(data);
 
       // setActivityData(data); // if you have state
     } catch (error) {
@@ -364,26 +382,26 @@ useEffect(() => {
                 </tr>
               </thead>
               <tbody>
-                {orgUsers.map((orgUser) => (
+                {(activityData ?? []).map((activity) => (
                   <tr
-                    key={orgUser._id}
+                    key={activity._id}
                     className="border-b border-slate-100 dark:border-slate-700"
                   >
                     <td className="px-6 py-3 text-slate-800 dark:text-slate-200 font-medium">
-                      -
+                      {activity.tenantName}
                     </td>
 
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">-</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{activity.totalSurveys}</td>
 
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">-</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{activity.drafts}</td>
 
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">-</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{activity.scheduled}</td>
 
                     <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
-                      -
+                      {activity.published}
                     </td>
                     <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
-                      -
+                      {activity.stopped}
                     </td>
                     <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
                       -

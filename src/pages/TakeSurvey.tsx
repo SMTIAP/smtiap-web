@@ -661,11 +661,11 @@ export default function TakeSurvey() {
                   </a>
                 </div>
               )}
-            <h1 className="text-2xl font-black mb-1 font-serif text-left" style={{ color: getTextColor(backgroundColor) }}>
+            <h1 className="text-2xl font-black mb-1  text-left" style={{ color: getTextColor(backgroundColor) }}>
               {surveyData.surveyTitle || "Untitled Survey"}
             </h1>
             {surveyData.description && (
-              <p className="text-sm mb-1 font-serif text-left" style={{ color: getTextColor(backgroundColor, 0.7) }}>
+              <p className="text-sm mb-1  text-left" style={{ color: getTextColor(backgroundColor, 0.7) }}>
                 {surveyData.description}
               </p>
             )}
