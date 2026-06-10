@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import Template from "../models/Template";
-import Category from "../models/Category";
+import Template from "../models/Template.js";
+import Category from "../models/Category.js";
 
 // Get all templates (public for org admins)
 export const getTemplates = async (req: Request, res: Response) => {
@@ -74,7 +74,7 @@ export const createTemplate = async (req: Request, res: Response) => {
       gradient,
       estimatedTime: estimatedTime || "quick",
       previewQuestions: previewQuestions || [],
-      createdBy: req.user?._id,
+      createdBy: (req.user as any)?._id,
     });
 
     res.status(201).json({
@@ -238,7 +238,7 @@ export const createCategory = async (req: Request, res: Response) => {
 
     const category = await Category.create({
       name,
-      createdBy: req.user?._id,
+      createdBy: (req.user as any)?._id,
     });
 
     res.status(201).json({

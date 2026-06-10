@@ -445,7 +445,21 @@ const VoiceAI: React.FC = () => {
                     <h3 className={`text-[15px] font-extrabold ${currentTheme.headerText}`}>Form Copilot</h3>
                     <span className="bg-[#000E54] text-white text-[9px] font-black uppercase px-1 py-0.5 rounded tracking-wide leading-none">AI</span>
                   </div>
-                  <p className="text-[11px] text-gray-500 font-semibold">SMTIAP Form Specialist</p>
+                  <div className="flex items-center gap-1.5 text-[11px] text-gray-500 font-semibold">
+                    <span>SMTIAP Form Specialist</span>
+                    <span className="text-gray-300">•</span>
+                    {isListening ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-green-600 font-extrabold bg-green-50 px-1.5 py-0.5 rounded animate-pulse border border-green-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                        Listening
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-gray-400 font-bold bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                        Mic Off
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -534,13 +548,18 @@ const VoiceAI: React.FC = () => {
             {/* Always-on mic toggle row */}
             <div className="flex items-center justify-between px-4 pb-2 border-b border-gray-50 bg-white">
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Continuous Voice Input</span>
-              <button
-                onClick={toggleAlwaysOn}
-                className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${alwaysOn ? 'bg-orange-500' : 'bg-gray-200'}`}
-                title={alwaysOn ? "Voice input remains active" : "Enable hands-free mode"}
-              >
-                <span className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${alwaysOn ? 'translate-x-3' : 'translate-x-0'}`} />
-              </button>
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-extrabold ${alwaysOn ? 'text-orange-600' : 'text-gray-400'}`}>
+                  {alwaysOn ? 'ON' : 'OFF'}
+                </span>
+                <button
+                  onClick={toggleAlwaysOn}
+                  className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${alwaysOn ? 'bg-orange-500' : 'bg-gray-200'}`}
+                  title={alwaysOn ? "Voice input remains active" : "Enable hands-free mode"}
+                >
+                  <span className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${alwaysOn ? 'translate-x-3' : 'translate-x-0'}`} />
+                </button>
+              </div>
             </div>
 
             {/* bottom input box card wrapper */}
@@ -574,7 +593,7 @@ const VoiceAI: React.FC = () => {
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendPrompt(textInput)}
-                  placeholder={activeTag ? "Add details or details..." : "Ask me to build a form..."}
+                  placeholder={isListening ? "Listening... Speak now..." : (activeTag ? "Add details or details..." : "Ask me to build a form...")}
                   className="flex-1 bg-transparent text-sm focus:outline-none text-slate-800 py-1.5 px-1 min-w-[120px]"
                   disabled={isLoading}
                 />
@@ -597,18 +616,28 @@ const VoiceAI: React.FC = () => {
                   >
                     <Plus className="w-4 h-4 font-bold" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={toggleListening}
-                    disabled={isLoading}
-                    className={`w-8.5 h-8.5 rounded-full border flex items-center justify-center transition-all cursor-pointer
-                      ${isListening
-                        ? 'bg-red-500 border-red-500 text-white animate-pulse'
-                        : 'border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
-                    title={isListening ? "Stop Voice Input" : "Voice Input"}
-                  >
-                    {isListening ? <MicOff className="w-4.5 h-4.5" /> : <Mic className="w-4.5 h-4.5" />}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {isListening && (
+                      <div className="flex items-end gap-[3px] h-5 px-1 pb-1">
+                        <span className="voice-wave-bar h-1"></span>
+                        <span className="voice-wave-bar h-1"></span>
+                        <span className="voice-wave-bar h-1"></span>
+                        <span className="voice-wave-bar h-1"></span>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={toggleListening}
+                      disabled={isLoading}
+                      className={`w-8.5 h-8.5 rounded-full border flex items-center justify-center transition-all cursor-pointer
+                        ${isListening
+                          ? 'bg-red-500 border-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.4)]'
+                          : 'border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
+                      title={isListening ? "Voice Input is ON - Click to turn off" : "Voice Input is OFF - Click to turn on"}
+                    >
+                      {isListening ? <Mic className="w-4.5 h-4.5 animate-pulse" /> : <MicOff className="w-4.5 h-4.5" />}
+                    </button>
+                  </div>
                 </div>
 
                 <button
