@@ -89,20 +89,20 @@ router.get(
         tenantId,
       } = req.query;
 
-      const pageNum = parseInt(page) || 1;
-      const limitNum = parseInt(limit) || 20;
+      const pageNum = parseInt(String(page)) || 1;
+      const limitNum = parseInt(String(limit)) || 20;
       const skip = (pageNum - 1) * limitNum;
 
-      const filter = {};
+      const filter: any = {};
 
       // Date filters
       if (fromDate || toDate) {
         filter.createdAt = {};
         if (fromDate) {
-          filter.createdAt.$gte = new Date(fromDate);
+          filter.createdAt.$gte = new Date(String(fromDate));
         }
         if (toDate) {
-          const toDateObj = new Date(toDate);
+          const toDateObj = new Date(String(toDate));
           toDateObj.setHours(23, 59, 59, 999);
           filter.createdAt.$lte = toDateObj;
         }
@@ -148,7 +148,7 @@ router.get(
           totalPages: Math.ceil(totalCount / limitNum),
         },
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching super admin audit logs:", error);
       res.status(500).json({
         success: false,
@@ -171,7 +171,7 @@ router.get(
         success: true,
         data: actions,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching distinct actions:", error);
       res.status(500).json({
         success: false,
@@ -194,7 +194,7 @@ router.get(
         success: true,
         data: entities,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching distinct entities:", error);
       res.status(500).json({
         success: false,
