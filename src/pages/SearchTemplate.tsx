@@ -133,7 +133,9 @@ export default function SearchTemplate() {
     return sorted.slice(0, 5);
   }, [templates]);
 
+  // Handle category selection with mutual exclusion for Most Popular
   const toggleCategory = (cat: string) => {
+    // Handle "All" category
     if (cat === "All") {
       if (selectedCategories.includes("All")) {
         setSelectedCategories([]);
@@ -143,13 +145,28 @@ export default function SearchTemplate() {
       return;
     }
 
+    // Handle "Most Popular" category - when clicked, clear all other categories and select only Most Popular
+    if (cat === "Most Popular") {
+      if (selectedCategories.includes("Most Popular")) {
+        setSelectedCategories([]);
+      } else {
+        setSelectedCategories(["Most Popular"]);
+      }
+      return;
+    }
+
+    // Handle regular categories
     setSelectedCategories((prev) => {
-      const withoutAll = prev.filter((c) => c !== "All");
+      // If "Most Popular" is currently selected, clear it first
+      const withoutMostPopular = prev.filter((c) => c !== "Most Popular");
+      const withoutAll = withoutMostPopular.filter((c) => c !== "All");
 
       if (withoutAll.includes(cat)) {
+        // Remove the category
         const newSelection = withoutAll.filter((c) => c !== cat);
         return newSelection;
       } else {
+        // Add the category
         return [...withoutAll, cat];
       }
     });
