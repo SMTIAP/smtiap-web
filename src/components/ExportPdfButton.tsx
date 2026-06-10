@@ -32,7 +32,10 @@ export default function ExportPdfButton({
         pixelRatio: 2,
         backgroundColor: "#F7FAFC",
         filter: (node) =>
-          !(node instanceof HTMLElement && node.getAttribute("data-export-hidden") === "true"),
+          !(
+            node instanceof HTMLElement &&
+            node.getAttribute("data-export-hidden") === "true"
+          ),
       });
 
       const img = new Image();
