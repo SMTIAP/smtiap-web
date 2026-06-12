@@ -284,7 +284,6 @@ const VoiceAI: React.FC = () => {
     
     setTimeout(() => {
       navigate(navigatePath);
-      setIsOpen(false);
     }, 1000);
   };
 
@@ -337,7 +336,6 @@ const VoiceAI: React.FC = () => {
       if (data.action === 'navigate' && data.path) {
         setTimeout(() => {
           navigate(data.path);
-          setIsOpen(false);
         }, 1500);
       } else if (data.action === 'generate' && data.surveyData) {
         setTimeout(() => {
@@ -356,7 +354,6 @@ const VoiceAI: React.FC = () => {
               aiGeneratedPages: data.surveyData.pages,
             },
           });
-          setIsOpen(false);
         }, 1500);
       }
     } catch (error: any) {
