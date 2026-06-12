@@ -17,7 +17,6 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Declare global interface for SpeechRecognition
 declare global {
   interface Window {
     SpeechRecognition: any;
@@ -125,7 +124,6 @@ const VoiceAI: React.FC = () => {
     return localStorage.getItem('voice_assistant_speech_enabled') !== 'false';
   });
 
-  // Chat message history
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -166,12 +164,10 @@ const VoiceAI: React.FC = () => {
 
   const manuallyStoppedRef = useRef(false);
 
-  // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Initialize Web Speech API
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -209,7 +205,6 @@ const VoiceAI: React.FC = () => {
     }
   }, []);
 
-  // Stop mic immediately when assistant panel is minimized
   useEffect(() => {
     if (!isOpen && isListening) {
       manuallyStoppedRef.current = true;
@@ -232,7 +227,6 @@ const VoiceAI: React.FC = () => {
 
   const handleSendPrompt = async (text: string) => {
     const promptText = text.trim();
-    // Allow sending tag or attachment even if text is empty
     if (!promptText && !activeTag && !attachedFile) return;
 
     let userPrompt = activeTag ? `[${activeTag}] ${promptText}`.trim() : promptText;
@@ -245,9 +239,8 @@ const VoiceAI: React.FC = () => {
 
     setIsLoading(true);
     setTextInput('');
-    setAttachedFile(null); // Reset attachment state immediately
+    setAttachedFile(null);
 
-    // Add user message to local state
     const userMsg: Message = {
       id: Math.random().toString(),
       sender: 'user',
@@ -414,9 +407,8 @@ const VoiceAI: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className={`relative bg-white w-[350px] sm:w-[380px] rounded-3xl shadow-2xl border ${currentTheme.panelBorder} flex flex-col overflow-visible`}
+            className={`relative bg-white w-[350px] sm:w-[380px] rounded-3xl shadow-2xl border ${currentTheme.panelBorder} flex flex-col overflow-hidden max-h-[550px]`}
           >
-            {/* Floating theme customizer paintbrush */}
             <button
               onClick={cycleTheme}
               className={`absolute -top-3.5 -right-3.5 w-9 h-9 rounded-full ${currentTheme.floatingBg} text-white shadow-lg flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 z-[60]`}
@@ -425,8 +417,7 @@ const VoiceAI: React.FC = () => {
               <Paintbrush className="w-4 h-4" />
             </button>
 
-            {/* Header section with gradient background */}
-            <div className={`flex justify-between items-center ${currentTheme.headerBg} p-4 rounded-t-3xl border-b border-gray-100/50`}>
+            <div className={`flex justify-between items-center ${currentTheme.headerBg} p-4 rounded-t-3xl border-b border-gray-100/50 shrink-0`}>
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <img
@@ -434,7 +425,6 @@ const VoiceAI: React.FC = () => {
                     alt="Form Copilot Avatar"
                     className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
                     onError={(e) => {
-                      // Fallback avatar in case the image fails to load
                       (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=80&auto=format&fit=crop&q=60";
                     }}
                   />
@@ -483,14 +473,13 @@ const VoiceAI: React.FC = () => {
               </div>
             </div>
 
-            {/* suggestion chips */}
-            <div className="px-4 pt-3 flex flex-col gap-1.5">
-              <div className="flex flex-wrap gap-1.5">
+            <div className="px-4 pt-3 flex flex-col gap-1.5 shrink-0">
+              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
                 {displayedChips.map((chip, index) => (
                   <button
                     key={index}
                     onClick={() => handleChipClick(chip)}
-                    className="px-3 py-1.5 text-xs font-semibold border border-gray-200 hover:border-orange-300 hover:bg-orange-50/20 text-gray-600 hover:text-orange-950 rounded-full transition-all duration-200 cursor-pointer shadow-sm bg-white"
+                    className="px-3 py-1.5 text-xs font-semibold border border-gray-200 hover:border-orange-300 hover:bg-orange-50/20 text-gray-600 hover:text-orange-950 rounded-full transition-all duration-200 cursor-pointer shadow-sm bg-white shrink-0"
                   >
                     {chip}
                   </button>
@@ -508,8 +497,7 @@ const VoiceAI: React.FC = () => {
               </button>
             </div>
 
-            {/* Conversation Feed */}
-            <div className="flex-1 p-4 max-h-[220px] min-h-[160px] overflow-y-auto flex flex-col gap-3 scrollbar-thin scrollbar-thumb-gray-200">
+            <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 scrollbar-thin scrollbar-thumb-gray-200 min-h-[120px]">
               {messages.map((msg) => (
                 <div
                   key={msg.id}
@@ -525,14 +513,14 @@ const VoiceAI: React.FC = () => {
                       }}
                     />
                   )}
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-col gap-0.5 max-w-[calc(100%-32px)]">
                     {msg.tag && (
                       <span className="text-[10px] uppercase font-bold text-orange-600 self-start bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
                         {msg.tag}
                       </span>
                     )}
                     <div
-                      className={`text-[13px] px-3.5 py-2.5 rounded-2xl leading-relaxed shadow-sm
+                      className={`text-[13px] px-3.5 py-2.5 rounded-2xl leading-relaxed shadow-sm break-words whitespace-normal
                         ${msg.sender === 'user'
                           ? 'bg-slate-100 text-slate-800 rounded-tr-none'
                           : 'bg-blue-50/60 text-slate-800 rounded-tl-none border border-blue-100/50'}`}
@@ -545,8 +533,7 @@ const VoiceAI: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Always-on mic toggle row */}
-            <div className="flex items-center justify-between px-4 pb-2 border-b border-gray-50 bg-white">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-50 bg-white shrink-0">
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Continuous Voice Input</span>
               <div className="flex items-center gap-2">
                 <span className={`text-[10px] font-extrabold ${alwaysOn ? 'text-orange-600' : 'text-gray-400'}`}>
@@ -562,8 +549,7 @@ const VoiceAI: React.FC = () => {
               </div>
             </div>
 
-            {/* bottom input box card wrapper */}
-            <div className="bg-white border border-gray-100 rounded-3xl p-2.5 shadow-md hover:shadow-lg focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100/40 transition-all flex flex-col gap-2.5 mx-4 mb-4 mt-2">
+            <div className="bg-white border border-gray-100 rounded-3xl p-2.5 shadow-md hover:shadow-lg focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100/40 transition-all flex flex-col gap-2.5 mx-4 mb-4 mt-2 shrink-0">
               <div className="flex flex-wrap items-center gap-1.5 px-1 pt-0.5">
                 {activeTag && (
                   <span className={`flex items-center gap-1 ${currentTheme.badgeBg} ${currentTheme.badgeText} text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 border`}>
