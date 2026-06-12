@@ -53,11 +53,30 @@ import Reports from "./pages/Reports.tsx";
 export const DarkModeContext = createContext({
   darkMode: false,
   toggleDarkMode: () => { },
-  setDarkMode: (value: boolean) => { },
+  setDarkMode: (_value: boolean) => { },
 });
 
 export function useDarkMode() {
   return useContext(DarkModeContext);
+}
+
+export function getSavedTheme(): boolean {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      const decoded = jwtDecode<{ id?: string }>(token);
+      const userId = decoded?.id;
+      if (userId) {
+        const saved = localStorage.getItem(`theme_${userId}`);
+        if (saved !== null) {
+          return saved === "dark";
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return localStorage.getItem("theme_guest") === "dark";
 }
 
 function ThemeSync() {
@@ -65,23 +84,7 @@ function ThemeSync() {
   const location = useLocation();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const decoded = jwtDecode<{ id?: string }>(token);
-        const userId = decoded?.id;
-        if (userId) {
-          const savedTheme = localStorage.getItem(`theme_${userId}`);
-          if (savedTheme === "dark") {
-            setDarkMode(true);
-            return;
-          }
-        }
-      } catch {
-        // ignore
-      }
-    }
-    setDarkMode(false);
+    setDarkMode(getSavedTheme());
   }, [location.pathname, setDarkMode]);
 
   return null;
@@ -98,28 +101,27 @@ function Layout() {
 }
 
 export default function App() {
-  const [darkMode, setDarkMode] = useState(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const decoded = jwtDecode<{ id?: string }>(token);
-        const userId = decoded?.id;
-        if (userId) {
-          return localStorage.getItem(`theme_${userId}`) === "dark";
-        }
-      } catch {
-        // ignore
-      }
-    }
-    return false;
-  });
+  const [darkMode, setDarkMode] = useState(() => getSavedTheme());
 
   useEffect(() => {
+    // Disable transitions temporarily to avoid mismatched theme updates
+    document.documentElement.classList.add("disable-transitions");
+    
     if (darkMode) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
+
+    // Force reflow to paint layout changes instantly
+    void document.documentElement.offsetHeight;
+
+    // Restore transitions on the next tick
+    const timer = setTimeout(() => {
+      document.documentElement.classList.remove("disable-transitions");
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [darkMode]);
 
   const toggleDarkMode = () =>
@@ -137,6 +139,7 @@ export default function App() {
           // ignore
         }
       }
+      localStorage.setItem("theme_guest", next ? "dark" : "light");
       return next;
     });
 
@@ -392,7 +395,7 @@ export default function App() {
           draggable
           theme={darkMode ? "dark" : "light"}
         />
-        <Toaster richColors position="bottom-right" />
+        <Toaster richColors position="bottom-right" theme={darkMode ? "dark" : "light"} />
       </div>
     </DarkModeContext.Provider>
   );
