@@ -225,6 +225,68 @@ const VoiceAI: React.FC = () => {
     }
   };
 
+  const handleChipAction = (chip: string) => {
+    const userMsg: Message = {
+      id: Math.random().toString(),
+      sender: 'user',
+      text: chip,
+      tag: chip,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, userMsg]);
+    
+    let responseText = "";
+    let navigatePath = "";
+    
+    switch (chip) {
+      case "View analytics":
+        responseText = "Opening analytics dashboard...";
+        navigatePath = "/analytics";
+        break;
+      case "View all surveys":
+        responseText = "Opening your surveys...";
+        navigatePath = "/created-surveys";
+        break;
+      case "View templates":
+        responseText = "Opening template library...";
+        navigatePath = "/templates";
+        break;
+      case "Create new survey":
+        responseText = "Creating a new survey for you...";
+        navigatePath = "/create-new-survey";
+        break;
+      case "Manage user roles":
+        responseText = "Opening role management...";
+        navigatePath = "/role-management";
+        break;
+      case "Upgrade plan":
+        responseText = "Taking you to subscription page...";
+        navigatePath = "/subscription";
+        break;
+      case "View audit logs":
+        responseText = "Opening audit logs...";
+        navigatePath = "/audit-logs";
+        break;
+      default:
+        setActiveTag(chip);
+        inputRef.current?.focus();
+        return;
+    }
+    
+    const aiMsg: Message = {
+      id: Math.random().toString(),
+      sender: 'ai',
+      text: responseText,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, aiMsg]);
+    speakText(responseText);
+    
+    setTimeout(() => {
+      navigate(navigatePath);
+    }, 1000);
+  };
+
   const handleSendPrompt = async (text: string) => {
     const promptText = text.trim();
     if (!promptText && !activeTag && !attachedFile) return;
@@ -391,8 +453,7 @@ const VoiceAI: React.FC = () => {
   };
 
   const handleChipClick = (chip: string) => {
-    setActiveTag(chip);
-    inputRef.current?.focus();
+    handleChipAction(chip);
   };
 
   const currentTheme = THEME_CONFIGS[theme];
