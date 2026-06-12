@@ -265,7 +265,7 @@ const VoiceAI: React.FC = () => {
         break;
       case "View audit logs":
         responseText = "Opening audit logs...";
-        navigatePath = "/audit-logs";
+        navigatePath = "/audit-log";
         break;
       default:
         setActiveTag(chip);
