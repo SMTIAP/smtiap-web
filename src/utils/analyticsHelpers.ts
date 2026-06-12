@@ -36,8 +36,6 @@ export interface SurveyListItem {
   status?: string;
 }
 
-// ── Helper functions ─────────────────────────────────────────────────────────
-
 /**
  * Returns the question's `_id` or `id` field as a trimmed string.
  * Used everywhere a stable question identifier is needed.

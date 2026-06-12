@@ -175,8 +175,8 @@ export const modifySurveyWithAi = async (
 
 const tryLocalNavigation = (prompt: string) => {
   const normalized = prompt.toLowerCase().trim();
-  
-  // Define route mapping
+
+  // route mapping
   const routes = [
     { pattern: /\b(dashboard|creator-dashboard|creator dashboard)\b/, path: "/creator-dashboard", name: "Dashboard" },
     { pattern: /\b(analytics|stats|charts|reports|analyze|analyzed|analysis|analyse|analysed)\b/, path: "/analytics", name: "Analytics" },

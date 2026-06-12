@@ -56,7 +56,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         `,
       );
     } catch (emailError: any) {
-      console.error("❌ Email sending failed:", emailError);
+      console.error("Email sending failed:", emailError);
       // Clean up newly created user since verification email could not be sent
       await User.deleteOne({ _id: user._id });
       res.status(500).json({
@@ -101,7 +101,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       entity: "User",
       entity_id: user._id,
       description: "Logged In",
-    }).catch(() => {});
+    }).catch(() => { });
 
     sendToken(user, res);
   } catch (error: any) {
@@ -118,7 +118,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
       entity: "User",
       entity_id: user._id,
       description: "Logged Out",
-    }).catch(() => {});
+    }).catch(() => { });
   }
 
   res.cookie("token", "", {

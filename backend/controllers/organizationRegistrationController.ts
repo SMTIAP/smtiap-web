@@ -19,7 +19,7 @@ export const createOrganization = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // Only prevent duplicate ACTIVE orgs (optional rule)
+    // Only prevent duplicate ACTIVE orgs
     const existingActiveTenant = await Tenant.findOne({
       domain,
       status: "active",
@@ -98,7 +98,7 @@ export const createOrganization = async (req: Request, res: Response) => {
 
     return res.status(500).json({
       message: error?.message || "Server Error",
-      error, // ⚠️ full error (ONLY for dev)
+      error, // full error (ONLY for dev)
     });
   }
 };

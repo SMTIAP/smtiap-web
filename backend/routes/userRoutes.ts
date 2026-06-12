@@ -45,7 +45,7 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { session: false }),
   (req, res) => {
-    console.log("✅ Google callback hit");
+    console.log("Google callback hit");
     console.log("USER:", req.user);
 
     const token = jwt.sign(
@@ -74,7 +74,7 @@ router.get(
   "/github/callback",
   passport.authenticate("github", { session: false }),
   (req, res) => {
-    console.log("✅ GitHub callback hit");
+    console.log("GitHub callback hit");
     console.log("USER:", req.user);
 
     const token = jwt.sign(
@@ -101,7 +101,7 @@ router.get(
     session: false,
   }),
   (req, res) => {
-    console.log("✅ LinkedIn callback hit");
+    console.log("LinkedIn callback hit");
     console.log("USER:", req.user);
 
     const token = jwt.sign(

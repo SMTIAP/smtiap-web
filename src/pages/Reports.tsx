@@ -88,7 +88,7 @@ export default function Reports() {
           },
         );
         const data = await response.json();
-        console.log("API RESULT 1:", data); // 👈 add this
+        console.log("API RESULT 1:", data);
         setTenants(data);
       } catch (error) {
         console.error("Error fetching tenants:", error);
@@ -105,12 +105,12 @@ export default function Reports() {
           credentials: "include",
         });
         const data = await response.json();
-        console.log("API RESULT 2:", data); // 👈 add this
-        console.log("AUDIT LOGS:", data.auditLogs); // 👈 THIS is what you want
+        console.log("API RESULT 2:", data);
+        console.log("AUDIT LOGS:", data.auditLogs);
         // setOrgUsers(Array.isArray(data) ? data : []);
         setOrgUsers(data.users ?? []);
-setauditLogs(data.auditLogs ?? []);
-console.log("ORG USERS:", orgUsers);
+        setauditLogs(data.auditLogs ?? []);
+        console.log("ORG USERS:", orgUsers);
 
         // setauditLogs([]);
       } catch (error) {
@@ -129,44 +129,44 @@ console.log("ORG USERS:", orgUsers);
     }
   })();
 
-useEffect(() => {
-  const fetchTenantActivity = async () => {
-    try {
-      const response = await fetch("http://localhost:5000/api/reports/tenant-activity", 
-        {
-          headers: authHeaders(),
-          credentials: "include",
-        }
-      );
+  useEffect(() => {
+    const fetchTenantActivity = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/reports/tenant-activity",
+          {
+            headers: authHeaders(),
+            credentials: "include",
+          }
+        );
 
-      const data = await response.json();
+        const data = await response.json();
 
-      console.log("TENANT ACTIVITY DATA:", data); // 👈 SEE DATA HERE
-      setActivityData(
-  Array.isArray(data)
-    ? data
-    : Array.isArray(data.activityData)
-      ? data.activityData
-      : []
-);
-      //  setActivityData(data);
+        console.log("TENANT ACTIVITY DATA:", data);
+        setActivityData(
+          Array.isArray(data)
+            ? data
+            : Array.isArray(data.activityData)
+              ? data.activityData
+              : []
+        );
+        //  setActivityData(data);
 
-      // setActivityData(data); // if you have state
-    } catch (error) {
-      console.error("Error fetching activity:", error);
-    }
-  };
+        // setActivityData(data); // if you have state
+      } catch (error) {
+        console.error("Error fetching activity:", error);
+      }
+    };
 
-  fetchTenantActivity();
-}, [location.key]);
+    fetchTenantActivity();
+  }, [location.key]);
 
-//   const getLastLogin = (userId: string) => {
-//   const logs = auditLogs
-//     .filter((log) => log.userId === userId && log.action === "login")
-//     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  //   const getLastLogin = (userId: string) => {
+  //   const logs = auditLogs
+  //     .filter((log) => log.userId === userId && log.action === "login")
+  //     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-//   return logs[0]?.createdAt ?? null;
-// };
+  //   return logs[0]?.createdAt ?? null;
+  // };
 
   // const isActiveTenantAdmin = (tenantId: string) =>
   //   orgUsers.some(
@@ -230,8 +230,8 @@ useEffect(() => {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 border ${activeTab === tab
-                    ? "flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-[13px] border-indigo-600 shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
-                    : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
+                  ? "flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-[13px] border-indigo-600 shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
+                  : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
                   }`}
               >
                 {tab === "tenants" && "Tenant Registrations"}
@@ -342,8 +342,8 @@ useEffect(() => {
 
                     <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
                       {orgUser.lastLogin
-                          ? new Date(orgUser.lastLogin).toLocaleString("en-GB")
-                          : "NEVER"
+                        ? new Date(orgUser.lastLogin).toLocaleString("en-GB")
+                        : "NEVER"
                       }
                     </td>
                   </tr>

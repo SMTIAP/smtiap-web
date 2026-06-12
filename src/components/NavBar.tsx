@@ -597,6 +597,6 @@ export default function NavBar() {
           </div>
         </>
       )}
-    </> /* end NavBar fragment */
+    </>
   );
 }

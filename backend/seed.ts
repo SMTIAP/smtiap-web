@@ -54,7 +54,7 @@ const seedCategoriesAndTemplates = async (superAdminId: any) => {
     }
   }
   console.log(
-    `✅ Categories: ${createdCount} new/reactivated, ${categoryNames.length - createdCount} existing`,
+    `Categories: ${createdCount} new/reactivated, ${categoryNames.length - createdCount} existing`,
   );
 };
 
@@ -70,7 +70,7 @@ const Q_TYPES = [
 ] as const;
 
 const seedAnalyticsDemoData = async (superAdminId: any) => {
-  console.log("\n📊 Seeding analytics demo data (all question types)...");
+  console.log("\n Seeding analytics demo data (all question types)...");
 
   // ── 1. Create or get a demo tenant ──────────────────────────────
   let tenant = await Tenant.findOne({ domain: "demo-analytics.smtiap.com" });
@@ -497,13 +497,13 @@ const seedAnalyticsDemoData = async (superAdminId: any) => {
     analyticsCount++;
   }
 
-  console.log(`  📈 Surveys created: ${surveyCount}`);
-  console.log(`  ❓ Questions created: ${questionCount}`);
-  console.log(`  📋 Responses created: ${responseCount}`);
-  console.log(`  💬 Answers created: ${answerCount}`);
-  console.log(`  📄 Flat survey responses created: ${flatResponseCount}`);
-  console.log(`  📊 Analytics results created: ${analyticsCount}`);
-  console.log("✅ Analytics demo data seeding complete!");
+  console.log(`Surveys created: ${surveyCount}`);
+  console.log(`Questions created: ${questionCount}`);
+  console.log(`Responses created: ${responseCount}`);
+  console.log(`Answers created: ${answerCount}`);
+  console.log(`Flat survey responses created: ${flatResponseCount}`);
+  console.log(`Analytics results created: ${analyticsCount}`);
+  console.log("Analytics demo data seeding complete!");
 };
 
 // ── Helper: survey-specific summaries ──────────────────────────────
@@ -560,11 +560,11 @@ function getKeywordsForSurvey(
 }
 
 const seedTenantUsers = async (superAdminId: any) => {
-  console.log("\n👥 Seeding tenant users...");
+  console.log("\n Seeding tenant users...");
 
   const tenant = await Tenant.findOne({ domain: "demo-analytics.smtiap.com" });
   if (!tenant) {
-    console.log("  ⏭️ No demo tenant found — skipping tenant users");
+    console.log("No demo tenant found — skipping tenant users");
     return;
   }
 
@@ -612,7 +612,7 @@ const seedTenantUsers = async (superAdminId: any) => {
     }
   }
   console.log(
-    `  ✓ TenantUsers: ${createdTu} created, ${tenantUsersData.length - createdTu} existing`,
+    `TenantUsers: ${createdTu} created, ${tenantUsersData.length - createdTu} existing`,
   );
 
   // ── Platform User records (for login) + UserTenantRole ──────────
@@ -639,7 +639,7 @@ const seedTenantUsers = async (superAdminId: any) => {
         isVerified: true,
       });
       createdPu++;
-      console.log(`  ✓ Created platform User: ${u.email}`);
+      console.log(`Created platform User: ${u.email}`);
     }
 
     // Create UserTenantRole linking platform user to demo tenant
@@ -661,8 +661,8 @@ const seedTenantUsers = async (superAdminId: any) => {
     }
   }
 
-  console.log(`  ✓ Platform Users: ${createdPu} created`);
-  console.log(`  ✓ UserTenantRoles: ${createdRole} created`);
+  console.log(`Platform Users: ${createdPu} created`);
+  console.log(`UserTenantRoles: ${createdRole} created`);
 
   // Also ensure super admin has a UserTenantRole
   const superAdmin = await User.findById(superAdminId);
@@ -679,11 +679,11 @@ const seedTenantUsers = async (superAdminId: any) => {
         role: "admin",
         status: "active",
       });
-      console.log("  ✓ Created UserTenantRole (super admin): admin");
+      console.log("Created UserTenantRole (super admin): admin");
     }
   }
 
-  console.log("✅ Tenant user seeding complete!");
+  console.log("Tenant user seeding complete!");
 };
 
 const runSeed = async (): Promise<void> => {
@@ -708,9 +708,9 @@ const runSeed = async (): Promise<void> => {
         role: "super_admin",
         isVerified: true,
       });
-      console.log("✅ Super admin created:", superAdmin.email);
+      console.log("Super admin created:", superAdmin.email);
     } else {
-      console.log("✅ Super admin found:", superAdmin.email);
+      console.log("Super admin found:", superAdmin.email);
     }
 
     await seedCategoriesAndTemplates(superAdmin._id);
@@ -719,7 +719,7 @@ const runSeed = async (): Promise<void> => {
 
     await seedTenantUsers(superAdmin._id);
 
-    console.log("\n✅ Seeding completed!");
+    console.log("\n Seeding completed!");
   } catch (error: unknown) {
     console.error(
       "Error while seeding:",

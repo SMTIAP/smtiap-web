@@ -84,12 +84,12 @@ interface DashboardStats {
     billing_manager: number;
     viewer: number;
   };
-  surveys: { 
-    total: number; 
-    draft: number; 
-    published: number; 
-    scheduled: number;  // ✅ ADDED
-    ended: number; 
+  surveys: {
+    total: number;
+    draft: number;
+    published: number;
+    scheduled: number;
+    ended: number;
   };
   subscription: {
     plan: string;
@@ -234,7 +234,7 @@ export default function OrganizationAdmin() {
     { label: "Viewers", value: stats?.roles.viewer ?? "—" },
   ];
 
-  
+
   const statRows2 = [
     { label: "Created Total", value: stats?.surveys.total ?? "—" },
     { label: "Draft Mode", value: stats?.surveys.draft ?? "—" },

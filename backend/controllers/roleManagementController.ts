@@ -51,7 +51,6 @@ const isTenantAdminOrCreator = async (
   return isCreator || isAdmin;
 };
 
-// ── Controllers ──────────────────────────────────────────────────────
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
@@ -236,7 +235,7 @@ export const updateOrgRole = async (req: Request, res: Response) => {
     const tenant = await Tenant.findById(tenantId);
 
     if (user && tenant) {
-      await notifyRoleChanged ({
+      await notifyRoleChanged({
         email: user?.email,
         organizationName: tenant?.name,
         username: user?.username,
@@ -322,7 +321,7 @@ export const removeOrgUser = async (req: Request, res: Response) => {
     const user = await User.findById(userId);
     const tenant = await Tenant.findById(tenantId);
 
-    if(user && tenant){
+    if (user && tenant) {
       await notifyUserRemove({
         email: user.email,
         username: user.username,
@@ -383,7 +382,7 @@ export const removeTenant = async (req: Request, res: Response) => {
     }
 
     const actorId = actor?._id?.toString();
-    
+
     // Get all active users before deactivating
     const tenantUsers = await UserTenantRole.find({
       tenantId,
@@ -424,27 +423,27 @@ export const removeTenant = async (req: Request, res: Response) => {
       tenantUsers
         .filter((member) => member.userId?._id?.toString() !== actorId)
         .map(async (member) => {
-        const user = member.userId as any;
+          const user = member.userId as any;
 
-        if (!user?.email) return;
+          if (!user?.email) return;
 
-        
 
-        // 👇 Other users notification
-        await createAppNotification({
-          tenant_id: tenantId,
-          user_id: user._id,
-          type: "TENANT_DEACTIVATED",
-          channel: "in_app",
-          message: `Organization ${tenant.name} has been deactivated`,
-        });
 
-        return notifyTenantRemoved({
-          email: user.email,
-          username: user.username,
-          organizationName: tenant.name,
-        });
-      })
+          // 👇 Other users notification
+          await createAppNotification({
+            tenant_id: tenantId,
+            user_id: user._id,
+            type: "TENANT_DEACTIVATED",
+            channel: "in_app",
+            message: `Organization ${tenant.name} has been deactivated`,
+          });
+
+          return notifyTenantRemoved({
+            email: user.email,
+            username: user.username,
+            organizationName: tenant.name,
+          });
+        })
 
     );
 

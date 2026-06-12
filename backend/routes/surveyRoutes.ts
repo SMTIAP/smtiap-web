@@ -51,16 +51,16 @@ router.put("/:id", protect, loadTenant, updateSurvey);
 router.patch("/:id/status", protect, loadTenant, updateStatus);
 router.delete("/:id", protect, loadTenant, deleteSurvey);
 
-// ✅ Verify survey password - NOW USING BCRYPT
+// Verify survey password - NOW USING BCRYPT
 router.post("/:id/verify-password", async (req, res) => {
   try {
     const survey = await Survey.findById(req.params.id);
     if (!survey) return res.status(404).json({ error: "Survey not found" });
     if (!survey.isPasswordProtected) return res.json({ success: true });
-    
+
     // Use bcrypt.compare to verify hashed password
     const isValid = await bcrypt.compare(req.body.password, survey.password);
-    
+
     if (isValid) {
       res.json({ success: true });
     } else {
