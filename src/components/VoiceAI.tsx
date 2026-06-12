@@ -534,7 +534,7 @@ const VoiceAI: React.FC = () => {
             </div>
 
             <div className="px-4 pt-3 flex flex-col gap-1.5 shrink-0">
-              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+              <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto pr-1">
                 {displayedChips.map((chip, index) => (
                   <button
                     key={index}
