@@ -1,0 +1,8 @@
+command to setup ngrok for use: 
+ngrok config add-authtoken 3EzKk7vEVVpBLMV2LoHIGAjWuxJ_6FvAePGjiRyA5vAsJ4SLv
+
+command to run to connect to port: 
+ngrok http 5000
+
+extra help: 
+https://dashboard.ngrok.com/get-started/setup/windows
