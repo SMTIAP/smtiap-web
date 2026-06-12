@@ -25,7 +25,7 @@ const seedCategoriesAndTemplates = async (superAdminId: any) => {
   console.log("\n📁 Seeding categories...");
 
   const categoryNames = [
-    "Most Popular",
+    
     "Restaurant",
     "HR",
     "Education",
