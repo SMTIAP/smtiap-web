@@ -1,6 +1,19 @@
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
 
+/* Prevent transition delay mismatch when switching themes */
+.disable-transitions,
+.disable-transitions * {
+  -webkit-transition: none !important;
+  -moz-transition: none !important;
+  -o-transition: none !important;
+  -ms-transition: none !important;
+  transition: none !important;
+  transition-duration: 0s !important;
+  animation-duration: 0s !important;
+}
+
+
 /* Voice active wave animation */
 @keyframes voice-wave {
   0%, 100% {
