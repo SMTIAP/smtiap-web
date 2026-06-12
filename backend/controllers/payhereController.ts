@@ -7,8 +7,32 @@ const getPlanDuration = (billingPeriod: string): number => {
   return billingPeriod === "yearly" ? 365 : 30; // days
 };
 
+//check that our personal notify endpoint is reachable from outside
+const isNotifyUrlReachable = async (): Promise<boolean> => {
+  if (!env.notifyBaseUrl) {
+    console.warn("NOTIFY_BASE_URL is not set — refusing to start payments.");
+    return false;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000); // 4s timeout
+
+    const response = await fetch(`${env.notifyBaseUrl}/api/health`, {
+      method: "GET",
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+    return response.ok;
+  } catch (err) {
+    console.error("Notify URL health check failed:", err);
+    return false;
+  }
+};
+
 //payhere create hash part
-export const createPayHereHash = (
+export const createPayHereHash = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -24,6 +48,17 @@ export const createPayHereHash = (
   console.log('Merchant Secret exists:', !!env.merchantSecret);
 
   try {
+        //0. Refuse to proceed if our notify endpoint isnt reachable
+    const reachable = await isNotifyUrlReachable();
+    if (!reachable) {
+      res.status(503).json({
+        error: "PAYMENT_BACKEND_UNREACHABLE",
+        message:
+          "Payment system is temporarily unavailable. Please try again shortly.",
+      });
+      return;
+    }
+
     const formattedAmount = Number(amount).toFixed(2);
 
     const hashedSecret = crypto
@@ -46,8 +81,12 @@ export const createPayHereHash = (
     
     console.log('Generated hash:', hash);
 
-    res.json({ merchant_id: env.merchantId,
-      hash });
+    res.json({
+      merchant_id: env.merchantId,
+      hash,
+      notify_url: `${env.notifyBaseUrl}/api/payhere-notify`, //
+    });
+
   } catch (err) {
     console.error('Hash generation error:', err);
     next(err);
@@ -175,7 +214,8 @@ export const getUserSubscription = async (
 ) => {
   try {
     const { email } = req.query as { email: string };
-    if (!email) { res.json({ plan: null, billingPeriod: null }); return; }
+    if (!email) { res.json({ plan: null, billingPeriod: null, createdAt: null, expiresAt: null }); return; }
+
 
     const payment = await Payment.findOne(
       { email, status: "success" },

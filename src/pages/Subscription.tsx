@@ -56,6 +56,7 @@ export default function Subscription() {
     expiresAt: string | null;
   } | null>(null);
   const [isSubLoading, setIsSubLoading] = useState(false);
+  const [backendUnavailable, setBackendUnavailable] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -147,20 +148,28 @@ export default function Subscription() {
 
     try {
       setIsGeneratingHash(true);
+      setBackendUnavailable(false);
       const response = await fetch("http://localhost:5000/api/payments/generate-hash", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ order_id: orderId, amount: price, currency: "LKR", items: itemDescription }),
       });
+
+      if (response.status === 503) {
+        //when notify backend isnt reachable, refuse to start payment so the user isnt charged
+        setBackendUnavailable(true);
+        return;
+      }
+
       if (!response.ok) throw new Error("Failed to fetch secure signature verification.");
-      const { merchant_id, hash } = await response.json();
+      const { merchant_id, hash, notify_url } = await response.json();
 
       startPayment({
         sandbox: true,
         merchant_id,
         return_url: "http://localhost:5173/subscription/success",
         cancel_url: "http://localhost:5173/subscription/cancel",
-        notify_url: "https://starring-backboned-headway.ngrok-free.dev/api/payhere-notify",
+        notify_url,
         order_id: orderId,
         items: itemDescription,
         amount: formattedAmount,

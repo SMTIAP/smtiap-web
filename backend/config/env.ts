@@ -9,6 +9,7 @@ export const env = {
   merchantSecret:
     process.env.MERCHANT_SECRET ||
     "MjQ1NTQ4Njg5MDk1MDA2MzM5NzE0NDU1NTg4Njc0MDk5NjA1MTIy",
+    notifyBaseUrl: process.env.NOTIFY_BASE_URL || "",
 };
 
 dotenv.config({
