@@ -230,7 +230,6 @@ const VoiceAI: React.FC = () => {
       id: Math.random().toString(),
       sender: 'user',
       text: chip,
-      tag: chip,
       timestamp: new Date()
     };
     setMessages(prev => [...prev, userMsg]);
@@ -260,7 +259,7 @@ const VoiceAI: React.FC = () => {
         navigatePath = "/role-management";
         break;
       case "Upgrade plan":
-        responseText = "Taking you to subscription page...";
+        responseText = "Opening subscription page...";
         navigatePath = "/subscription";
         break;
       case "View audit logs":
