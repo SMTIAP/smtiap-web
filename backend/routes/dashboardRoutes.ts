@@ -4,7 +4,7 @@ import { loadTenant } from "../middleware/tenant.js";
 import UserTenantRole from "../models/UserTenantRole.js";
 import Survey from "../models/Survey.js";
 import Subscription from "../models/Subscription.js";
-import User from "../models/User.js";
+import { Payment } from "../models/Payment.js";
 import mongoose from "mongoose";
 
 const router = Router();
@@ -72,17 +72,17 @@ router.get(
           Survey.countDocuments(withStatus("Finished")),
         ]);
 
-      const subscription = activeTenantObjectId
-        ? await Subscription.findOne({ tenant_id: activeTenantObjectId })
-            .sort({ end_date: -1 })
+      const payment = activeTenantObjectId
+        ? await Payment.findOne({ tenantId: activeTenantObjectId, status: "success" })
+            .sort({ createdAt: -1 })
             .lean()
         : null;
 
       let subscriptionData = null;
-      if (subscription) {
+      if (payment && payment.expiresAt) {
         const now = new Date();
-        const endDate = new Date(subscription.end_date);
-        const startDate = new Date(subscription.start_date);
+        const endDate = new Date(payment.expiresAt);
+        const startDate = new Date(payment.createdAt as unknown as string);
         const remainingDays = Math.max(
           0,
           Math.ceil(
@@ -97,8 +97,8 @@ router.get(
             ? Math.round(((totalDays - remainingDays) / totalDays) * 100)
             : 0;
         subscriptionData = {
-          plan: subscription.plan,
-          status: subscription.status,
+          plan: payment.planName,
+          status: payment.status,
           startDate: startDate.toLocaleDateString("en-GB"),
           endDate: endDate.toLocaleDateString("en-GB"),
           remainingDays,

@@ -31,6 +31,9 @@ const isNotifyUrlReachable = async (): Promise<boolean> => {
   }
 };
 
+//these are the roles allowed to purchase or change a tenant's subscription
+const BILLING_ROLES = ["admin", "billing_manager", "super_admin"];
+
 //payhere create hash part
 export const createPayHereHash = async (
   req: Request,
@@ -48,7 +51,33 @@ export const createPayHereHash = async (
   console.log('Merchant Secret exists:', !!env.merchantSecret);
 
   try {
-        //0. Refuse to proceed if our notify endpoint isnt reachable
+        //0a. Require an active tenant context (set by loadTenant, header-verified)
+    const activeTenantId = (req as any).activeTenantId as string | null;
+    if (!activeTenantId) {
+      res.status(403).json({
+        error: "NO_ACTIVE_TENANT",
+        message: "Select an organization before purchasing a plan.",
+      });
+      return;
+    }
+
+    //0b. Require the user to hold a billing-capable role in that tenant
+    const memberships = (req as any).memberships as
+      | { tenantId: any; role: string }[]
+      | undefined;
+    const membership = memberships?.find(
+      (m) => String(m.tenantId) === activeTenantId,
+    );
+
+    if (!membership || !BILLING_ROLES.includes(membership.role)) {
+      res.status(403).json({
+        error: "INSUFFICIENT_PERMISSIONS",
+        message: "You don't have permission to manage billing for this organization.",
+      });
+      return;
+    }
+
+    //0c. Refuse to proceed if our notify endpoint isnt reachable
     const reachable = await isNotifyUrlReachable();
     if (!reachable) {
       res.status(503).json({
@@ -84,7 +113,8 @@ export const createPayHereHash = async (
     res.json({
       merchant_id: env.merchantId,
       hash,
-      notify_url: `${env.notifyBaseUrl}/api/payhere-notify`, //
+      notify_url: `${env.notifyBaseUrl}/api/payhere-notify`,
+      tenant_id: activeTenantId,
     });
 
   } catch (err) {
@@ -148,7 +178,7 @@ export const handlePayHereNotify = async (
       res.sendStatus(400);
       return;
     }
- 
+
     //2. map status_code -> readable status
     const statusMap: Record<string, IPaymentStatus> = {
       "2": "success",
@@ -162,21 +192,22 @@ export const handlePayHereNotify = async (
     const orderParts = order_id.split("_");
     const planName = orderParts[1] ?? "Unknown";
     const billingPeriod = orderParts[2] === "yearly" ? "yearly" : "monthly";
+    const tenantId = orderParts[3];
+
+    //3b. Require a tenant ID to be present
+    if (!tenantId) {
+      console.warn("PayHere notify: missing tenantId — cannot record payment.");
+      res.sendStatus(400);
+      return;
+    }
  
-    //4. calculate expireAt
-    const expireAt = status === "success"
-      ? (() => {
-          const date = new Date();
-          date.setDate(date.getDate() + (billingPeriod === "yearly" ? 365 : 30));
-          return date;
-        })()
-      : undefined;
+    //4. Single upsert into MongoDB, scoped to the tenant
+    console.log("Attempting DB write for order:", order_id, "tenant:", tenantId);
 
-    //5. single upsert into mongoDB
-    console.log("Attempting DB write for order:", order_id);
-    await Payment.deleteMany({ email: email || "customer@smtiap.com", status: "success" });
+    // Remove the tenant's previous active plan (upgrades replace, not stack)
+    await Payment.deleteMany({ tenantId, status: "success" });
 
-    // Calculate expiry date
+    // calculate expiry date
     const days = getPlanDuration(billingPeriod);
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
@@ -185,6 +216,7 @@ export const handlePayHereNotify = async (
       { orderId: order_id },
       {
         orderId: order_id,
+        tenantId,
         username: username || "Registered User",
         email: email || "customer@smtiap.com",
         amount: parseFloat(payhere_amount),
@@ -199,7 +231,7 @@ export const handlePayHereNotify = async (
       { upsert: true, returnDocument: "after" },
     );
 
-    console.log(`Payment recorded — Order: ${order_id} | Status: ${status}`);
+    console.log(`Payment recorded — Order: ${order_id} | Tenant: ${tenantId} | Status: ${status}`);
     res.sendStatus(200);
   } catch (err) {
     console.error("PayHere notify handler error:", err);
@@ -207,18 +239,21 @@ export const handlePayHereNotify = async (
   }
 };
 
-export const getUserSubscription = async (
+//returns the active plan for the CURRENT tenant context (from x-tenant-id, validated server-side by loadTenant, never trusted from the client directly)
+export const getTenantSubscription = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const { email } = req.query as { email: string };
-    if (!email) { res.json({ plan: null, billingPeriod: null, createdAt: null, expiresAt: null }); return; }
-
+    const activeTenantId = (req as any).activeTenantId as string | null;
+    if (!activeTenantId) {
+      res.json({ plan: null, billingPeriod: null, createdAt: null, expiresAt: null });
+      return;
+    }
 
     const payment = await Payment.findOne(
-      { email, status: "success" },
+      { tenantId: activeTenantId, status: "success" },
       {},
       { sort: { createdAt: -1 } },
     );
