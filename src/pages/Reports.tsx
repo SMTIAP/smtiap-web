@@ -88,7 +88,7 @@ export default function Reports() {
           },
         );
         const data = await response.json();
-        console.log("API RESULT 1:", data); // 👈 add this
+        console.log("API RESULT 1:", data);
         setTenants(data);
       } catch (error) {
         console.error("Error fetching tenants:", error);
@@ -105,8 +105,8 @@ export default function Reports() {
           credentials: "include",
         });
         const data = await response.json();
-        console.log("API RESULT 2:", data); // 👈 add this
-        console.log("AUDIT LOGS:", data.auditLogs); // 👈 THIS is what you want
+        console.log("API RESULT 2:", data);
+        console.log("AUDIT LOGS:", data.auditLogs);
         // setOrgUsers(Array.isArray(data) ? data : []);
         setOrgUsers(data.users ?? []);
 setauditLogs(data.auditLogs ?? []);
@@ -141,7 +141,7 @@ useEffect(() => {
 
       const data = await response.json();
 
-      console.log("TENANT ACTIVITY DATA:", data); // 👈 SEE DATA HERE
+      console.log("TENANT ACTIVITY DATA:", data); // SEE DATA HERE
       setActivityData(
   Array.isArray(data)
     ? data

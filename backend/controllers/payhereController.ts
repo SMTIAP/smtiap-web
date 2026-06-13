@@ -2,6 +2,11 @@ import type { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
 import { env } from "../config/env.js";
 import { Payment } from "../models/Payment.js";
+import UserTenantRole from "../models/UserTenantRole.js";
+import User, { IUser } from "../models/User.js";
+import Tenant from "../models/Tenant.js";
+import { notifyPaymentReceived } from "../services/emailNotificationService.js";
+
 
 const getPlanDuration = (billingPeriod: string): number => {
   return billingPeriod === "yearly" ? 365 : 30; // days
@@ -232,6 +237,39 @@ export const handlePayHereNotify = async (
     );
 
     console.log(`Payment recorded — Order: ${order_id} | Tenant: ${tenantId} | Status: ${status}`);
+        // ---5. email Notify org admins & billing managers on successful payment---
+    if (status === "success") {
+      try {
+        const recipients = await UserTenantRole.find({
+          tenantId,
+          role: { $in: ["admin", "billing_manager"] },
+          status: "active",
+        }).lean();
+
+        const tenant = await Tenant.findById(tenantId).lean();
+
+        await Promise.all(
+          recipients.map(async (member) => {
+            const user = await User.findById(member.userId).lean<IUser>();
+            if (!user?.email) return;
+
+            await notifyPaymentReceived({
+              email: user.email,
+              username: user.username || "User",
+              organizationName: tenant?.name || "Your organization",
+              planName,
+              billingPeriod,
+              amount: parseFloat(payhere_amount),
+              currency: payhere_currency,
+              expiresAt,
+            });
+          }),
+        );
+      } catch (emailErr) {
+        //for payhere notify. email failures should never block the 200 OK back to PayHere
+        console.error("Payment confirmation email error:", emailErr);
+      }
+    }
     res.sendStatus(200);
   } catch (err) {
     console.error("PayHere notify handler error:", err);

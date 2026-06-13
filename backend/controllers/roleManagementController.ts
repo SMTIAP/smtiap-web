@@ -3,6 +3,7 @@ import User, { IUser } from "../models/User.js";
 import Tenant from "../models/Tenant.js";
 import UserTenantRole from "../models/UserTenantRole.js";
 import AuditLog from "../models/AuditLog.js";
+import { Payment } from "../models/Payment.js";
 import { toast } from "sonner";
 import { notifyRoleChanged, notifyUserAddedToOrganization, notifyUserRemove, notifyTenantRemoved } from "../services/emailNotificationService.js";
 import { createAppNotification } from "../services/notificationService.js";
@@ -49,6 +50,28 @@ const isTenantAdminOrCreator = async (
   const isAdmin = membership?.role === "admin";
 
   return isCreator || isAdmin;
+};
+
+// ---plan-based member ability limits, payment related---
+// limit how many members one can add to their organization
+//depending on their payment plan
+// null means unlimited (for the pro plan)
+const PLAN_MEMBER_LIMITS: Record<string, number | null> = {
+  free: 1,
+  startup: 2,
+  pro: 10,
+};
+
+// resolve the tenant's current active plan, defaulting to "free" if none/expired.
+const getTenantPlanName = async (tenantId: string): Promise<string> => {
+  const payment = await Payment.findOne({ tenantId, status: "success" })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  if (!payment) return "free";
+  if (payment.expiresAt && new Date(payment.expiresAt) < new Date()) return "free";
+
+  return payment.planName.toLowerCase();
 };
 
 // ── Controllers ──────────────────────────────────────────────────────
@@ -109,6 +132,26 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
       return res.status(400).json({
         message: "User already assigned to this tenant",
       });
+    }
+
+    // ---Enforce plan-based member limits--
+    const planName = await getTenantPlanName(tenantId);
+    const memberLimit = PLAN_MEMBER_LIMITS[planName] ?? 1;
+
+    if (memberLimit !== null) {
+      const currentMemberCount = await UserTenantRole.countDocuments({
+        tenantId,
+        status: "active",
+      });
+
+      if (currentMemberCount >= memberLimit) {
+        return res.status(403).json({
+          message:
+            planName === "free"
+              ? "Your organization is on the Free plan, which only supports 1 member (you). Upgrade your plan to add more members."
+              : `Your organization is on the ${formatRole(planName)} plan, which supports up to ${memberLimit} members. Upgrade to Pro for unlimited members.`,
+        });
+      }
     }
 
     const record = await UserTenantRole.create({
@@ -255,7 +298,7 @@ export const updateOrgRole = async (req: Request, res: Response) => {
     });
 
 
-    //In-app notification for User (NEW)
+    //In-app notification for User (new)
     await createAppNotification({
       tenant_id: tenantId,
       user_id: userId,
@@ -400,7 +443,7 @@ export const removeTenant = async (req: Request, res: Response) => {
       }
     );
 
-    // 👇 Actor notification
+    // Actor notification
     if (actor) {
       await createAppNotification({
         tenant_id: tenantId,
@@ -430,7 +473,7 @@ export const removeTenant = async (req: Request, res: Response) => {
 
         
 
-        // 👇 Other users notification
+        // Other users notification
         await createAppNotification({
           tenant_id: tenantId,
           user_id: user._id,
