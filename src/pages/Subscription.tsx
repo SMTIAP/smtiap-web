@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, AlertCircle, ArrowLeft } from "lucide-react";
+import { Check, AlertCircle, ArrowLeft, Building2 } from "lucide-react";
 import { usePayHere } from "../hooks/usePayHere";
-import api from "../api/api"; 
+import api from "../api/api";
+import { useTenant } from "../contexts/TenantContext";
 
 interface PricingPlan {
   name: string;
@@ -45,6 +46,7 @@ export default function Subscription() {
   const [isYearly, setIsYearly] = useState(false);
   const [isGeneratingHash, setIsGeneratingHash] = useState(false);
   const { startPayment, paymentStatus, isLoading: isPaymentLoading } = usePayHere();
+  const { activeTenant, isSystemContext, loading: isTenantLoading } = useTenant();
 
   //profile data hooks
   const [currentUser, setCurrentUser] = useState<{ username: string; email: string } | null>(null);
@@ -57,6 +59,7 @@ export default function Subscription() {
   } | null>(null);
   const [isSubLoading, setIsSubLoading] = useState(false);
   const [backendUnavailable, setBackendUnavailable] = useState(false);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -74,35 +77,47 @@ export default function Subscription() {
     return () => { mounted = false; };
   }, []);
 
-  const fetchSubscription = (email: string) => {
+  const fetchSubscription = () => {
+    //no tenant selected, nothing to show, treat as Free with no active plan
+    if (isSystemContext || !activeTenant) {
+      setActivePlan(null);
+      return;
+    }
+
     setIsSubLoading(true);
-    fetch(`http://localhost:5000/api/payments/subscription?email=${encodeURIComponent(email)}`)
-      .then((r) => r.json())
-      .then((data) => setActivePlan(
-        data.plan ? {
-          plan: data.plan,
-          billingPeriod: data.billingPeriod,
-          createdAt: data.createdAt,
-          expiresAt: data.expiresAt,
-        } : null
-      ))
+    api.get("http://localhost:5000/api/payments/subscription")
+      .then((res) => {
+        const data = res.data;
+        setActivePlan(
+          data.plan ? {
+            plan: data.plan,
+            billingPeriod: data.billingPeriod,
+            createdAt: data.createdAt,
+            expiresAt: data.expiresAt,
+          } : null
+        );
+      })
       .catch(() => setActivePlan(null))
       .finally(() => setIsSubLoading(false));
   };
-  //when we have the email, fetch their active subscription
-  useEffect(() => {
-    if (!currentUser?.email || currentUser.email === "customer@smtiap.com") return;
-    fetchSubscription(currentUser.email);
-  }, [currentUser]);
 
+  //fetch active plan whenever the selected organization changes
   useEffect(() => {
-    if (paymentStatus.status === "success" && currentUser?.email) {
-      fetchSubscription(currentUser.email);
+    if (isTenantLoading) return;
+    fetchSubscription();
+  }, [activeTenant?.tenantId._id, isSystemContext, isTenantLoading]);
+
+  //refetch after a successful payment
+  useEffect(() => {
+    if (paymentStatus.status === "success") {
+      fetchSubscription();
     }
   }, [paymentStatus.status]);
 
-  const isUiDisabled = isPaymentLoading || isGeneratingHash || isUserLoading || isSubLoading;
+  const isUiDisabled =
+    isPaymentLoading || isGeneratingHash || isUserLoading || isSubLoading || isTenantLoading;
 
+  //get to per-plan state
   const getPlanState = (plan: PricingPlan) => {
     const currentPlanName = activePlan?.plan ?? "Free";
     const currentBilling = activePlan?.billingPeriod ?? null;
@@ -120,7 +135,7 @@ export default function Subscription() {
       return { label: "Current Plan", disabled: true, style: "current" };
     }
 
-    //for plan downgrade disabling. if on a yearly plan and viewing monthly tab, everything is a downgrade
+    //if on a yearly plan and viewing monthly tab, everything is a downgrade
     if (onYearlyPlan && !viewingYearly) {
       return { label: "Downgrade", disabled: true, style: "downgrade" };
     }
@@ -138,9 +153,15 @@ export default function Subscription() {
     const state = getPlanState(plan);
     if (state.disabled) return;
 
+    if (isSystemContext || !activeTenant) {
+      setPermissionError("Select an organization from the menu before purchasing a plan.");
+      return;
+    }
+
     const price = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
     const billingPeriod = isYearly ? "yearly" : "monthly";
-    const orderId = `SUB_${plan.name}_${billingPeriod}_${Date.now()}`;
+    const tenantId = activeTenant!.tenantId._id;
+    const orderId = `SUB_${plan.name}_${billingPeriod}_${tenantId}_${Date.now()}`;
     const itemDescription = `${plan.name} Subscription`;
     const formattedAmount = price.toFixed(2);
     const liveUsername = currentUser?.username || "Registered User";
@@ -149,20 +170,14 @@ export default function Subscription() {
     try {
       setIsGeneratingHash(true);
       setBackendUnavailable(false);
-      const response = await fetch("http://localhost:5000/api/payments/generate-hash", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order_id: orderId, amount: price, currency: "LKR", items: itemDescription }),
-      });
+      setPermissionError(null);
 
-      if (response.status === 503) {
-        //when notify backend isnt reachable, refuse to start payment so the user isnt charged
-        setBackendUnavailable(true);
-        return;
-      }
+      const response = await api.post(
+        "http://localhost:5000/api/payments/generate-hash",
+        { order_id: orderId, amount: price, currency: "LKR", items: itemDescription },
+      );
 
-      if (!response.ok) throw new Error("Failed to fetch secure signature verification.");
-      const { merchant_id, hash, notify_url } = await response.json();
+      const { merchant_id, hash, notify_url, tenant_id } = response.data;
 
       startPayment({
         sandbox: true,
@@ -185,8 +200,20 @@ export default function Subscription() {
         custom_1: liveUsername,
         custom_2: liveEmail,
       });
-    } catch (err) {
-      console.error("Payment starting failed:", err);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const data = err?.response?.data;
+
+      if (status === 503) {
+        //notify backend isnt reachable, refuse to start payment so the user isnt charged
+        setBackendUnavailable(true);
+      } else if (status === 403) {
+        setPermissionError(
+          data?.message || "You don't have permission to manage billing for this organization.",
+        );
+      } else {
+        console.error("Payment starting failed:", err);
+      }
     } finally {
       setIsGeneratingHash(false);
     }
@@ -198,13 +225,13 @@ export default function Subscription() {
     }
 
     const start = new Date(activePlan.createdAt);
-    start.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);  //snap to midnight of start day
 
     const end = new Date(activePlan.expiresAt);
-    end.setHours(23, 59, 59, 999);
+    end.setHours(23, 59, 59, 999);  //snap to end of expiry day
 
     const now = new Date();
-    now.setHours(0, 0, 0, 0);
+    now.setHours(0, 0, 0, 0);  //snap to midnight of today
 
     const totalDuration = end.getTime() - start.getTime();
     const remaining = Math.max(0, end.getTime() - now.getTime());
@@ -247,6 +274,8 @@ export default function Subscription() {
     );
   };
 
+  const noTenantSelected = !isTenantLoading && (isSystemContext || !activeTenant);
+
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-[#0F172A] font-inter text-[#141217] dark:text-white transition-colors duration-300">
       <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
@@ -266,9 +295,26 @@ export default function Subscription() {
             </button>
           </div>
 
+          {!isTenantLoading && activeTenant && (
+            <p className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-1">
+              <Building2 size={14} />
+              Managing billing for {activeTenant.tenantId.name}
+            </p>
+          )}
+
           <p className="text-[#64748B] dark:text-slate-400 text-sm text-center max-w-2xl mb-8 sm:mb-12 mt-2 px-2">
             Choose the plan that's right for you. Pay for a monthly subscription or yearly.
           </p>
+
+          {/* no tenant selected — billing applies to organizations, not personal accounts */}
+          {noTenantSelected && (
+            <div className="mb-6 w-full p-4 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg flex items-center gap-3">
+              <Building2 className="text-indigo-600 dark:text-indigo-400" size={20} />
+              <p className="text-indigo-800 dark:text-indigo-300">
+                Subscriptions belong to organizations. Select or create an organization from the menu in the top to manage its plan.
+              </p>
+            </div>
+          )}
 
           <SubscriptionProgress />
 
@@ -291,6 +337,18 @@ export default function Subscription() {
               <p className="text-red-800 dark:text-red-300">Payment failed: {paymentStatus.error || "Please try again."}</p>
             </div>
           )}
+          {backendUnavailable && (
+            <div className="mb-6 w-full p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3">
+              <AlertCircle className="text-red-600 dark:text-red-400" size={20} />
+              <p className="text-red-800 dark:text-red-300">Payment system is temporarily unavailable. Please try again shortly.</p>
+            </div>
+          )}
+          {permissionError && (
+            <div className="mb-6 w-full p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3">
+              <AlertCircle className="text-red-600 dark:text-red-400" size={20} />
+              <p className="text-red-800 dark:text-red-300">{permissionError}</p>
+            </div>
+          )}
 
           {/* Billing Switcher */}
           <div className="flex p-1.5 bg-[#F2F2F5] dark:bg-slate-800 rounded-xl mb-8 w-full max-w-[320px]">
@@ -310,6 +368,7 @@ export default function Subscription() {
               const state = getPlanState(plan);
               const isCurrent = state.style === "current";
               const isDowngrade = state.style === "downgrade";
+              const purchaseDisabled = state.disabled || noTenantSelected;
 
               return (
                 <div key={plan.name}
@@ -344,7 +403,7 @@ export default function Subscription() {
 
                   <button
                     onClick={() => handlePayment(plan)}
-                    disabled={isUiDisabled || state.disabled}
+                    disabled={isUiDisabled || purchaseDisabled}
                     className={`w-full py-3 rounded-xl font-bold text-sm transition-all mb-8
                       ${isCurrent
                         ? "bg-blue-500 text-white cursor-not-allowed"
@@ -353,7 +412,7 @@ export default function Subscription() {
                           : plan.isPopular
                             ? "bg-blue-500 text-white hover:bg-blue-600 shadow-md hover:shadow-lg"
                             : "bg-[#F2F2F5] dark:bg-slate-700 text-[#141217] dark:text-white hover:bg-gray-200 dark:hover:bg-slate-600"
-                      } ${isUiDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                      } ${isUiDisabled || purchaseDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     {isSubLoading ? "Checking plan..." : isUiDisabled ? "Processing..." : state.label}
                   </button>
