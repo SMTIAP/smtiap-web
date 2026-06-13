@@ -557,27 +557,6 @@ export default function SearchTemplate() {
               </div>
             )}
 
-            {/* AI Custom - Hide when Most Popular is selected */}
-            {!isMostPopularSelected && (
-              <div
-                onClick={() => setShowAiModal(true)}
-                className="group cursor-pointer bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-              >
-                <div className="h-40 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center relative overflow-hidden">
-                  <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <Sparkles size={44} className="text-white drop-shadow" />
-                </div>
-                <div className="p-4">
-                  <h3 className="text-[#0F172A] dark:text-white font-black text-base">
-                    AI Custom Survey
-                  </h3>
-                  <p className="text-slate-400 text-sm mt-1">
-                    Describe your survey and AI builds it instantly.
-                  </p>
-                </div>
-              </div>
-            )}
-
             {/* Template Cards */}
             {filteredTemplates.map((temp, idx) => renderTemplateCard(temp, idx))}
           </div>
