@@ -233,10 +233,10 @@ const VoiceAI: React.FC = () => {
       timestamp: new Date()
     };
     setMessages(prev => [...prev, userMsg]);
-    
+
     let responseText = "";
     let navigatePath = "";
-    
+
     switch (chip) {
       case "View analytics":
         responseText = "Opening analytics dashboard...";
@@ -271,7 +271,7 @@ const VoiceAI: React.FC = () => {
         inputRef.current?.focus();
         return;
     }
-    
+
     const aiMsg: Message = {
       id: Math.random().toString(),
       sender: 'ai',
@@ -280,7 +280,7 @@ const VoiceAI: React.FC = () => {
     };
     setMessages(prev => [...prev, aiMsg]);
     speakText(responseText);
-    
+
     setTimeout(() => {
       navigate(navigatePath);
     }, 1000);
@@ -520,9 +520,6 @@ const VoiceAI: React.FC = () => {
                   title={speechEnabled ? "Mute voice response" : "Unmute voice response"}
                 >
                   {speechEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                </button>
-                <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-black/5 rounded-full transition-colors cursor-pointer">
-                  <Columns className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
