@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
-import { Payment } from "./models/Payment.js";
+import { Payment, OldPayment } from "./models/Payment.js";
 
 //load env first (important for OAuth)
 dotenv.config({
@@ -56,6 +56,7 @@ const ensureCollections = async () => {
     Notification.createCollection(),
     AuditLog.createCollection(),
     Payment.createCollection(),
+    OldPayment.createCollection(),
   ]);
   console.log("All collections ensured.");
 };

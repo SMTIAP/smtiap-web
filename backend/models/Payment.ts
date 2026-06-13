@@ -43,3 +43,7 @@ const PaymentSchema = new Schema<IPayment>(
 );
 
 export const Payment = mongoose.model<IPayment>("Payment", PaymentSchema);
+
+
+// archive db collection for expired/historical payments — same shape as Payment. this happens when a plan expires. it is moved to the old payments collection for archiving. removing plan previlages from users.
+export const OldPayment = mongoose.model<IPayment>("OldPayment", PaymentSchema);

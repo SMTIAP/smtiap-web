@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
 import { env } from "../config/env.js";
-import { Payment } from "../models/Payment.js";
+import { Payment, OldPayment } from "../models/Payment.js";
 import UserTenantRole from "../models/UserTenantRole.js";
 import User, { IUser } from "../models/User.js";
 import Tenant from "../models/Tenant.js";
@@ -295,6 +295,34 @@ export const getTenantSubscription = async (
       {},
       { sort: { createdAt: -1 } },
     );
+
+        // --if the plan has expired, archive it and revoke privileges--
+    if (payment && payment.expiresAt && payment.expiresAt < new Date()) {
+      await OldPayment.create({
+        orderId: payment.orderId,
+        tenantId: payment.tenantId,
+        username: payment.username,
+        email: payment.email,
+        amount: payment.amount,
+        currency: payment.currency,
+        items: payment.items,
+        status: payment.status,
+        payherePaymentId: payment.payherePaymentId,
+        billingPeriod: payment.billingPeriod,
+        planName: payment.planName,
+        expiresAt: payment.expiresAt,
+        createdAt: payment.createdAt,
+      });
+
+      await Payment.deleteOne({ _id: payment._id });
+
+      console.log(
+        `Expired payment archived — Order: ${payment.orderId} | Tenant: ${activeTenantId}`,
+      );
+
+      res.json({ plan: null, billingPeriod: null, createdAt: null, expiresAt: null });
+      return;
+    }
 
     res.json({
       plan: payment?.planName ?? null,
