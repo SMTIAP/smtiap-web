@@ -1,0 +1,12 @@
+0. create a account on website, get authenticator token. open ngrok in your pc.
+
+1. command to setup ngrok for use (use your own auth token. not this. its mine lmao): 
+ngrok config add-authtoken 3EzKk7vEVVpBLMV2LoHIGAjWuxJ_6FvAePGjiRyA5vAsJ4SLv
+
+2. command to run to connect to port: 
+ngrok http 5000
+
+extra help: 
+https://dashboard.ngrok.com/get-started/setup/windows
+
+download ngrok from windows store. else it might get removed by windows antivirus since it opens a port.

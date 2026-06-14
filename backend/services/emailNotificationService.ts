@@ -58,6 +58,17 @@ interface RegisteredPayload {
   username: string,
 }
 
+interface PaymentReceivedPayload {
+  email: string;
+  username: string;
+  organizationName: string;
+  planName: string;
+  billingPeriod: "monthly" | "yearly";
+  amount: number;
+  currency: string;
+  expiresAt: Date | string;
+}
+
 export const formatRole = (role: string) => {
   return role
     .split("_")
@@ -620,5 +631,93 @@ export const notifyRegistered = async ({
     
   } catch (error) {
     console.error("Survey stopped email error:", error);
+  }
+};
+
+//to send emails to payhere payment. when a payment is done, send notify email to all admin and billing managers of that tenant.
+export const notifyPaymentReceived = async ({
+  email,
+  username,
+  organizationName,
+  planName,
+  billingPeriod,
+  amount,
+  currency,
+  expiresAt,
+}: PaymentReceivedPayload): Promise<void> => {
+  try {
+    const expiryDate = new Date(expiresAt).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+
+    await sendEmail(
+      email,
+      `Payment Received — ${organizationName} is now on the ${planName} plan`,
+      `
+      <div style="font-family:Arial, sans-serif; background:#f4f6f8; padding:40px;">
+        <div style="max-width:600px; margin:auto; background:#ffffff; border-radius:14px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <div style="background:linear-gradient(135deg,#2563eb,#4f46e5); padding:20px; text-align:center;">
+            <h2 style="color:#ffffff; margin:0; font-size:20px;">
+              MTSP
+            </h2>
+          </div>
+
+          <!-- Body -->
+          <div style="padding:30px; color:#1f2937;">
+
+            <h3 style="margin-top:0; color:#111827;">
+              Payment Successful
+            </h3>
+
+            <p style="font-size:15px;">
+              Hello <b>${username}</b>,
+            </p>
+
+            <p style="font-size:15px; line-height:1.6;">
+              A payment was successfully processed for <b>${organizationName}</b>.
+              The organization's subscription has been updated.
+            </p>
+
+            <!-- Info Box -->
+            <div style="margin-top:20px; background:#eff6ff; border-left:4px solid #2563eb; padding:15px; border-radius:8px;">
+              <p style="margin:4px 0; font-size:14px;">
+                <b>Plan:</b> ${planName} (${formatRole(billingPeriod)})
+              </p>
+              <p style="margin:4px 0; font-size:14px;">
+                <b>Amount Charged:</b> ${currency} ${amount.toFixed(2)}
+              </p>
+              <p style="margin:4px 0; font-size:14px;">
+                <b>Renews / Expires:</b> ${expiryDate}
+              </p>
+            </div>
+
+            <p style="margin-top:25px; font-size:14px; color:#6b7280;">
+              If you did not expect this charge, please contact your organization administrator or support immediately.
+            </p>
+
+            <div style="text-align:center; margin-top:24px;">
+              <a href="http://localhost:3000/subscription"
+                style="display:inline-block; padding:12px 22px; background:#2563eb; color:#ffffff; text-decoration:none; border-radius:8px; font-weight:600;">
+                View Subscription
+              </a>
+            </div>
+
+          </div>
+
+          <!-- Footer -->
+          <div style="background:#f9fafb; text-align:center; padding:14px; font-size:12px; color:#9ca3af;">
+            © ${new Date().getFullYear()} MTSP System. All rights reserved.
+          </div>
+
+        </div>
+      </div>
+      `
+    );
+  } catch (error) {
+    console.error("Payment received email error:", error);
   }
 };

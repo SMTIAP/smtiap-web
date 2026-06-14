@@ -12,11 +12,20 @@ if (token) {
     const decoded = jwtDecode<{ id?: string }>(token);
     const userId = decoded?.id;
     if (userId) {
-      isDark = localStorage.getItem(`theme_${userId}`) === "dark";
+      const saved = localStorage.getItem(`theme_${userId}`);
+      if (saved !== null) {
+        isDark = saved === "dark";
+      } else {
+        isDark = localStorage.getItem("theme_guest") === "dark";
+      }
+    } else {
+      isDark = localStorage.getItem("theme_guest") === "dark";
     }
   } catch {
-    // ignore
+    isDark = localStorage.getItem("theme_guest") === "dark";
   }
+} else {
+  isDark = localStorage.getItem("theme_guest") === "dark";
 }
 
 if (isDark) {

@@ -105,7 +105,6 @@ function ScheduleModal({ scheduledOpen, scheduledClose, onSave, onClose }: Sched
           </button>
         </div>
 
-        {/* Timezone Info */}
         <div className="mb-5 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg flex items-center gap-2">
           <Globe size={14} className="text-slate-400" />
           <span className="text-xs text-slate-500 dark:text-slate-400">
@@ -113,7 +112,6 @@ function ScheduleModal({ scheduledOpen, scheduledClose, onSave, onClose }: Sched
           </span>
         </div>
 
-        {/* Start Date */}
         <div className="border-b border-slate-100 dark:border-slate-700 pb-4 mb-4">
           <label className="flex items-center justify-between cursor-pointer mb-3">
             <div>
@@ -154,7 +152,6 @@ function ScheduleModal({ scheduledOpen, scheduledClose, onSave, onClose }: Sched
           )}
         </div>
 
-        {/* Close Date */}
         <div className="pb-2">
           <label className="flex items-center justify-between cursor-pointer mb-3">
             <div>
@@ -336,12 +333,12 @@ export default function ReviewAndPublish() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
               <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-700">
                 <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Title</p>
-                <p className="text-gray-900 dark:text-white font-bold">{surveyTitle}</p>
+                <p className="text-gray-900 dark:text-white font-bold break-words whitespace-normal">{surveyTitle}</p>
               </div>
               {description && (
                 <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-700">
                   <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1">Description</p>
-                  <p className="text-gray-700 dark:text-slate-300 text-sm">{description}</p>
+                  <p className="text-gray-700 dark:text-slate-300 text-sm break-words whitespace-normal">{description}</p>
                 </div>
               )}
               <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-700">
@@ -386,7 +383,7 @@ export default function ReviewAndPublish() {
                 <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
                   <Calendar size={14} /> Schedule configured:
                 </p>
-                <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">{scheduleSummary()}</p>
+                <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1 break-words whitespace-normal">{scheduleSummary()}</p>
               </div>
             )}
 
@@ -399,7 +396,7 @@ export default function ReviewAndPublish() {
                   <div key={page.id || pIdx} className="border-l-2 border-gray-100 dark:border-slate-700 pl-6 space-y-4">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold py-0.5 px-2 bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300 rounded">PAGE {pIdx + 1}</span>
-                      <span className="text-sm font-bold text-gray-800 dark:text-white">{page.title}</span>
+                      <span className="text-sm font-bold text-gray-800 dark:text-white break-words whitespace-normal">{page.title}</span>
                     </div>
                     {page.questions.length === 0 ? (
                       <p className="text-sm text-gray-400 italic">No questions on this page</p>
@@ -407,10 +404,10 @@ export default function ReviewAndPublish() {
                       <div className="grid gap-3">
                         {page.questions.map((q: any, qIdx: number) => (
                           <div key={q.id || qIdx} className="flex items-start gap-3 p-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-700 rounded-xl shadow-sm hover:border-gray-200 dark:hover:border-slate-600 transition-colors">
-                            <span className="text-xs font-bold text-gray-400 mt-0.5">{qIdx + 1}.</span>
-                            <div className="flex-1">
-                              <p className="text-sm font-semibold text-gray-800 dark:text-white mb-1">{q.label}</p>
-                              <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-gray-400 mt-0.5 shrink-0">{qIdx + 1}.</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-800 dark:text-white mb-1 break-words whitespace-normal">{q.label}</p>
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-[10px] text-gray-400 flex items-center gap-1 uppercase tracking-tighter">
                                   <FileText size={10} /> {q.type.replace("_", " ")}
                                 </span>
@@ -419,7 +416,7 @@ export default function ReviewAndPublish() {
                               {q.options && q.options.length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-1">
                                   {q.options.slice(0, 3).map((opt: string, i: number) => (
-                                    <span key={i} className="text-[10px] px-2 py-0.5 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded text-gray-500 dark:text-slate-400">{opt}</span>
+                                    <span key={i} className="text-[10px] px-2 py-0.5 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded text-gray-500 dark:text-slate-400 break-words">{opt}</span>
                                   ))}
                                   {q.options.length > 3 && <span className="text-[10px] text-gray-400">+{q.options.length - 3} more</span>}
                                 </div>
@@ -459,7 +456,6 @@ export default function ReviewAndPublish() {
         </div>
       </div>
 
-      { }
       {showScheduleModal && (
         <ScheduleModal
           scheduledOpen={scheduledOpen}

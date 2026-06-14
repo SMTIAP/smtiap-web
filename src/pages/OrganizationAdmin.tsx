@@ -88,7 +88,7 @@ interface DashboardStats {
     total: number; 
     draft: number; 
     published: number; 
-    scheduled: number;  // ✅ ADDED
+    scheduled: number;
     ended: number; 
   };
   subscription: {
@@ -106,7 +106,7 @@ export default function OrganizationAdmin() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const { activeTenant, isSystemContext } = useTenant();
 
-  // Resolve effective role: system context → user.role, tenant context → tenant role
+  // Resolve effective role: system context → user.role, tenant context -> tenant role
   const effectiveRole =
     !isSystemContext && activeTenant
       ? activeTenant.role

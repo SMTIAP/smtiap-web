@@ -166,7 +166,6 @@ const previewDeviceWidths: Record<PreviewDeviceType, string> = {
   mobile: "w-[375px]",
 };
 
-// Helper function to get appropriate text color based on background
 function getTextColor(backgroundColor: string, opacity: number = 1): string {
   if (!backgroundColor || backgroundColor === "#F8FAFC") {
     return `rgba(30, 41, 59, ${opacity})`;
@@ -201,7 +200,6 @@ const PreviewDeviceIcon = ({ device, current, onClick }: { device: PreviewDevice
   );
 };
 
-// Interactive calendar picker used in preview mode for date question types
 const DatePickerCalendar = ({ value, onChange }: DatePickerCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(
     value ? new Date(value) : new Date(),
@@ -330,7 +328,6 @@ const DatePickerCalendar = ({ value, onChange }: DatePickerCalendarProps) => {
   );
 };
 
-// Supported question types with their default field values
 const QUESTION_TYPES: QuestionTypeConfig[] = [
   {
     id: "short_text",
@@ -388,7 +385,6 @@ const QUESTION_TYPES: QuestionTypeConfig[] = [
   },
 ];
 
-// Renders a single question card in the builder canvas with move, copy and delete actions
 const QuestionCard = ({
   question,
   index,
@@ -448,13 +444,13 @@ const QuestionCard = ({
 
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2 break-words whitespace-normal">
             {question.label}
             {question.required && <span className="text-red-500">*</span>}
           </h3>
         </div>
         {!isPreview && isActive && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -515,7 +511,7 @@ const QuestionCard = ({
                 <div
                   className={`w-4 h-4 border border-gray-300 ${question.type === "multiple_choice" ? "rounded-full" : "rounded"}`}
                 />
-                <span className="text-gray-700 dark:text-slate-300">{opt}</span>
+                <span className="text-gray-700 dark:text-slate-300 break-words whitespace-normal">{opt}</span>
               </div>
             ))}
           </div>
@@ -545,7 +541,6 @@ const QuestionCard = ({
   );
 };
 
-// Right panel for editing question properties, options and conditional branching rules
 const PropertyEditor = ({
   selectedQuestion,
   updateQuestion,
@@ -598,7 +593,6 @@ const PropertyEditor = ({
         </button>
       </div>
 
-      {/* Question Label */}
       <div className="space-y-1">
         <label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
           Question Label
@@ -613,7 +607,6 @@ const PropertyEditor = ({
         />
       </div>
 
-      {/* Placeholder for text questions */}
       {(selectedQuestion.type === "short_text" || selectedQuestion.type === "long_text") && (
         <div className="space-y-1">
           <label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
@@ -632,7 +625,6 @@ const PropertyEditor = ({
         </div>
       )}
 
-      {/* Options for multiple choice/checkboxes */}
       {(selectedQuestion.type === "multiple_choice" || selectedQuestion.type === "checkboxes") && (
         <div className="space-y-2">
           <label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">
@@ -682,7 +674,6 @@ const PropertyEditor = ({
         </div>
       )}
 
-      {/* Conditional Branching */}
       {supportsBranching && (
         <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-slate-700">
           <label className="flex items-center justify-between cursor-pointer">
@@ -774,7 +765,6 @@ const PropertyEditor = ({
         </div>
       )}
 
-      {/* Max Stars for rating */}
       {selectedQuestion.type === "rating" && (
         <div className="space-y-1">
           <label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
@@ -793,7 +783,6 @@ const PropertyEditor = ({
         </div>
       )}
 
-      {/* Required Field Toggle */}
       <div className="pt-2 border-t border-gray-100 dark:border-slate-700">
         <label className="flex items-center justify-between cursor-pointer">
           <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
@@ -867,7 +856,6 @@ export default function AddQuestions() {
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [previewDevice, setPreviewDevice] = useState<PreviewDeviceType>("desktop");
 
-  // Rest of your existing useEffect hooks (keep them as is)
   useEffect(() => {
     if (
       aiGeneratedPages &&
@@ -1543,7 +1531,6 @@ export default function AddQuestions() {
 
       <main className={`flex-1 flex flex-col h-full overflow-hidden ${readOnly ? "pt-12" : ""}`}>
         <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 transition-colors duration-300">
-          {/* Button bar - top row */}
           <div className="flex items-center justify-end gap-2 px-4 py-2">
             {!readOnly && (
               <button
@@ -1555,7 +1542,6 @@ export default function AddQuestions() {
               </button>
             )}
             
-            {/* Preview button */}
             <button
               onClick={() => {
                 if (readOnly) {
@@ -1574,7 +1560,6 @@ export default function AddQuestions() {
               {isPreviewMode ? "Exit Preview" : "Preview"}
             </button>
             
-            {/* Device Switcher - only show in preview mode */}
             {isPreviewMode && (
               <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-slate-700 rounded-lg px-1.5 py-1">
                 <button
@@ -1665,7 +1650,6 @@ export default function AddQuestions() {
             )}
           </div>
           
-          {/* Title bar - bottom row */}
           <div className="px-6 pb-4">
             <input
               type="text"
@@ -1737,14 +1721,12 @@ export default function AddQuestions() {
                 </div>
               </div>
             ) : (
-              // PREVIEW MODE with fixed background color visibility
               <div className="relative">
                 <div className={`transition-all duration-300 mx-auto ${previewDeviceWidths[previewDevice]}`}>
                   <div 
                     className="relative rounded-3xl shadow-xl border border-gray-200 dark:border-slate-700 overflow-hidden min-h-150 flex flex-col transition-colors duration-300"
                     style={{ backgroundColor: backgroundColor || "#FFFFFF" }}
                   >
-                    {/* Cover Image Banner */}
                     <div className="h-32 w-full relative overflow-hidden bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 shrink-0">
                       {coverImage ? (
                         <img
@@ -1762,14 +1744,12 @@ export default function AddQuestions() {
                       )}
                     </div>
                     
-                    {/* Overlapping Logo */}
                     {logo && (
                       <div className="absolute left-1/2 -translate-x-1/2 top-20 w-24 h-24 rounded-full bg-white p-1 border-4 border-white shadow-md flex items-center justify-center overflow-hidden z-10 transition-all">
                         <img src={logo} alt="Survey logo" className="w-full h-full object-cover rounded-full" />
                       </div>
                     )}
 
-                    {/* Content area - no white background, shows the bg color */}
                     <div className={`p-8 pb-6 flex flex-col items-start flex-1 ${logo ? 'pt-16' : 'pt-6'}`}>
                       {customizeBranding && websiteUrl && (
                         <div className="flex justify-center w-full">
@@ -1777,37 +1757,52 @@ export default function AddQuestions() {
                             href={websiteUrl} 
                             target="_blank" 
                             rel="noopener noreferrer" 
-                            className="inline-block text-[11px] font-bold hover:underline mb-4 text-center"
+                            className="inline-block text-[11px] font-bold hover:underline mb-4 text-center break-all max-w-full"
                             style={{ color: getTextColor(backgroundColor) }}
                           >
                             {websiteUrl}
                           </a>
                         </div>
                       )}
-                      <h1 className="text-2xl font-bold mb-2 font-serif text-left" style={{ color: getTextColor(backgroundColor) }}>
+                      
+                      <h1 
+                        className="text-2xl font-bold mb-2  text-left w-full break-words whitespace-normal" 
+                        style={{ color: getTextColor(backgroundColor) }}
+                      >
                         {surveyTitle}
                       </h1>
+                      
                       {description && (
-                        <p className="text-sm mb-1 font-serif text-left" style={{ color: getTextColor(backgroundColor, 0.7) }}>
+                        <p 
+                          className="text-sm mb-1  text-left w-full break-words whitespace-normal" 
+                          style={{ color: getTextColor(backgroundColor, 0.7) }}
+                        >
                           {description}
                         </p>
                       )}
-                      <p className="mb-8 font-serif text-left" style={{ color: getTextColor(backgroundColor, 0.6) }}>
+                      
+                      <p 
+                        className="mb-8  text-left w-full break-words whitespace-normal" 
+                        style={{ color: getTextColor(backgroundColor, 0.6) }}
+                      >
                         {activePage.title}
                       </p>
 
-                      <div className="space-y-8">
+                      <div className="space-y-8 w-full">
                         {activePage.questions.map((q, idx) => (
-                          <div key={q.id}>
-                            <div className="flex gap-2 mb-3">
-                              <span className="font-bold" style={{ color: getTextColor(backgroundColor) }}>
+                          <div key={q.id} className="w-full">
+                            <div className="flex gap-2 mb-3 w-full">
+                              <span className="font-bold shrink-0" style={{ color: getTextColor(backgroundColor) }}>
                                 {idx + 1}.
                               </span>
-                              <h3 className="font-semibold" style={{ color: getTextColor(backgroundColor) }}>
+                              <h3 
+                                className="font-semibold flex-1 break-words whitespace-normal" 
+                                style={{ color: getTextColor(backgroundColor) }}
+                              >
                                 {q.label} {q.required && <span className="text-red-500">*</span>}
                               </h3>
                             </div>
-                            <div className="pl-6">
+                            <div className="pl-6 w-full">
                               {q.type === "short_text" && (
                                 <input 
                                   type="text" 
@@ -1827,13 +1822,16 @@ export default function AddQuestions() {
                               {(q.type === "multiple_choice" || q.type === "checkboxes") && (
                                 <div className="space-y-3">
                                   {q.options?.map((opt: string, i: number) => (
-                                    <label key={i} className="flex items-center gap-3 cursor-pointer group">
+                                    <label key={i} className="flex items-start gap-3 cursor-pointer group">
                                       <input 
                                         type={q.type === "multiple_choice" ? "radio" : "checkbox"} 
                                         name={q.id} 
-                                        className="w-5 h-5 border-gray-400 rounded-full focus:ring-0" 
+                                        className="w-5 h-5 border-gray-400 rounded-full focus:ring-0 mt-0.5 shrink-0" 
                                       />
-                                      <span className="transition-colors" style={{ color: getTextColor(backgroundColor) }}>
+                                      <span 
+                                        className="transition-colors flex-1 break-words whitespace-normal" 
+                                        style={{ color: getTextColor(backgroundColor) }}
+                                      >
                                         {opt}
                                       </span>
                                     </label>
@@ -1845,7 +1843,7 @@ export default function AddQuestions() {
                                   {[...Array(q.max || 5)].map((_, i) => (
                                     <button 
                                       key={i} 
-                                      className="w-10 h-10 rounded-lg border-2 border-gray-300 transition-all hover:border-yellow-400"
+                                      className="w-10 h-10 rounded-lg border-2 border-gray-300 transition-all hover:border-yellow-400 flex items-center justify-center shrink-0"
                                       style={{ color: getTextColor(backgroundColor, 0.5) }}
                                     >
                                       <Star size={20} />

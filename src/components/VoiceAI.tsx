@@ -17,7 +17,6 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Declare global interface for SpeechRecognition
 declare global {
   interface Window {
     SpeechRecognition: any;
@@ -125,7 +124,6 @@ const VoiceAI: React.FC = () => {
     return localStorage.getItem('voice_assistant_speech_enabled') !== 'false';
   });
 
-  // Chat message history
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -166,12 +164,10 @@ const VoiceAI: React.FC = () => {
 
   const manuallyStoppedRef = useRef(false);
 
-  // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Initialize Web Speech API
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -209,7 +205,6 @@ const VoiceAI: React.FC = () => {
     }
   }, []);
 
-  // Stop mic immediately when assistant panel is minimized
   useEffect(() => {
     if (!isOpen && isListening) {
       manuallyStoppedRef.current = true;
@@ -230,9 +225,69 @@ const VoiceAI: React.FC = () => {
     }
   };
 
+  const handleChipAction = (chip: string) => {
+    const userMsg: Message = {
+      id: Math.random().toString(),
+      sender: 'user',
+      text: chip,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, userMsg]);
+
+    let responseText = "";
+    let navigatePath = "";
+
+    switch (chip) {
+      case "View analytics":
+        responseText = "Opening analytics dashboard...";
+        navigatePath = "/analytics";
+        break;
+      case "View all surveys":
+        responseText = "Opening your surveys...";
+        navigatePath = "/created-surveys";
+        break;
+      case "View templates":
+        responseText = "Opening template library...";
+        navigatePath = "/templates";
+        break;
+      case "Create new survey":
+        responseText = "Creating a new survey for you...";
+        navigatePath = "/create-new-survey";
+        break;
+      case "Manage user roles":
+        responseText = "Opening role management...";
+        navigatePath = "/role-management";
+        break;
+      case "Upgrade plan":
+        responseText = "Opening subscription page...";
+        navigatePath = "/subscription";
+        break;
+      case "View audit logs":
+        responseText = "Opening audit logs...";
+        navigatePath = "/audit-log";
+        break;
+      default:
+        setActiveTag(chip);
+        inputRef.current?.focus();
+        return;
+    }
+
+    const aiMsg: Message = {
+      id: Math.random().toString(),
+      sender: 'ai',
+      text: responseText,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, aiMsg]);
+    speakText(responseText);
+
+    setTimeout(() => {
+      navigate(navigatePath);
+    }, 1000);
+  };
+
   const handleSendPrompt = async (text: string) => {
     const promptText = text.trim();
-    // Allow sending tag or attachment even if text is empty
     if (!promptText && !activeTag && !attachedFile) return;
 
     let userPrompt = activeTag ? `[${activeTag}] ${promptText}`.trim() : promptText;
@@ -245,9 +300,8 @@ const VoiceAI: React.FC = () => {
 
     setIsLoading(true);
     setTextInput('');
-    setAttachedFile(null); // Reset attachment state immediately
+    setAttachedFile(null);
 
-    // Add user message to local state
     const userMsg: Message = {
       id: Math.random().toString(),
       sender: 'user',
@@ -398,8 +452,7 @@ const VoiceAI: React.FC = () => {
   };
 
   const handleChipClick = (chip: string) => {
-    setActiveTag(chip);
-    inputRef.current?.focus();
+    handleChipAction(chip);
   };
 
   const currentTheme = THEME_CONFIGS[theme];
@@ -414,9 +467,8 @@ const VoiceAI: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className={`relative bg-white w-[350px] sm:w-[380px] rounded-3xl shadow-2xl border ${currentTheme.panelBorder} flex flex-col overflow-visible`}
+            className={`relative bg-white w-[350px] sm:w-[380px] rounded-3xl shadow-2xl border ${currentTheme.panelBorder} flex flex-col overflow-hidden max-h-[550px]`}
           >
-            {/* Floating theme customizer paintbrush */}
             <button
               onClick={cycleTheme}
               className={`absolute -top-3.5 -right-3.5 w-9 h-9 rounded-full ${currentTheme.floatingBg} text-white shadow-lg flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 z-[60]`}
@@ -425,8 +477,7 @@ const VoiceAI: React.FC = () => {
               <Paintbrush className="w-4 h-4" />
             </button>
 
-            {/* Header section with gradient background */}
-            <div className={`flex justify-between items-center ${currentTheme.headerBg} p-4 rounded-t-3xl border-b border-gray-100/50`}>
+            <div className={`flex justify-between items-center ${currentTheme.headerBg} p-4 rounded-t-3xl border-b border-gray-100/50 shrink-0`}>
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <img
@@ -434,7 +485,6 @@ const VoiceAI: React.FC = () => {
                     alt="Form Copilot Avatar"
                     className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
                     onError={(e) => {
-                      // Fallback avatar in case the image fails to load
                       (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=80&auto=format&fit=crop&q=60";
                     }}
                   />
@@ -445,7 +495,21 @@ const VoiceAI: React.FC = () => {
                     <h3 className={`text-[15px] font-extrabold ${currentTheme.headerText}`}>Form Copilot</h3>
                     <span className="bg-[#000E54] text-white text-[9px] font-black uppercase px-1 py-0.5 rounded tracking-wide leading-none">AI</span>
                   </div>
-                  <p className="text-[11px] text-gray-500 font-semibold">SMTIAP Form Specialist</p>
+                  <div className="flex items-center gap-1.5 text-[11px] text-gray-500 font-semibold">
+                    <span>SMTIAP Form Specialist</span>
+                    <span className="text-gray-300">•</span>
+                    {isListening ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-green-600 font-extrabold bg-green-50 px-1.5 py-0.5 rounded animate-pulse border border-green-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                        Listening
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-gray-400 font-bold bg-gray-50 px-1.5 py-0.5 rounded border border-gray-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                        Mic Off
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -457,9 +521,6 @@ const VoiceAI: React.FC = () => {
                 >
                   {speechEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
                 </button>
-                <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-black/5 rounded-full transition-colors cursor-pointer">
-                  <Columns className="w-4 h-4" />
-                </button>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-black/5 rounded-full transition-colors cursor-pointer"
@@ -469,14 +530,13 @@ const VoiceAI: React.FC = () => {
               </div>
             </div>
 
-            {/* suggestion chips */}
-            <div className="px-4 pt-3 flex flex-col gap-1.5">
-              <div className="flex flex-wrap gap-1.5">
+            <div className="px-4 pt-3 flex flex-col gap-1.5 shrink-0">
+              <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto pr-1">
                 {displayedChips.map((chip, index) => (
                   <button
                     key={index}
                     onClick={() => handleChipClick(chip)}
-                    className="px-3 py-1.5 text-xs font-semibold border border-gray-200 hover:border-orange-300 hover:bg-orange-50/20 text-gray-600 hover:text-orange-950 rounded-full transition-all duration-200 cursor-pointer shadow-sm bg-white"
+                    className="px-3 py-1.5 text-xs font-semibold border border-gray-200 hover:border-orange-300 hover:bg-orange-50/20 text-gray-600 hover:text-orange-950 rounded-full transition-all duration-200 cursor-pointer shadow-sm bg-white shrink-0"
                   >
                     {chip}
                   </button>
@@ -494,8 +554,7 @@ const VoiceAI: React.FC = () => {
               </button>
             </div>
 
-            {/* Conversation Feed */}
-            <div className="flex-1 p-4 max-h-[220px] min-h-[160px] overflow-y-auto flex flex-col gap-3 scrollbar-thin scrollbar-thumb-gray-200">
+            <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 scrollbar-thin scrollbar-thumb-gray-200 min-h-[120px]">
               {messages.map((msg) => (
                 <div
                   key={msg.id}
@@ -511,14 +570,14 @@ const VoiceAI: React.FC = () => {
                       }}
                     />
                   )}
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-col gap-0.5 max-w-[calc(100%-32px)]">
                     {msg.tag && (
                       <span className="text-[10px] uppercase font-bold text-orange-600 self-start bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
                         {msg.tag}
                       </span>
                     )}
                     <div
-                      className={`text-[13px] px-3.5 py-2.5 rounded-2xl leading-relaxed shadow-sm
+                      className={`text-[13px] px-3.5 py-2.5 rounded-2xl leading-relaxed shadow-sm break-words whitespace-normal
                         ${msg.sender === 'user'
                           ? 'bg-slate-100 text-slate-800 rounded-tr-none'
                           : 'bg-blue-50/60 text-slate-800 rounded-tl-none border border-blue-100/50'}`}
@@ -531,20 +590,23 @@ const VoiceAI: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Always-on mic toggle row */}
-            <div className="flex items-center justify-between px-4 pb-2 border-b border-gray-50 bg-white">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-50 bg-white shrink-0">
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Continuous Voice Input</span>
-              <button
-                onClick={toggleAlwaysOn}
-                className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${alwaysOn ? 'bg-orange-500' : 'bg-gray-200'}`}
-                title={alwaysOn ? "Voice input remains active" : "Enable hands-free mode"}
-              >
-                <span className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${alwaysOn ? 'translate-x-3' : 'translate-x-0'}`} />
-              </button>
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-extrabold ${alwaysOn ? 'text-orange-600' : 'text-gray-400'}`}>
+                  {alwaysOn ? 'ON' : 'OFF'}
+                </span>
+                <button
+                  onClick={toggleAlwaysOn}
+                  className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${alwaysOn ? 'bg-orange-500' : 'bg-gray-200'}`}
+                  title={alwaysOn ? "Voice input remains active" : "Enable hands-free mode"}
+                >
+                  <span className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${alwaysOn ? 'translate-x-3' : 'translate-x-0'}`} />
+                </button>
+              </div>
             </div>
 
-            {/* bottom input box card wrapper */}
-            <div className="bg-white border border-gray-100 rounded-3xl p-2.5 shadow-md hover:shadow-lg focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100/40 transition-all flex flex-col gap-2.5 mx-4 mb-4 mt-2">
+            <div className="bg-white border border-gray-100 rounded-3xl p-2.5 shadow-md hover:shadow-lg focus-within:border-orange-300 focus-within:ring-2 focus-within:ring-orange-100/40 transition-all flex flex-col gap-2.5 mx-4 mb-4 mt-2 shrink-0">
               <div className="flex flex-wrap items-center gap-1.5 px-1 pt-0.5">
                 {activeTag && (
                   <span className={`flex items-center gap-1 ${currentTheme.badgeBg} ${currentTheme.badgeText} text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 border`}>
@@ -574,7 +636,7 @@ const VoiceAI: React.FC = () => {
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendPrompt(textInput)}
-                  placeholder={activeTag ? "Add details or details..." : "Ask me to build a form..."}
+                  placeholder={isListening ? "Listening... Speak now..." : (activeTag ? "Add details or details..." : "Ask me to build a form...")}
                   className="flex-1 bg-transparent text-sm focus:outline-none text-slate-800 py-1.5 px-1 min-w-[120px]"
                   disabled={isLoading}
                 />
@@ -597,18 +659,28 @@ const VoiceAI: React.FC = () => {
                   >
                     <Plus className="w-4 h-4 font-bold" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={toggleListening}
-                    disabled={isLoading}
-                    className={`w-8.5 h-8.5 rounded-full border flex items-center justify-center transition-all cursor-pointer
-                      ${isListening
-                        ? 'bg-red-500 border-red-500 text-white animate-pulse'
-                        : 'border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
-                    title={isListening ? "Stop Voice Input" : "Voice Input"}
-                  >
-                    {isListening ? <MicOff className="w-4.5 h-4.5" /> : <Mic className="w-4.5 h-4.5" />}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {isListening && (
+                      <div className="flex items-end gap-[3px] h-5 px-1 pb-1">
+                        <span className="voice-wave-bar h-1"></span>
+                        <span className="voice-wave-bar h-1"></span>
+                        <span className="voice-wave-bar h-1"></span>
+                        <span className="voice-wave-bar h-1"></span>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={toggleListening}
+                      disabled={isLoading}
+                      className={`w-8.5 h-8.5 rounded-full border flex items-center justify-center transition-all cursor-pointer
+                        ${isListening
+                          ? 'bg-red-500 border-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.4)]'
+                          : 'border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
+                      title={isListening ? "Voice Input is ON - Click to turn off" : "Voice Input is OFF - Click to turn on"}
+                    >
+                      {isListening ? <Mic className="w-4.5 h-4.5 animate-pulse" /> : <MicOff className="w-4.5 h-4.5" />}
+                    </button>
+                  </div>
                 </div>
 
                 <button

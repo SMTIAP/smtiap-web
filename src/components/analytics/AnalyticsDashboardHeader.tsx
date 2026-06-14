@@ -1,5 +1,6 @@
-import BackButton from "../BackButton";
 import SurveyTitleBadge from "./SurveyTitleBadge";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import AnalyticsToolbar from "./AnalyticsToolbar";
 
 interface AnalyticsDashboardHeaderProps {
@@ -17,10 +18,17 @@ export default function AnalyticsDashboardHeader({
   toDate,
   setToDate,
 }: AnalyticsDashboardHeaderProps) {
+  const navigate = useNavigate();
   return (
     <>
-      <div className="w-full flex justify-start mb-6">
-        <BackButton to="/analytics" />
+      <div className="w-full flex justify-end mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+          
+        >
+          <ArrowLeft size={16} />
+        </button>
       </div>
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex py-3 items-center gap-3 flex-wrap w-full">
