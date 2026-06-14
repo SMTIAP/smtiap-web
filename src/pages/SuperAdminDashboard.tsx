@@ -1,14 +1,14 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { 
-  Building2, 
-  FileText, 
-  ShieldCheck, 
-  Users, 
-  Search, 
-  Filter, 
-  RefreshCw, 
-  UserPlus, 
-  Shield, 
+import {
+  Building2,
+  FileText,
+  ShieldCheck,
+  Users,
+  Search,
+  Filter,
+  RefreshCw,
+  UserPlus,
+  Shield,
   Calendar,
   Layers,
   Sparkles,
@@ -78,7 +78,7 @@ export default function SuperAdminDashboard() {
   const [createError, setCreateError] = useState("");
   const [createMessage, setCreateMessage] = useState("");
   const [roleUpdates, setRoleUpdates] = useState<Record<string, string>>({});
-  
+
   // Stats state
   const [stats, setStats] = useState({
     activeTenants: 0,
@@ -115,10 +115,10 @@ export default function SuperAdminDashboard() {
     password: "",
     role: "admin",
   });
-  
+
   // Template count state
   const [templatesCount, setTemplatesCount] = useState(0);
-  
+
   const navigate = useNavigate();
 
   const authHeaders = () => {
@@ -283,7 +283,7 @@ export default function SuperAdminDashboard() {
       setCreateMessage("User created successfully.");
       setNewUser({ username: "", email: "", password: "", role: "admin" });
       setRoleUpdates((prev) => ({ ...prev, [data._id]: data.role }));
-      
+
       fetchManagedUsers();
       fetchDashboardData();
       fetchRecentLogs();
@@ -405,7 +405,7 @@ export default function SuperAdminDashboard() {
       setCreditSuccess(`Successfully adjusted balance by ${creditAmount} credits.`);
       setCreditAmount("");
       setCreditReason("");
-      
+
       setTimeout(() => {
         setSelectedTenantForCredits(null);
         setCreditSuccess("");
@@ -461,11 +461,11 @@ export default function SuperAdminDashboard() {
       // Find the navbar - adjust selector to match your actual navbar
       const navbar = document.querySelector('nav') || document.querySelector('.navbar') || document.querySelector('header');
       const navHeight = navbar ? navbar.getBoundingClientRect().height : 80;
-      
+
       // Get element position and calculate offset
       const elementPosition = element.getBoundingClientRect().top + window.scrollY;
       const offsetPosition = elementPosition - navHeight - 15; // 15px extra padding for breathing room
-      
+
       // Smooth scroll to adjusted position
       window.scrollTo({
         top: offsetPosition,
@@ -487,18 +487,18 @@ export default function SuperAdminDashboard() {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300 text-slate-800 dark:text-slate-200">
-      
+
       {/* Accent Stripe */}
       <div className="h-1.5 w-full bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500" />
-      
+
       <SuperAdminNavBar />
-      
+
       <div className="flex max-w-6xl py-10 px-6 flex-col items-start gap-10 w-full">
-        
+
         {/* Hero Greeting Card - REMOVED Active User and Global Role cards */}
         <div className="relative w-full rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md p-8 overflow-hidden">
           <div className="absolute -top-20 -right-20 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-          
+
           <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="flex-1">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-indigo-50 dark:bg-indigo-900/40 border border-indigo-100 dark:border-indigo-700 mb-4">
@@ -519,9 +519,9 @@ export default function SuperAdminDashboard() {
 
         {/* Feature Cards Grid - 5 columns */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-5 w-full">
-          
+
           {/* Card 1: Users & Team */}
-          <div 
+          <div
             onClick={() => scrollToSection("super-admin-users")}
             className="group relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-xl hover:scale-[1.02] hover:border-indigo-300 dark:hover:border-indigo-500 transition-all duration-300 p-6 flex flex-col cursor-pointer"
           >
@@ -543,7 +543,7 @@ export default function SuperAdminDashboard() {
           </div>
 
           {/* Card 2: Organization Plans */}
-          <div 
+          <div
             onClick={() => scrollToSection("super-admin-tenants")}
             className="group relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-xl hover:scale-[1.02] hover:border-indigo-300 dark:hover:border-indigo-500 transition-all duration-300 p-6 flex flex-col cursor-pointer"
           >
@@ -565,7 +565,7 @@ export default function SuperAdminDashboard() {
           </div>
 
           {/* Card 3: Security Trail */}
-          <div 
+          <div
             onClick={() => scrollToSection("security-trail-section")}
             className="group relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-xl hover:scale-[1.02] hover:border-indigo-300 dark:hover:border-indigo-500 transition-all duration-300 p-6 flex flex-col cursor-pointer"
           >
@@ -587,7 +587,7 @@ export default function SuperAdminDashboard() {
           </div>
 
           {/* Card 4: System Metrics */}
-          <div 
+          <div
             onClick={() => scrollToSection("metrics-section")}
             className="group relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-xl hover:scale-[1.02] hover:border-indigo-300 dark:hover:border-indigo-500 transition-all duration-300 p-6 flex flex-col cursor-pointer"
           >
@@ -609,7 +609,7 @@ export default function SuperAdminDashboard() {
           </div>
 
           {/* Card 5: Templates Library */}
-          <div 
+          <div
             onClick={() => navigate("/super-admin/templates")}
             className="group relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-xl hover:scale-[1.02] hover:border-orange-300 dark:hover:border-orange-500 transition-all duration-300 p-6 flex flex-col cursor-pointer"
           >
@@ -639,7 +639,7 @@ export default function SuperAdminDashboard() {
               <h2 className="text-gray-900 dark:text-white text-xl font-extrabold leading-8">
                 Platform operational metrics:
               </h2>
-              <button 
+              <button
                 onClick={fetchDashboardData}
                 disabled={statsLoading}
                 className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition disabled:opacity-50"
@@ -650,7 +650,7 @@ export default function SuperAdminDashboard() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 w-full">
-              
+
               {/* Stat 1: Active Tenants */}
               <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-6 shadow-sm">
                 <div className="flex items-center gap-3">
@@ -748,7 +748,7 @@ export default function SuperAdminDashboard() {
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-2 pl-9 pr-3 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition"
               />
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative">
                 <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
@@ -765,8 +765,8 @@ export default function SuperAdminDashboard() {
                   <option value="billing_manager">Billing Manager</option>
                 </select>
               </div>
-              
-              <button 
+
+              <button
                 onClick={() => {
                   setSearchQuery("");
                   setRoleFilter("");
@@ -814,7 +814,7 @@ export default function SuperAdminDashboard() {
                           <p className="font-bold text-slate-800 dark:text-white text-sm">{u.username}</p>
                           <p className="text-xs text-slate-400">{u.email}</p>
                         </div>
-                       </td>
+                      </td>
                       <td className="py-4">
                         {roleUpdates[u._id] !== undefined ? (
                           <div className="flex items-center gap-2">
@@ -854,7 +854,7 @@ export default function SuperAdminDashboard() {
                             <option value="billing_manager">Billing Manager</option>
                           </select>
                         )}
-                       </td>
+                      </td>
                       <td className="py-4 text-right">
                         <button
                           onClick={() => handleDeleteUser(u._id)}
@@ -863,7 +863,7 @@ export default function SuperAdminDashboard() {
                           <Trash2 size={12} />
                           Delete
                         </button>
-                       </td>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -882,7 +882,7 @@ export default function SuperAdminDashboard() {
             <p className="text-xs text-slate-400 mb-4">
               Establish a secure user record and role assignment directly in the system databases.
             </p>
-            
+
             {createError && (
               <div className="mb-4 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 p-2.5 flex items-center gap-2">
                 <AlertCircle size={12} className="text-rose-600" />
@@ -895,7 +895,7 @@ export default function SuperAdminDashboard() {
                 <span className="text-xs text-emerald-700 dark:text-emerald-300">{createMessage}</span>
               </div>
             )}
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <input
                 type="text"
@@ -951,7 +951,7 @@ export default function SuperAdminDashboard() {
                 View, filter, and manage all organization instances registered on the platform.
               </p>
             </div>
-            
+
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
               <input
@@ -980,16 +980,14 @@ export default function SuperAdminDashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-1.5">
                         <h3 className="font-bold text-slate-800 dark:text-white truncate">{tenant.name}</h3>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
-                          tenant.status === "active" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" :
-                          tenant.status === "suspended" ? "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300" :
-                          "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                        }`}>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${tenant.status === "active" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" :
+                            tenant.status === "suspended" ? "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300" :
+                              "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                          }`}>
                           {tenant.status}
                         </span>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
-                          tenant.plan === "premium" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                        }`}>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${tenant.plan === "premium" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                          }`}>
                           {tenant.plan}
                         </span>
                       </div>
@@ -1002,34 +1000,25 @@ export default function SuperAdminDashboard() {
                         <span>📍 {tenant.country}</span>
                       </div>
                     </div>
-                    
+
                     <div className="flex flex-wrap items-center gap-2 shrink-0">
                       <button
                         onClick={() => handleUpdateTenant(tenant._id, tenant.status === "active" ? "suspended" : "active")}
-                        className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                          tenant.status === "active" 
+                        className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition ${tenant.status === "active"
                             ? "border border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100 dark:border-amber-800/50 dark:bg-amber-950/30 dark:text-amber-400"
                             : "border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:border-emerald-800/50 dark:bg-emerald-950/30 dark:text-emerald-400"
-                        }`}
+                          }`}
                       >
                         {tenant.status === "active" ? <Ban size={12} /> : <CheckCircle2 size={12} />}
                         {tenant.status === "active" ? "Suspend" : "Activate"}
                       </button>
-                      
+
                       <button
                         onClick={() => handleUpdateTenant(tenant._id, undefined, tenant.plan === "premium" ? "free" : "premium")}
                         className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                       >
                         <ArrowRightLeft size={12} />
                         Switch to {tenant.plan === "premium" ? "Free" : "Premium"}
-                      </button>
-                      
-                      <button
-                        onClick={() => setSelectedTenantForCredits(tenant)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-100 dark:border-indigo-800/50 dark:bg-indigo-950/30 dark:text-indigo-400"
-                      >
-                        <Coins size={12} />
-                        Allocate Credits
                       </button>
                     </div>
                   </div>
@@ -1061,7 +1050,7 @@ export default function SuperAdminDashboard() {
               >
                 <RefreshCw size={14} className={logsLoading ? "animate-spin" : ""} />
               </button>
-              <button 
+              <button
                 onClick={() => navigate("/super-admin/audit-log")}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-55 dark:bg-slate-950 px-3.5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-300"
               >
@@ -1084,7 +1073,7 @@ export default function SuperAdminDashboard() {
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {recentLogs.map((log) => (
-                  <div 
+                  <div
                     key={log._id}
                     className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/10 transition-all"
                   >
