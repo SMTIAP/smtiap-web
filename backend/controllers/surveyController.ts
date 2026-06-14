@@ -7,6 +7,7 @@ import { notifySurveyPublished, notifySurveyStopped } from "../services/emailNot
 import User from "../models/User.js";
 import { toast } from "sonner";
 import Tenant from "../models/Tenant.js";
+import { Payment } from "../models/Payment.js";
 import { createAppNotification } from "../services/notificationService.js";
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -128,6 +129,65 @@ const verifySurveyAccess = async (
   return null;
 };
 
+// ---plan-based active survey limits pyahere----
+
+// "Active" = counts toward the limit (Running or Scheduled)
+const ACTIVE_SURVEY_STATUSES = ["Running", "Scheduled"];
+
+// null = unlimited
+const PLAN_SURVEY_LIMITS: Record<string, number> = {
+  free: 2,
+  startup: 3,
+  pro: 100,
+};
+
+/** Resolve the tenant's current active plan, defaulting to "free" if none/expired. */
+const getTenantPlanName = async (tenantId: string): Promise<string> => {
+  const payment = await Payment.findOne({ tenantId, status: "success" })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  if (!payment) return "free";
+  if (payment.expiresAt && new Date(payment.expiresAt) < new Date()) return "free";
+
+  return payment.planName.toLowerCase();
+};
+
+/**
+ returns null if the survey can transition to `newStatus`, or an error
+ message string if doing so would exceed the tenant's plan limit.
+
+ only checks when newStatus is "Running"/"Scheduled" AND the survey's
+ previous status was NOT already counted as active - ex: only on the
+ transition INTO the active set, not between Running <-> Scheduled.
+ */
+const checkActiveSurveyLimit = async (
+  tenantId: string | null | undefined,
+  newStatus: string,
+  oldStatus: string | null | undefined,
+): Promise<string | null> => {
+  if (!tenantId) return null; // personal/system surveys arent plan-limited
+  if (!ACTIVE_SURVEY_STATUSES.includes(newStatus)) return null;
+  if (oldStatus && ACTIVE_SURVEY_STATUSES.includes(oldStatus)) return null; // already counted
+
+  const planName = await getTenantPlanName(tenantId);
+  const limit = PLAN_SURVEY_LIMITS[planName] ?? PLAN_SURVEY_LIMITS.free;
+
+  const activeCount = await Survey.countDocuments({
+    tenantId: new mongoose.Types.ObjectId(tenantId),
+    status: { $in: ACTIVE_SURVEY_STATUSES },
+  } as any);
+
+  if (activeCount >= limit) {
+    return `Your organization is on the ${
+      planName.charAt(0).toUpperCase() + planName.slice(1)
+    } plan, which allows up to ${limit} active (published or scheduled) survey${limit === 1 ? "" : "s"} at a time. Finish or unpublish an existing survey to publish more.`;
+  }
+
+  return null;
+};
+
+
 // Records an audit trail entry for survey actions
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const logAudit = (
@@ -204,6 +264,13 @@ export const createSurvey = async (req: Request, res: Response) => {
     if (isPasswordProtected && password) {
       const saltRounds = 10;
       hashedPassword = await bcrypt.hash(password, saltRounds);
+    }
+
+        // ---enforce plan based active survey limits payhere---
+    const limitError = await checkActiveSurveyLimit(activeTenantId, status, null);
+    if (limitError) {
+      res.status(403).json({ message: limitError });
+      return;
     }
 
     const survey = new Survey({
@@ -394,12 +461,26 @@ export const updateSurvey = async (req: Request, res: Response) => {
       }
     }
 
+      // ---enforce plan-based active survey limits payhere---
+    if (safeBody.status) {
+      const limitError = await checkActiveSurveyLimit(
+        survey.tenantId ? String(survey.tenantId) : null,
+        safeBody.status,
+        survey.status,
+      );
+      if (limitError) {
+        res.status(403).json({ message: limitError });
+        return;
+      }
+    }
+
+
     const updated = await Survey.findByIdAndUpdate(req.params.id, safeBody, {
       new: true,
       runValidators: true,
     });
 
-    // 🔥 AUDIT: title changed
+    // AUDIT: title changed
     if (safeBody.surveyTitle && safeBody.surveyTitle !== oldTitle) {
       await AuditLog.create({
         tenant_id: survey.tenantId ?? null,
@@ -482,6 +563,20 @@ export const updateStatus = async (req: Request, res: Response) => {
     )
 
     return;
+
+
+    // --enforce plan-based active survey limits payhere---
+    const limitError = await checkActiveSurveyLimit(
+      survey.tenantId ? String(survey.tenantId) : null,
+      status,
+      survey.status,
+    );
+    if (limitError) {
+      res.status(403).json({ message: limitError });
+      return;
+    }
+
+
     const updated = await Survey.findByIdAndUpdate(
       req.params.id,
       { status },
