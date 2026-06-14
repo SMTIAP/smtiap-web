@@ -10,6 +10,7 @@ import {
   formatFileDateTime,
   formatRole,
 } from "../utils/pdfHelpers";
+import { exportToCSV } from "../utils/csvHelpers";
 
 // interface User {
 //   _id: string;
@@ -194,14 +195,12 @@ export default function Reports() {
     fetchTenantActivity();
   }, [location.key]);
 
+  // PDF Exports
   const exportTenantRegistrationsPDF = async () => {
     const doc = new jsPDF();
 
     const generatedBy = await getGeneratedBy();
     const now = new Date();
-
-    // Header
-    // addHeader(doc, "MTSP System");
     const pageWidth = doc.internal.pageSize.width;
 
     // Report title below the line
@@ -231,7 +230,7 @@ export default function Reports() {
 
       didDrawPage: (data) => {
         const pageCount = doc.getNumberOfPages();
-        
+
         // HEADER + FOOTER helper
         addHeaderAndFooter(
           doc,
@@ -243,8 +242,6 @@ export default function Reports() {
       },
     });
 
-    // addFooter(doc, generatedBy);
-
     // Download
     doc.save(`tenant-registration-report_${formatFileDateTime(now)}.pdf`);
   };
@@ -254,9 +251,6 @@ export default function Reports() {
 
     const generatedBy = await getGeneratedBy();
     const now = new Date();
-
-    // Header
-    // addHeader(doc, "MTSP System");
     const pageWidth = doc.internal.pageSize.width;
 
     // Report title below the line
@@ -304,8 +298,6 @@ export default function Reports() {
       },
     });
 
-    // addFooter(doc, generatedBy);
-
     // Download
     doc.save(`user-tenant-report_${formatFileDateTime(now)}.pdf`);
   };
@@ -321,7 +313,41 @@ export default function Reports() {
     // }
   };
 
-  
+  // CSV Exports
+    const exportTenantsCSV = () => {
+    exportToCSV(
+      "tenant-registrations",
+      tenants.map((t) => ({
+        name: t.name,
+        domain: t.domain,
+        plan: t.plan,
+        created_at: new Date(t.created_at).toLocaleDateString("en-GB"),
+      })),
+      ["name", "domain", "plan", "created_at"],
+    );
+  };
+
+  const exportUsersCSV = () => {
+    exportToCSV(
+      "user-tenant-registrations",
+      orgUsers.map((u) => ({
+        username: u.userId.username,
+        tenant: u.tenantId.name,
+        email: u.userId.email,
+        role: formatRole(u.role),
+        lastLogin: u.lastLogin
+          ? new Date(u.lastLogin).toLocaleString("en-GB")
+          : "NEVER",
+      })),
+      ["username", "tenant", "email", "role", "lastLogin"],
+    );
+  };
+
+  const handleExportCSV = () => {
+    if (activeTab === "tenants") exportTenantsCSV();
+    else if (activeTab === "users") exportUsersCSV();
+    // else if (activeTab === "activity") exportActivityCSV();
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
@@ -374,7 +400,7 @@ export default function Reports() {
           {/* Export Button */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => console.log("Export CSV")}
+              onClick={handleExportCSV}
               className="flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
             >
               <Download size={16} />
