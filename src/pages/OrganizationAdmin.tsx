@@ -186,7 +186,7 @@ export default function OrganizationAdmin() {
       to: "/created-surveys",
       gradient: "bg-linear-to-br from-indigo-500 to-purple-600",
       description:
-        "Craft, distribute and monitor active system feedback forms.",
+        "Craft, distribute and monitor active survey feedback forms.",
       badge: `${activePublished} Active`,
       badgeColor:
         "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/40 dark:text-indigo-300",
@@ -208,7 +208,7 @@ export default function OrganizationAdmin() {
       to: "/subscription",
       gradient: "bg-linear-to-br from-indigo-500 to-purple-600",
       description:
-        "Configure licensing, view active invoices, or scale your account.",
+        "Upgrade your account to premium status for extra features and more freedom.",
       badge: stats?.subscription?.plan
         ? `${stats.subscription.plan} Active`
         : "Free Tier",

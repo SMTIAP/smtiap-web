@@ -25,6 +25,10 @@ import AnalyticsDashboardHeader from "../components/analytics/AnalyticsDashboard
 import AnalyticsChartsSection from "../components/analytics/AnalyticsChartsSection";
 import AiInsightsSection from "../components/analytics/AiInsightsSection";
 
+//custom analytics for paid users
+import AiQuestionSection from "../components/analytics/AiQuestionSection";
+
+
 // Register Chart.js modules needed for Bar and Pie charts
 ChartJS.register(
   CategoryScale,
@@ -158,6 +162,14 @@ export default function Analytics() {
               summary={summary}
               keywords={keywords}
             />
+
+            {/* paid user Component - ask AI a specific question about this survey */}
+            <AiQuestionSection
+              surveyQuestions={surveyQuestions}
+              surveyResponses={filteredResponses}
+              totalResponses={filteredTotalResponses}
+            />
+
           </div>
         </div>
       </main>

@@ -162,26 +162,31 @@ const getTenantPlanName = async (tenantId: string): Promise<string> => {
  transition INTO the active set, not between Running <-> Scheduled.
  */
 const checkActiveSurveyLimit = async (
+  req: Request,
   tenantId: string | null | undefined,
   newStatus: string,
   oldStatus: string | null | undefined,
 ): Promise<string | null> => {
-  if (!tenantId) return null; // personal/system surveys arent plan-limited
   if (!ACTIVE_SURVEY_STATUSES.includes(newStatus)) return null;
-  if (oldStatus && ACTIVE_SURVEY_STATUSES.includes(oldStatus)) return null; // already counted
+  if (oldStatus && ACTIVE_SURVEY_STATUSES.includes(oldStatus)) return null;
 
-  const planName = await getTenantPlanName(tenantId);
+  const planName = tenantId ? await getTenantPlanName(tenantId) : "free";
   const limit = PLAN_SURVEY_LIMITS[planName] ?? PLAN_SURVEY_LIMITS.free;
 
-  const activeCount = await Survey.countDocuments({
-    tenantId: new mongoose.Types.ObjectId(tenantId),
-    status: { $in: ACTIVE_SURVEY_STATUSES },
-  } as any);
+  // build the same filter used to scope surveys for this context:
+  // tenant-scoped surveys for orgs, personal surveys (no tenant) for "My Account"
+  const countFilter = tenantId
+    ? { tenantId: new mongoose.Types.ObjectId(tenantId), status: { $in: ACTIVE_SURVEY_STATUSES } }
+    : {
+        createdBy: (req as any).user?._id,
+        $or: [{ tenantId: { $exists: false } }, { tenantId: null }],
+        status: { $in: ACTIVE_SURVEY_STATUSES },
+      };
+
+  const activeCount = await Survey.countDocuments(countFilter as any);
 
   if (activeCount >= limit) {
-    return `Your organization is on the ${
-      planName.charAt(0).toUpperCase() + planName.slice(1)
-    } plan, which allows up to ${limit} active (published or scheduled) survey${limit === 1 ? "" : "s"} at a time. Finish or unpublish an existing survey to publish more.`;
+    return `${tenantId ? `Your organization is on the ${planName.charAt(0).toUpperCase() + planName.slice(1)} plan` : "Your personal account is on the Free plan"}, which allows up to ${limit} active (published or scheduled) survey${limit === 1 ? "" : "s"} at a time. Finish or unpublish an existing survey to publish more.`;
   }
 
   return null;
@@ -267,7 +272,7 @@ export const createSurvey = async (req: Request, res: Response) => {
     }
 
         // ---enforce plan based active survey limits payhere---
-    const limitError = await checkActiveSurveyLimit(activeTenantId, status, null);
+    const limitError = await checkActiveSurveyLimit(req, activeTenantId, status, null);
     if (limitError) {
       res.status(403).json({ message: limitError });
       return;
@@ -464,6 +469,7 @@ export const updateSurvey = async (req: Request, res: Response) => {
       // ---enforce plan-based active survey limits payhere---
     if (safeBody.status) {
       const limitError = await checkActiveSurveyLimit(
+        req,
         survey.tenantId ? String(survey.tenantId) : null,
         safeBody.status,
         survey.status,
@@ -543,7 +549,7 @@ export const updateSurvey = async (req: Request, res: Response) => {
   }
 };
 
-// PATCH /api/surveys/:id/status — Updates survey status (with tenant check)
+// updates survey status (with tenant check)
 export const updateStatus = async (req: Request, res: Response) => {
   try {
     const { status } = req.body;
@@ -564,18 +570,14 @@ export const updateStatus = async (req: Request, res: Response) => {
 
     return;
 
-
     // --enforce plan-based active survey limits payhere---
     const limitError = await checkActiveSurveyLimit(
+      req,
       survey.tenantId ? String(survey.tenantId) : null,
       status,
       survey.status,
     );
-    if (limitError) {
-      res.status(403).json({ message: limitError });
-      return;
-    }
-
+    
 
     const updated = await Survey.findByIdAndUpdate(
       req.params.id,
