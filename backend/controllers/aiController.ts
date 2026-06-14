@@ -217,7 +217,7 @@ export const chatWithAi = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { prompt, history } = req.body;
+  const { prompt, history, file } = req.body;
   if (!prompt) {
     res.status(400).json({ error: "Prompt is required" });
     return;
@@ -333,7 +333,7 @@ SYSTEM CONTEXT & INFORMATION:
    - Role Permissions: Users with roles 'super_admin', 'admin', or 'creator' can create, update, and delete surveys. Users with roles 'viewer' or 'billing_manager' cannot modify or create surveys.
    - If user asks about survey configurations, statuses, templates, or permissions, provide details and/or offer navigation to relevant routes like /created-surveys, /create-new-survey, or /templates.
 
-If the user asks to generate, create, or build a survey (especially if they upload or provide questions and answers in a text file), parse and analyze the provided text content, generate the survey JSON structure matching the surveyData format, set action to "generate", set surveyData to the generated JSON, and response_message to a polite confirmation like "I have generated the survey from your questions. Let me take you to the editor."
+If the user asks to generate, create, or build a survey (especially if they upload or provide questions and answers in a text file or an image/screenshot of a survey), parse and analyze the provided text content or image, generate the survey JSON structure matching the surveyData format, set action to "generate", set surveyData to the generated JSON, and response_message to a polite confirmation like "I have generated the survey from your questions. Let me take you to the editor."
 If the user asks to go to a page or open a page, set action to "navigate", path to the page path, and response_message to confirm the action.
 If the user asks a general question, hello, or asks about billing/surveys, answer it in response_message, set action to "speak" (or "navigate" if they explicitly asked to go to the page), and path to null (unless navigating).`;
 
@@ -346,8 +346,18 @@ If the user asks a general question, hello, or asks about billing/surveys, answe
 
     const fullPrompt = `${systemInstruction}${historyText}\n\nUser request: ${prompt}`;
 
+    const parts: any[] = [{ text: fullPrompt }];
+    if (file && file.mimeType && file.data) {
+      parts.push({
+        inlineData: {
+          mimeType: file.mimeType,
+          data: file.data
+        }
+      });
+    }
+
     const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
+      contents: [{ role: "user", parts }],
       generationConfig: {
         responseMimeType: "application/json",
       },
