@@ -4,6 +4,8 @@ import { Check, AlertCircle, ArrowLeft, Building2 } from "lucide-react";
 import { usePayHere } from "../hooks/usePayHere";
 import api from "../api/api";
 import { useTenant } from "../contexts/TenantContext";
+import PlanComparisonTable from "../components/PlanComparisonTable";
+
 
 interface PricingPlan {
   name: string;
@@ -11,7 +13,7 @@ interface PricingPlan {
   yearlyPrice: number;
   features: string[];
   buttonText: string;
-  isPopular?: boolean;
+  isPopular?: boolean; //? to mean optional. for the popular choice of package.
 }
 
 const plans: PricingPlan[] = [
@@ -26,7 +28,7 @@ const plans: PricingPlan[] = [
     name: "Startup",
     monthlyPrice: 1000,
     yearlyPrice: 11000,
-    features: ["10 Members", "10 Active Surveys", "Priority support", "Advanced analytics"],
+    features: ["10 Members", "10 Active Surveys", "Priority support", "Custom Analytics"],
     buttonText: "Get Started",
     isPopular: true,
   },
@@ -34,7 +36,7 @@ const plans: PricingPlan[] = [
     name: "Pro",
     monthlyPrice: 1500,
     yearlyPrice: 17000,
-    features: ["100 Members", "100 Active Surveys", "Dedicated account manager", "Custom integrations"],
+    features: ["100 Members", "100 Active Surveys", "Dedicated account manager", "Custom Analytics"],
     buttonText: "Get Started",
   },
 ];
@@ -431,6 +433,7 @@ export default function Subscription() {
               );
             })}
           </div>
+          <PlanComparisonTable />
         </div>
       </main>
     </div>
