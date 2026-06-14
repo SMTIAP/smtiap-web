@@ -486,13 +486,7 @@ const VoiceAI: React.FC = () => {
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className={`relative bg-white w-[350px] sm:w-[380px] rounded-3xl shadow-2xl border ${currentTheme.panelBorder} flex flex-col overflow-hidden max-h-[550px]`}
           >
-            <button
-              onClick={cycleTheme}
-              className={`absolute -top-3.5 -right-3.5 w-9 h-9 rounded-full ${currentTheme.floatingBg} text-white shadow-lg flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 z-[60]`}
-              title="Change theme color"
-            >
-              <Paintbrush className="w-4 h-4" />
-            </button>
+
 
             <div className={`flex justify-between items-center ${currentTheme.headerBg} p-4 rounded-t-3xl border-b border-gray-100/50 shrink-0`}>
               <div className="flex items-center gap-3">
@@ -539,6 +533,13 @@ const VoiceAI: React.FC = () => {
                   {speechEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
                 </button>
                 <button
+                  onClick={cycleTheme}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-black/5 rounded-full transition-colors cursor-pointer"
+                  title="Change theme color"
+                >
+                  <Paintbrush className="w-4 h-4" />
+                </button>
+                <button
                   onClick={() => setIsOpen(false)}
                   className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-black/5 rounded-full transition-colors cursor-pointer"
                 >
@@ -571,11 +572,11 @@ const VoiceAI: React.FC = () => {
               </button>
             </div>
 
-            <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 scrollbar-thin scrollbar-thumb-gray-200 min-h-[120px]">
+            <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-slate-700 min-h-[120px]">
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex gap-2 max-w-[85%] ${msg.sender === 'user' ? 'self-end flex-row-reverse' : 'self-start'}`}
+                  className={`flex gap-2 max-w-[85%] ${msg.sender === 'user' ? 'self-end justify-end' : 'self-start'}`}
                 >
                   {msg.sender === 'ai' && (
                     <img
@@ -587,9 +588,9 @@ const VoiceAI: React.FC = () => {
                       }}
                     />
                   )}
-                  <div className="flex flex-col gap-0.5 max-w-[calc(100%-32px)]">
+                  <div className={`flex flex-col gap-0.5 ${msg.sender === 'user' ? 'max-w-full items-end' : 'max-w-[calc(100%-32px)]'}`}>
                     {msg.tag && (
-                      <span className="text-[10px] uppercase font-bold text-orange-600 self-start bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
+                      <span className="text-[10px] uppercase font-bold text-orange-600 dark:text-orange-400 self-start bg-orange-50 dark:bg-orange-950/30 px-1.5 py-0.5 rounded border border-orange-100 dark:border-orange-900/50">
                         {msg.tag}
                       </span>
                     )}
