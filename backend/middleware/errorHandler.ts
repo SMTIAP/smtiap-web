@@ -1,3 +1,4 @@
+// Global Express error handler; logs the error and returns a generic 500 response.
 import type { Request, Response, NextFunction } from "express";
 
 export const errorHandler = (

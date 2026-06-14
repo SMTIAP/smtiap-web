@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, Check, ArrowLeft, CheckCheck, Loader2 } from "lucide-react";
 
+// Notification item returned by the API, with optional survey context.
 interface NotificationItem {
   _id: string;
   type: string;
@@ -30,6 +31,7 @@ const authHeaders = (): Record<string, string> => {
   return headers;
 };
 
+// Format ISO timestamp to DD.MM.YYYY HH:mm for consistent locale-independent display.
 function formatTimestamp(iso: string): string {
   const date = new Date(iso);
   const day = String(date.getDate()).padStart(2, "0");
@@ -40,6 +42,7 @@ function formatTimestamp(iso: string): string {
   return `${day}.${month}.${year} ${hours}:${minutes}`;
 }
 
+// Paginated notification list with mark-as-read functionality.
 export default function NotificationsPage() {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -52,6 +55,7 @@ export default function NotificationsPage() {
   });
   const [markingAll, setMarkingAll] = useState(false);
 
+  // Fetch paginated notifications from the API.
   const fetchNotifications = useCallback(async (page: number = 1) => {
     setLoading(true);
     try {
@@ -75,6 +79,7 @@ export default function NotificationsPage() {
     fetchNotifications(1);
   }, [fetchNotifications]);
 
+  // Mark a single notification as read and optimistically update local state.
   const handleMarkAsRead = async (id: string) => {
     try {
       await fetch(`${API_BASE}/api/notifications/${id}/read`, {
@@ -92,6 +97,7 @@ export default function NotificationsPage() {
     }
   };
 
+  // Mark all unread notifications as read, then optimistically update local state.
   const handleMarkAllRead = async () => {
     setMarkingAll(true);
     try {

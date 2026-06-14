@@ -4,6 +4,7 @@ interface SurveyTitleBadgeProps {
 }
 
 // Renders the survey name as a page title (not a button).
+// Badge showing the selected survey title with a colored accent.
 export default function SurveyTitleBadge({
   surveyTitle,
 }: SurveyTitleBadgeProps) {

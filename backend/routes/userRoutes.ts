@@ -1,3 +1,4 @@
+// Auth + user profile routes: registration, login, password reset, OAuth callbacks.
 import express from "express";
 import {
   register,
@@ -18,6 +19,7 @@ import User from "../models/User.js";
 
 const router = express.Router();
 
+// Public auth routes
 router.post("/register", register);
 router.post("/login", login);
 router.post("/logout", protect, logout);
@@ -28,6 +30,7 @@ router.put("/reset-password", resetPassword);
 router.get("/verify-email", verifyEmail);
 router.post("/resend-verification", resendVerification);
 
+// Super admin quick-check endpoint.
 router.get(
   "/superadmin",
   protect,
@@ -36,6 +39,7 @@ router.get(
     res.json({ message: "Welcome Admin Dashboard" });
   },
 );
+// Google OAuth
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] }),
@@ -45,7 +49,7 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { session: false }),
   (req, res) => {
-    console.log("✅ Google callback hit");
+    console.log("Google callback hit");
     console.log("USER:", req.user);
 
     const token = jwt.sign(
@@ -64,17 +68,17 @@ router.get(
   },
 );
 
+// GitHub OAuth
 router.get(
   "/github",
   passport.authenticate("github", { scope: ["user:email"] }),
 );
 
-// callback
 router.get(
   "/github/callback",
   passport.authenticate("github", { session: false }),
   (req, res) => {
-    console.log("✅ GitHub callback hit");
+    console.log("GitHub callback hit");
     console.log("USER:", req.user);
 
     const token = jwt.sign(
@@ -93,6 +97,7 @@ router.get(
   },
 );
 
+// LinkedIn OAuth
 router.get("/linkedin", passport.authenticate("linkedin"));
 
 router.get(
@@ -101,7 +106,7 @@ router.get(
     session: false,
   }),
   (req, res) => {
-    console.log("✅ LinkedIn callback hit");
+    console.log("LinkedIn callback hit");
     console.log("USER:", req.user);
 
     const token = jwt.sign(

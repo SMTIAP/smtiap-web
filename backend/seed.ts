@@ -28,7 +28,6 @@ const seedCategoriesAndTemplates = async (superAdminId: any) => {
   console.log("\n📁 Seeding categories...");
 
   const categoryNames = [
-    
     "Restaurant",
     "HR",
     "Education",
@@ -406,7 +405,6 @@ const seedAnalyticsDemoData = async (superAdminId: any) => {
         flatResponses[eq.embedId] = value;
       }
 
-
       for (const q of createdQuestions) {
         let val: any;
         switch (q.type) {
@@ -460,7 +458,6 @@ const seedAnalyticsDemoData = async (superAdminId: any) => {
         });
         answerCount++;
       }
-
 
       const userAgents = [
         "Mozilla/5.0 Chrome/120",

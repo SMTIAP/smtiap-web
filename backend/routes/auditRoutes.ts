@@ -1,3 +1,4 @@
+// Audit log routes: paginated logs scoped to the user's tenants, plus filter options.
 import { Router, Request, Response } from "express";
 import AuditLog from "../models/AuditLog.js";
 import TenantUser from "../models/TenantUser.js";
@@ -7,7 +8,7 @@ import { loadTenant } from "../middleware/tenant.js";
 
 const router = Router();
 
-// Get all audit logs with filters (scoped to user's tenant)
+// Get all audit logs with filters (scoped to user's tenant).
 router.get("/", protect, loadTenant, async (req: Request, res: Response) => {
   try {
     const { fromDate, toDate, action, page = 1, limit = 10 } = req.query;
@@ -30,13 +31,9 @@ router.get("/", protect, loadTenant, async (req: Request, res: Response) => {
     // }
 
     if (tenantIds.length > 0) {
-      filter.$or = [
-        { tenant_id: { $in: tenantIds } },
-        { tenant_id: null }
-      ];
+      filter.$or = [{ tenant_id: { $in: tenantIds } }, { tenant_id: null }];
     }
 
-    
     if (fromDate || toDate) {
       filter.createdAt = {};
       if (fromDate) {
@@ -87,7 +84,7 @@ router.get("/", protect, loadTenant, async (req: Request, res: Response) => {
   }
 });
 
-// Get distinct values for filters
+// Get distinct values for filter dropdowns.
 router.get("/filters/options", protect, async (req: Request, res: Response) => {
   try {
     const currentUser = (req as Request & { user?: { _id: unknown } }).user;

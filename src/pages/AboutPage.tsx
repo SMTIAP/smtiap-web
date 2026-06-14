@@ -110,6 +110,7 @@ const sections = [
   },
 ];
 
+// Landing-style about page showcasing platform features: AI analysis, templates, sentiment, support, reports.
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950 text-[#2C2F32] dark:text-slate-200 selection:bg-[#5C38E1] selection:text-white overflow-x-hidden font-sans">

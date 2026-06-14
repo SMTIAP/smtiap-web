@@ -3,7 +3,11 @@ import { Sparkles, Loader2, Bot, MessageSquare, Lightbulb } from "lucide-react";
 import axios from "axios";
 
 interface AiSurveyGeneratorProps {
-  onGenerated: (result: { surveyTitle: string; description: string; pages: any[] }) => void;
+  onGenerated: (result: {
+    surveyTitle: string;
+    description: string;
+    pages: any[];
+  }) => void;
   onCancel: () => void;
 }
 
@@ -18,11 +22,11 @@ const SUGGESTED_PROMPTS = [
 // Helper function to clean up survey title
 const cleanSurveyTitle = (title: string): string => {
   // Remove brackets and their content like [Coffee Shop]
-  let cleaned = title.replace(/\[[^\]]*\]/g, '').trim();
+  let cleaned = title.replace(/\[[^\]]*\]/g, "").trim();
   // Remove extra dashes and spaces
-  cleaned = cleaned.replace(/\s*-\s*$/, '').trim();
+  cleaned = cleaned.replace(/\s*-\s*$/, "").trim();
   // Remove any trailing special characters
-  cleaned = cleaned.replace(/[-–—]\s*$/, '').trim();
+  cleaned = cleaned.replace(/[-–—]\s*$/, "").trim();
   // If empty, return a default
   return cleaned || "AI Generated Survey";
 };
@@ -30,11 +34,15 @@ const cleanSurveyTitle = (title: string): string => {
 // Helper function to clean up question labels
 const cleanQuestionLabel = (label: string): string => {
   // Remove asterisks from labels
-  let cleaned = label.replace(/\*/g, '').trim();
+  let cleaned = label.replace(/\*/g, "").trim();
   return cleaned;
 };
 
-export default function AiSurveyGenerator({ onGenerated, onCancel }: AiSurveyGeneratorProps) {
+// Modal dialog for generating a new survey from a natural-language description via AI.
+export default function AiSurveyGenerator({
+  onGenerated,
+  onCancel,
+}: AiSurveyGeneratorProps) {
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,17 +58,20 @@ export default function AiSurveyGenerator({ onGenerated, onCancel }: AiSurveyGen
         { withCredentials: true },
       );
       if (data._error === "invalid_input") {
-        setError(data._message || "Please describe what kind of survey you want to create.");
+        setError(
+          data._message ||
+            "Please describe what kind of survey you want to create.",
+        );
         return;
       }
       if (!data.surveyTitle || !data.pages || !Array.isArray(data.pages)) {
         throw new Error("AI returned an incomplete survey. Please try again.");
       }
-      
+
       // Clean up the survey data
       const cleanedTitle = cleanSurveyTitle(data.surveyTitle);
       const cleanedDescription = data.description || "";
-      
+
       // Clean up pages and questions
       const cleanedPages = (data.pages || []).map((page: any) => ({
         ...page,
@@ -70,16 +81,20 @@ export default function AiSurveyGenerator({ onGenerated, onCancel }: AiSurveyGen
           label: cleanQuestionLabel(question.label || "Untitled Question"),
           // Ensure required is a boolean
           required: question.required === true || question.required === "true",
-        }))
+        })),
       }));
-      
-      onGenerated({ 
-        surveyTitle: cleanedTitle, 
-        description: cleanedDescription, 
-        pages: cleanedPages 
+
+      onGenerated({
+        surveyTitle: cleanedTitle,
+        description: cleanedDescription,
+        pages: cleanedPages,
       });
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || "Failed to connect to AI. Is the backend running?");
+      setError(
+        err.response?.data?.error ||
+          err.message ||
+          "Failed to connect to AI. Is the backend running?",
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -87,7 +102,6 @@ export default function AiSurveyGenerator({ onGenerated, onCancel }: AiSurveyGen
 
   return (
     <div className="flex flex-col gap-6">
-
       {/* Header */}
       <div className="flex items-center gap-3 pb-4 border-b border-[#F1F5F9] dark:border-slate-700">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
@@ -126,7 +140,10 @@ export default function AiSurveyGenerator({ onGenerated, onCancel }: AiSurveyGen
           {SUGGESTED_PROMPTS.map((suggestion) => (
             <button
               key={suggestion}
-              onClick={() => { setAiPrompt(suggestion); setError(null); }}
+              onClick={() => {
+                setAiPrompt(suggestion);
+                setError(null);
+              }}
               disabled={isGenerating}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                 aiPrompt === suggestion
@@ -158,8 +175,12 @@ export default function AiSurveyGenerator({ onGenerated, onCancel }: AiSurveyGen
               <Sparkles size={32} className="text-indigo-600" />
             </div>
           </div>
-          <p className="text-sm text-[#64748B] dark:text-slate-400 font-medium">AI is crafting your survey...</p>
-          <p className="text-xs text-[#94A3B8] dark:text-slate-500">This usually takes a few seconds</p>
+          <p className="text-sm text-[#64748B] dark:text-slate-400 font-medium">
+            AI is crafting your survey...
+          </p>
+          <p className="text-xs text-[#94A3B8] dark:text-slate-500">
+            This usually takes a few seconds
+          </p>
         </div>
       )}
 
@@ -177,10 +198,15 @@ export default function AiSurveyGenerator({ onGenerated, onCancel }: AiSurveyGen
           disabled={isGenerating || !aiPrompt.trim()}
           className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
         >
-          {isGenerating
-            ? <><Loader2 size={16} className="animate-spin" /> Generating...</>
-            : <><Sparkles size={16} /> Generate Survey</>
-          }
+          {isGenerating ? (
+            <>
+              <Loader2 size={16} className="animate-spin" /> Generating...
+            </>
+          ) : (
+            <>
+              <Sparkles size={16} /> Generate Survey
+            </>
+          )}
         </button>
       </div>
     </div>

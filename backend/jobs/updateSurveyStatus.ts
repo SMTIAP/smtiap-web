@@ -2,7 +2,7 @@ import cron from "node-cron";
 import Survey from "../models/Survey.js";  
 
 export const startSurveyStatusJob = () => {
-  console.log("⏰ Cron job registered - will check every minute");
+  console.log("Cron job registered - will check every minute");
   
   // Run every minute
   cron.schedule("* * * * *", async () => {
@@ -29,10 +29,10 @@ export const startSurveyStatusJob = () => {
       );
       
       if (startedSurveys.modifiedCount > 0 || closedSurveys.modifiedCount > 0) {
-        console.log(`✅ Updated: ${startedSurveys.modifiedCount} started, ${closedSurveys.modifiedCount} closed`);
+        console.log(`Updated: ${startedSurveys.modifiedCount} started, ${closedSurveys.modifiedCount} closed`);
       }
     } catch (error) {
-      console.error("❌ Cron error:", error);
+      console.error("Cron error:", error);
     }
   });
 };

@@ -1,11 +1,12 @@
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 interface BackButtonProps {
   to?: string;
   className?: string;
 }
 
+// Navigates back in history or to a specific route.
 export default function BackButton({ to, className = "" }: BackButtonProps) {
   const navigate = useNavigate();
 

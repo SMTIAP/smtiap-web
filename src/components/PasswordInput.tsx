@@ -8,6 +8,7 @@ interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement>
   placeholder?: string;
 }
 
+// Password field with a toggleable visibility button.
 export default function PasswordInput({
   value,
   onChange,

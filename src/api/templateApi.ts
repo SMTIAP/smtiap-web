@@ -1,11 +1,12 @@
+// Axios client and API functions for template and category management.
 import axios from "axios";
 
-// Create a separate axios instance for templates
 const templateApiClient = axios.create({
   baseURL: "http://localhost:5000/api",
   withCredentials: true,
 });
 
+// Attach auth token and active tenant ID from localStorage to every outgoing request.
 templateApiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -19,7 +20,14 @@ templateApiClient.interceptors.request.use((config) => {
 });
 
 export interface TemplateQuestion {
-  type: "short_text" | "long_text" | "multiple_choice" | "checkboxes" | "rating" | "number" | "date";
+  type:
+    | "short_text"
+    | "long_text"
+    | "multiple_choice"
+    | "checkboxes"
+    | "rating"
+    | "number"
+    | "date";
   label: string;
   max?: number;
   min?: number;
@@ -35,7 +43,7 @@ export interface Template {
   usedCount: string;
   gradient: string;
   coverImage?: string;
-  estimatedTime: string;  // Replaced 'icon' with 'estimatedTime'
+  estimatedTime: string;
   aiPrompt: string;
   previewQuestions: TemplateQuestion[];
   isActive: boolean;
@@ -64,7 +72,10 @@ export const templateApi = {
     return response.data.data;
   },
 
-  updateTemplate: async (id: string, data: Partial<Template>): Promise<Template> => {
+  updateTemplate: async (
+    id: string,
+    data: Partial<Template>,
+  ): Promise<Template> => {
     const response = await templateApiClient.put(`/templates/${id}`, data);
     return response.data.data;
   },
@@ -79,7 +90,9 @@ export const templateApi = {
   },
 
   createCategory: async (name: string): Promise<Category> => {
-    const response = await templateApiClient.post("/templates/categories", { name });
+    const response = await templateApiClient.post("/templates/categories", {
+      name,
+    });
     return response.data.data;
   },
 
@@ -88,7 +101,9 @@ export const templateApi = {
   },
 
   incrementUsageCount: async (id: string): Promise<{ usedCount: string }> => {
-    const response = await templateApiClient.post(`/templates/${id}/increment-usage`);
+    const response = await templateApiClient.post(
+      `/templates/${id}/increment-usage`,
+    );
     return response.data.data;
   },
 };

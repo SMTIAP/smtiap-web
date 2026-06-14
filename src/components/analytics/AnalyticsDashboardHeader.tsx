@@ -11,6 +11,7 @@ interface AnalyticsDashboardHeaderProps {
   setToDate: (value: string) => void;
 }
 
+// Header for the analytics dashboard showing total responses, source count, and NPS score.
 export default function AnalyticsDashboardHeader({
   surveyTitle,
   fromDate,
@@ -25,7 +26,6 @@ export default function AnalyticsDashboardHeader({
         <button
           onClick={() => navigate(-1)}
           className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
-          
         >
           <ArrowLeft size={16} />
         </button>

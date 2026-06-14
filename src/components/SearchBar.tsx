@@ -1,5 +1,6 @@
-import React from 'react';
+import React from "react";
 
+// Search input for filtering templates. Currently a static placeholder component.
 const SearchBar: React.FC = () => {
   return (
     <div className="flex py-3 px-4 flex-col items-start w-full">

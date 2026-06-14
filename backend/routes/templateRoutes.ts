@@ -1,3 +1,4 @@
+// Template and category routes: public browsing, super admin management.
 import express from "express";
 import {
   getTemplates,
@@ -15,7 +16,7 @@ import { authorizeRoles } from "../middleware/role.js";
 
 const router = express.Router();
 
-// Public routes (authenticated users can view)
+// Authenticated users can browse templates and categories.
 router.get("/", protect, getTemplates);
 router.get("/:id", protect, getTemplateById);
 router.get("/categories/all", protect, getCategories);
@@ -27,7 +28,17 @@ router.post("/:id/increment-usage", protect, incrementUsageCount);
 router.post("/", protect, authorizeRoles("super_admin"), createTemplate);
 router.put("/:id", protect, authorizeRoles("super_admin"), updateTemplate);
 router.delete("/:id", protect, authorizeRoles("super_admin"), deleteTemplate);
-router.post("/categories", protect, authorizeRoles("super_admin"), createCategory);
-router.delete("/categories/:id", protect, authorizeRoles("super_admin"), deleteCategory);
+router.post(
+  "/categories",
+  protect,
+  authorizeRoles("super_admin"),
+  createCategory,
+);
+router.delete(
+  "/categories/:id",
+  protect,
+  authorizeRoles("super_admin"),
+  deleteCategory,
+);
 
 export default router;

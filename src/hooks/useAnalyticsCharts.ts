@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useDarkMode } from "../App";
+import { useDarkMode } from "../contexts/DarkModeContext";
 import {
   getQuestionId,
   normalizeAnswer,

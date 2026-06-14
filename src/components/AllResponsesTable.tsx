@@ -20,6 +20,7 @@ const normalizeAnswer = (value: unknown): string => {
   return String(value).trim();
 };
 
+// Table view of all survey responses with completion, date range, and answer-text filters.
 export default function AllResponsesTable({
   questions,
   responses,
@@ -99,7 +100,12 @@ export default function AllResponsesTable({
     setQuestionFilterValue("");
   };
 
-  const hasActiveFilters = completionFilter !== "all" || fromDate || toDate || questionFilterId || questionFilterValue;
+  const hasActiveFilters =
+    completionFilter !== "all" ||
+    fromDate ||
+    toDate ||
+    questionFilterId ||
+    questionFilterValue;
 
   return (
     <div className="space-y-4">
@@ -148,7 +154,10 @@ export default function AllResponsesTable({
               From date
             </label>
             <div className="relative">
-              <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+              <Calendar
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+              />
               <input
                 type="date"
                 value={fromDate}
@@ -163,7 +172,10 @@ export default function AllResponsesTable({
               To date
             </label>
             <div className="relative">
-              <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+              <Calendar
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+              />
               <input
                 type="date"
                 value={toDate}
@@ -179,7 +191,10 @@ export default function AllResponsesTable({
             Answer contains
           </label>
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+            />
             <input
               type="text"
               placeholder="Type text/option/value to match"
@@ -216,7 +231,10 @@ export default function AllResponsesTable({
       {/* Table - WITH DARK MODE */}
       {filteredResponses.length === 0 ? (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-10 text-center transition-colors duration-300">
-          <Search size={40} className="mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+          <Search
+            size={40}
+            className="mx-auto text-slate-300 dark:text-slate-600 mb-3"
+          />
           <p className="text-slate-700 dark:text-slate-300 font-bold">
             No responses match your filters
           </p>
@@ -288,7 +306,9 @@ export default function AllResponsesTable({
                                 {answer}
                               </span>
                             ) : (
-                              <span className="text-slate-300 dark:text-slate-600 text-sm">—</span>
+                              <span className="text-slate-300 dark:text-slate-600 text-sm">
+                                —
+                              </span>
                             )}
                           </td>
                         );
