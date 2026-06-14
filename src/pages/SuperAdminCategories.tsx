@@ -14,6 +14,7 @@ import {
 import { templateApi, type Category } from "../api/templateApi";
 import SuperAdminNavBar from "../components/SuperAdminNavBar";
 
+// Super-admin category CRUD page for managing template categories.
 export default function SuperAdminCategories() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -25,6 +26,7 @@ export default function SuperAdminCategories() {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [adding, setAdding] = useState(false);
 
+  // Load all template categories from the API.
   const fetchCategories = async () => {
     try {
       setLoading(true);
@@ -43,6 +45,7 @@ export default function SuperAdminCategories() {
     fetchCategories();
   }, []);
 
+  // Create a new category and refresh the list.
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) {
       setError("Category name is required");
@@ -65,8 +68,13 @@ export default function SuperAdminCategories() {
     }
   };
 
+  // Delete a category; templates using it are unaffected.
   const handleDeleteCategory = async (id: string, name: string) => {
-    if (!window.confirm(`Delete category "${name}"? Templates using this category will still work.`)) {
+    if (
+      !window.confirm(
+        `Delete category "${name}"? Templates using this category will still work.`,
+      )
+    ) {
       return;
     }
     try {
@@ -81,8 +89,9 @@ export default function SuperAdminCategories() {
     }
   };
 
+  // Client-side search filtering by category name.
   const filteredCategories = categories.filter((cat) =>
-    cat.name.toLowerCase().includes(searchQuery.toLowerCase())
+    cat.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -168,14 +177,19 @@ export default function SuperAdminCategories() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
-                      <Tag size={18} className="text-indigo-600 dark:text-indigo-400" />
+                      <Tag
+                        size={18}
+                        className="text-indigo-600 dark:text-indigo-400"
+                      />
                     </div>
                     <span className="font-medium text-slate-900 dark:text-white">
                       {category.name}
                     </span>
                   </div>
                   <button
-                    onClick={() => handleDeleteCategory(category._id, category.name)}
+                    onClick={() =>
+                      handleDeleteCategory(category._id, category.name)
+                    }
                     className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all opacity-0 group-hover:opacity-100"
                     title="Delete category"
                   >
@@ -190,9 +204,14 @@ export default function SuperAdminCategories() {
         {/* Empty State */}
         {!loading && !error && filteredCategories.length === 0 && (
           <div className="text-center py-12">
-            <Tag size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+            <Tag
+              size={48}
+              className="mx-auto text-slate-300 dark:text-slate-600 mb-4"
+            />
             <p className="text-slate-500 dark:text-slate-400">
-              {searchQuery ? "No categories match your search" : "No categories yet. Create your first category!"}
+              {searchQuery
+                ? "No categories match your search"
+                : "No categories yet. Create your first category!"}
             </p>
             {!searchQuery && (
               <button
@@ -222,7 +241,9 @@ export default function SuperAdminCategories() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 w-full max-w-md">
             <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Add New Category</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Add New Category
+              </h3>
               <button
                 onClick={() => {
                   setShowAddModal(false);
@@ -249,7 +270,9 @@ export default function SuperAdminCategories() {
                 onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
               />
               {error && (
-                <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                  {error}
+                </p>
               )}
             </div>
 

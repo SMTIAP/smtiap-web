@@ -1,3 +1,4 @@
+// Survey routes: CRUD for surveys, public response submission, password verification.
 import { Router, Request } from "express";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
@@ -16,6 +17,7 @@ import { loadTenant } from "../middleware/tenant.js";
 
 const router = Router();
 
+// Extracts the real client IP from proxy-forwarded headers, falling back to req.ip.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getClientIp = (req: any): string => {
   const forwarded = req.headers["x-forwarded-for"];
@@ -25,7 +27,7 @@ const getClientIp = (req: any): string => {
   return String(req.ip || req.socket?.remoteAddress || "").trim();
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Generates a SHA-256 fingerprint from browser headers for duplicate detection.
 const getDeviceHash = (req: any): string => {
   const userAgent = String(req.headers["user-agent"] || "");
   const acceptLanguage = String(req.headers["accept-language"] || "");
@@ -57,10 +59,10 @@ router.post("/:id/verify-password", async (req, res) => {
     const survey = await Survey.findById(req.params.id);
     if (!survey) return res.status(404).json({ error: "Survey not found" });
     if (!survey.isPasswordProtected) return res.json({ success: true });
-    
+
     // Use bcrypt.compare to verify hashed password
     const isValid = await bcrypt.compare(req.body.password, survey.password);
-    
+
     if (isValid) {
       res.json({ success: true });
     } else {
@@ -71,7 +73,7 @@ router.post("/:id/verify-password", async (req, res) => {
   }
 });
 
-// Save a survey response (public — no auth required)
+// Save a survey response (public endpoint, no auth required).
 router.post("/:id/responses", async (req, res) => {
   try {
     const respondentToken = String(req.body?.respondentToken || "").trim();
@@ -129,7 +131,7 @@ router.post("/:id/responses", async (req, res) => {
   }
 });
 
-// Get all responses for a survey (public — but filter by tenant context if available)
+// Get all responses for a survey (public endpoint).
 router.get("/:id/responses", async (req, res) => {
   try {
     // Only return responses for this survey

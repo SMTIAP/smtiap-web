@@ -6,7 +6,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import { createContext, useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -47,41 +47,12 @@ import SuperAdminTemplateEditor from "./pages/SuperAdminTemplateEditor";
 import SuperAdminCategories from "./pages/SuperAdminCategories";
 import VoiceAI from "./components/VoiceAI.tsx";
 import { TenantProvider } from "./contexts/TenantContext";
+import { DarkModeContext, getSavedTheme } from "./contexts/DarkModeContext";
 import AboutPage from "./pages/AboutPage.tsx";
 import Reports from "./pages/Reports.tsx";
 
-// Dark mode context
-export const DarkModeContext = createContext({
-  darkMode: false,
-  toggleDarkMode: () => {},
-  setDarkMode: (_value: boolean) => {},
-});
-
-export function useDarkMode() {
-  return useContext(DarkModeContext);
-}
-
-export function getSavedTheme(): boolean {
-  const token = localStorage.getItem("token");
-  if (token) {
-    try {
-      const decoded = jwtDecode<{ id?: string }>(token);
-      const userId = decoded?.id;
-      if (userId) {
-        const saved = localStorage.getItem(`theme_${userId}`);
-        if (saved !== null) {
-          return saved === "dark";
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }
-  return localStorage.getItem("theme_guest") === "dark";
-}
-
 function ThemeSync() {
-  const { setDarkMode } = useDarkMode();
+  const { setDarkMode } = useContext(DarkModeContext);
   const location = useLocation();
 
   useEffect(() => {

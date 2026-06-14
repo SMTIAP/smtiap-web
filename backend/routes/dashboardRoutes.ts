@@ -1,3 +1,4 @@
+// Dashboard stats: role counts, survey breakdown, and subscription info for the active tenant.
 import { Router, Request, Response } from "express";
 import { protect } from "../middleware/auth.js";
 import { loadTenant } from "../middleware/tenant.js";
@@ -63,17 +64,25 @@ router.get(
         $and: [surveyFilter, { status }],
       });
 
-      const [totalSurveys, draftCount, runningCount, scheduledCount, finishedCount] =
-        await Promise.all([
-          Survey.countDocuments(surveyFilter),
-          Survey.countDocuments(withStatus("Draft")),
-          Survey.countDocuments(withStatus("Running")),
-          Survey.countDocuments(withStatus("Scheduled")),
-          Survey.countDocuments(withStatus("Finished")),
-        ]);
+      const [
+        totalSurveys,
+        draftCount,
+        runningCount,
+        scheduledCount,
+        finishedCount,
+      ] = await Promise.all([
+        Survey.countDocuments(surveyFilter),
+        Survey.countDocuments(withStatus("Draft")),
+        Survey.countDocuments(withStatus("Running")),
+        Survey.countDocuments(withStatus("Scheduled")),
+        Survey.countDocuments(withStatus("Finished")),
+      ]);
 
       const payment = activeTenantObjectId
-        ? await Payment.findOne({ tenantId: activeTenantObjectId, status: "success" })
+        ? await Payment.findOne({
+            tenantId: activeTenantObjectId,
+            status: "success",
+          })
             .sort({ createdAt: -1 })
             .lean()
         : null;

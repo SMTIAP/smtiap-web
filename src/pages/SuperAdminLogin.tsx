@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Sun, Moon } from "lucide-react";
 import PasswordInput from "../components/PasswordInput";
 import axios from "axios";
-import { useDarkMode } from "../App";
+import { useDarkMode } from "../contexts/DarkModeContext";
 
 export default function SuperAdminLogin() {
   const { darkMode, toggleDarkMode } = useDarkMode();

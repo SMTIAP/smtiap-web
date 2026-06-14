@@ -9,7 +9,7 @@ import {
   User,
 } from "lucide-react";
 import api from "../api/api";
-import { useDarkMode } from "../App";
+import { useDarkMode } from "../contexts/DarkModeContext";
 
 interface SuperAdminUser {
   username: string;
@@ -17,6 +17,7 @@ interface SuperAdminUser {
   role: string;
 }
 
+// Navigation bar for the super admin panel with role badge, dark mode toggle, and sign-out.
 export default function SuperAdminNavBar() {
   const navigate = useNavigate();
   const { darkMode, toggleDarkMode } = useDarkMode();
@@ -84,9 +85,7 @@ export default function SuperAdminNavBar() {
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-white/80">
               SuperAdmin
             </p>
-            <p className="text-xs text-white/70">
-              Organization Admin
-            </p>
+            <p className="text-xs text-white/70">Organization Admin</p>
           </div>
         </div>
 
@@ -113,58 +112,79 @@ export default function SuperAdminNavBar() {
                 {initials}
               </span>
               <div className="hidden text-left sm:block">
-                <p className="text-sm font-semibold">{user?.username || "SuperAdmin"}</p>
-                <p className="text-xs text-white/70">{user?.email || "superadmin@email"}</p>
+                <p className="text-sm font-semibold">
+                  {user?.username || "SuperAdmin"}
+                </p>
+                <p className="text-xs text-white/70">
+                  {user?.email || "superadmin@email"}
+                </p>
               </div>
               <ChevronDown size={18} className="text-white/80" />
             </button>
 
             {dropdownOpen && (
-              <div className={`absolute right-0 mt-3 w-80 overflow-hidden rounded-2xl border-2 shadow-2xl transition-all duration-200 ${
-                darkMode 
-                  ? "border-purple-400 bg-slate-900 text-white shadow-purple-500/30" 
-                  : "border-indigo-400 bg-white text-slate-800 shadow-indigo-200/50"
-              }`}>
-                
+              <div
+                className={`absolute right-0 mt-3 w-80 overflow-hidden rounded-2xl border-2 shadow-2xl transition-all duration-200 ${
+                  darkMode
+                    ? "border-purple-400 bg-slate-900 text-white shadow-purple-500/30"
+                    : "border-indigo-400 bg-white text-slate-800 shadow-indigo-200/50"
+                }`}
+              >
                 {/* User Info Section */}
-                <div className={`flex items-center gap-3 p-4 ${
-                  darkMode ? "bg-white/5 border-b border-purple-400/30" : "bg-indigo-50 border-b border-indigo-200"
-                }`}>
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl text-lg font-black ${
-                    darkMode ? "bg-purple-500/30 text-purple-300" : "bg-indigo-200 text-indigo-700"
-                  }`}>
+                <div
+                  className={`flex items-center gap-3 p-4 ${
+                    darkMode
+                      ? "bg-white/5 border-b border-purple-400/30"
+                      : "bg-indigo-50 border-b border-indigo-200"
+                  }`}
+                >
+                  <div
+                    className={`flex h-12 w-12 items-center justify-center rounded-xl text-lg font-black ${
+                      darkMode
+                        ? "bg-purple-500/30 text-purple-300"
+                        : "bg-indigo-200 text-indigo-700"
+                    }`}
+                  >
                     {initials}
                   </div>
                   <div>
-                    <p className={`text-sm font-semibold ${
-                      darkMode ? "text-white" : "text-slate-800"
-                    }`}>
+                    <p
+                      className={`text-sm font-semibold ${
+                        darkMode ? "text-white" : "text-slate-800"
+                      }`}
+                    >
                       {user?.username || "SuperAdmin"}
                     </p>
-                    <p className={`text-xs ${
-                      darkMode ? "text-slate-400" : "text-slate-500"
-                    }`}>
+                    <p
+                      className={`text-xs ${
+                        darkMode ? "text-slate-400" : "text-slate-500"
+                      }`}
+                    >
                       {user?.email || "superadmin@example.com"}
                     </p>
                   </div>
                 </div>
 
                 {/* Role & Theme Section */}
-                <div className={`p-4 border-b ${
-                  darkMode ? "border-purple-400/30" : "border-indigo-200"
-                }`}>
+                <div
+                  className={`p-4 border-b ${
+                    darkMode ? "border-purple-400/30" : "border-indigo-200"
+                  }`}
+                >
                   <div className="flex items-center justify-between">
-                    <div className={`flex items-center gap-2 text-sm ${
-                      darkMode ? "text-slate-300" : "text-slate-600"
-                    }`}>
+                    <div
+                      className={`flex items-center gap-2 text-sm ${
+                        darkMode ? "text-slate-300" : "text-slate-600"
+                      }`}
+                    >
                       <User size={16} />
                       <span>Organization Admin</span>
                     </div>
                     <button
                       onClick={toggleDarkMode}
                       className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
-                        darkMode 
-                          ? "bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-400" 
+                        darkMode
+                          ? "bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-400"
                           : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-300"
                       }`}
                     >
@@ -180,8 +200,8 @@ export default function SuperAdminNavBar() {
                     navigate("/super-admin-dashboard");
                   }}
                   className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition-all ${
-                    darkMode 
-                      ? "text-slate-300 hover:bg-white/5 hover:text-white" 
+                    darkMode
+                      ? "text-slate-300 hover:bg-white/5 hover:text-white"
                       : "text-slate-600 hover:bg-indigo-50 hover:text-indigo-700"
                   }`}
                 >
@@ -193,8 +213,8 @@ export default function SuperAdminNavBar() {
                 <button
                   onClick={handleSignOut}
                   className={`flex w-full items-center gap-3 rounded-b-2xl px-4 py-3 text-left text-sm font-semibold transition-all ${
-                    darkMode 
-                      ? "text-red-400 hover:bg-red-500/10 hover:text-red-300 border-t border-purple-400/30" 
+                    darkMode
+                      ? "text-red-400 hover:bg-red-500/10 hover:text-red-300 border-t border-purple-400/30"
                       : "text-red-600 hover:bg-red-50 border-t border-indigo-200"
                   }`}
                 >

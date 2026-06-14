@@ -1,6 +1,13 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState, Fragment } from "react";
-import { ArrowLeft, Search, Plus, ClipboardList, Trash2, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  Search,
+  Plus,
+  ClipboardList,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "sonner";
 
@@ -26,6 +33,7 @@ interface UserTenantRole {
   status: "active" | "inactive";
 }
 
+// Role and organisation management page with add/update/remove users and delete organisation.
 export default function RoleManagement() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,6 +47,7 @@ export default function RoleManagement() {
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
   const [orgUsers, setOrgUsers] = useState<UserTenantRole[]>([]);
 
+  // Human-readable labels for internal role values.
   const roleLabels: Record<string, string> = {
     admin: "Tenant Admin",
     viewer: "Viewer",
@@ -57,6 +66,7 @@ export default function RoleManagement() {
     return headers;
   };
 
+  // Show a non-dismissing toast confirmation and return the user's choice as a promise.
   const confirmAsync = (message: string): Promise<boolean> => {
     return new Promise((resolve) => {
       toast.custom(
@@ -95,10 +105,13 @@ export default function RoleManagement() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/role-management", {
-          headers: authHeaders(),
-          credentials: "include",
-        });
+        const response = await fetch(
+          "http://localhost:5000/api/role-management",
+          {
+            headers: authHeaders(),
+            credentials: "include",
+          },
+        );
         const data = await response.json();
         setUsers(data);
       } catch (error) {
@@ -111,10 +124,13 @@ export default function RoleManagement() {
   useEffect(() => {
     const fetchTenants = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/role-management/tenants", {
-          headers: authHeaders(),
-          credentials: "include",
-        });
+        const response = await fetch(
+          "http://localhost:5000/api/role-management/tenants",
+          {
+            headers: authHeaders(),
+            credentials: "include",
+          },
+        );
         const data = await response.json();
         setTenants(data);
       } catch (error) {
@@ -127,10 +143,13 @@ export default function RoleManagement() {
   useEffect(() => {
     const fetchOrganizationData = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/role-management/user-tenant", {
-          headers: authHeaders(),
-          credentials: "include",
-        });
+        const response = await fetch(
+          "http://localhost:5000/api/role-management/user-tenant",
+          {
+            headers: authHeaders(),
+            credentials: "include",
+          },
+        );
         const data = await response.json();
         setOrgUsers(data);
       } catch (error) {
@@ -150,23 +169,23 @@ export default function RoleManagement() {
   })();
 
   const canManageTenant = (tenantId: string) => {
-    const tenant = tenants.find(t => t._id === tenantId);
+    const tenant = tenants.find((t) => t._id === tenantId);
     if (!tenant || !currentUserId) return false;
 
     const isActiveMember = orgUsers.some(
-      u =>
+      (u) =>
         u.tenantId._id === tenantId &&
         u.userId._id === currentUserId &&
-        u.status === "active"
+        u.status === "active",
     );
 
     const isCreator = tenant.createdBy === currentUserId && isActiveMember;
     const isTenantAdmin = orgUsers.some(
-      u =>
+      (u) =>
         u.tenantId._id === tenantId &&
         u.userId._id === currentUserId &&
         u.role === "admin" &&
-        u.status === "active"
+        u.status === "active",
     );
 
     return isCreator || isTenantAdmin;
@@ -180,7 +199,7 @@ export default function RoleManagement() {
       (u) =>
         u.tenantId._id === tenantId &&
         u.userId._id === currentUserId &&
-        u.status === "active"
+        u.status === "active",
     );
 
     const isCreator = tenant.createdBy === currentUserId && isActiveMember;
@@ -189,7 +208,7 @@ export default function RoleManagement() {
         u.tenantId._id === tenantId &&
         u.userId._id === currentUserId &&
         u.role === "admin" &&
-        u.status === "active"
+        u.status === "active",
     );
 
     return isCreator || isTenantAdmin;
@@ -201,13 +220,15 @@ export default function RoleManagement() {
         u.tenantId._id === tenantId &&
         u.userId._id === currentUserId &&
         u.role === "admin" &&
-        u.status === "active"
+        u.status === "active",
     );
 
+  // Exclude super_admin from search results; they are not assignable to organisations.
   const filteredUsers = searchTerm.trim()
-    ? users.filter((user) =>
-        user.role !== "super_admin" &&
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()),
+    ? users.filter(
+        (user) =>
+          user.role !== "super_admin" &&
+          user.email.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     : [];
 
@@ -216,8 +237,8 @@ export default function RoleManagement() {
       (u) =>
         u.tenantId._id === tenant._id &&
         u.userId._id === currentUserId &&
-        u.status === "active"
-    )
+        u.status === "active",
+    ),
   );
 
   const handleAddUser = async (user: User, tenant: Tenant) => {
@@ -225,7 +246,9 @@ export default function RoleManagement() {
       toast.error("Only the organization creator can add users");
       return;
     }
-    const confirmed = await confirmAsync(`Add "${user.username}" to "${tenant.name}"?`);
+    const confirmed = await confirmAsync(
+      `Add "${user.username}" to "${tenant.name}"?`,
+    );
     if (!confirmed) return;
     try {
       // const newRole = selectedRole[user._id] || "viewer";
@@ -235,22 +258,30 @@ export default function RoleManagement() {
         toast.error("Please select a role before adding user");
         return;
       }
-      const response = await fetch(`http://localhost:5000/api/role-management/${user._id}/${tenant._id}`, {
-        method: "PUT",
-        headers: authHeaders(),
-        credentials: "include",
-        body: JSON.stringify({ role: newRole }),
-      });
+      const response = await fetch(
+        `http://localhost:5000/api/role-management/${user._id}/${tenant._id}`,
+        {
+          method: "PUT",
+          headers: authHeaders(),
+          credentials: "include",
+          body: JSON.stringify({ role: newRole }),
+        },
+      );
       const data = await response.json();
       if (!response.ok) {
-        toast.error(data.message || "User already assigned to this organization");
+        toast.error(
+          data.message || "User already assigned to this organization",
+        );
         return;
       }
       toast.success("User added successfully");
-      const updatedOrg = await fetch("http://localhost:5000/api/role-management/user-tenant", {
-        headers: authHeaders(),
-        credentials: "include",
-      });
+      const updatedOrg = await fetch(
+        "http://localhost:5000/api/role-management/user-tenant",
+        {
+          headers: authHeaders(),
+          credentials: "include",
+        },
+      );
       setOrgUsers(await updatedOrg.json());
     } catch (err) {
       console.error(err);
@@ -264,14 +295,15 @@ export default function RoleManagement() {
     }
 
     const newRole = selectedRole[item._id];
-    const changingTenantAdminRole = item.role === "admin" && newRole !== "admin";
+    const changingTenantAdminRole =
+      item.role === "admin" && newRole !== "admin";
 
     if (changingTenantAdminRole) {
       const otherAdmins = orgUsers.filter(
         (u) =>
           u.tenantId._id === item.tenantId._id &&
           u._id !== item._id &&
-          u.role === "admin"
+          u.role === "admin",
       );
       if (otherAdmins.length === 0) {
         toast.error("This organization must have at least one Tenant Admin");
@@ -279,15 +311,20 @@ export default function RoleManagement() {
       }
     }
 
-    const confirmed = await confirmAsync(`Update role for "${item.userId.username}"?`);
+    const confirmed = await confirmAsync(
+      `Update role for "${item.userId.username}"?`,
+    );
     if (!confirmed) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}/role`, {
-        method: "PUT",
-        headers: authHeaders(),
-        credentials: "include",
-        body: JSON.stringify({ role: newRole }),
-      });
+      const response = await fetch(
+        `http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}/role`,
+        {
+          method: "PUT",
+          headers: authHeaders(),
+          credentials: "include",
+          body: JSON.stringify({ role: newRole }),
+        },
+      );
       const data = await response.json().catch(() => null);
       if (!response.ok) {
         throw new Error(data?.message || "Failed to update role");
@@ -310,6 +347,7 @@ export default function RoleManagement() {
     }
   };
 
+  // Remove a user from an organisation; prevent removing the last admin.
   const handleRemoveOrgUser = async (item: UserTenantRole) => {
     if (!canManageTenant(item.tenantId._id)) {
       toast.error("Only the organization creator can remove users");
@@ -321,27 +359,36 @@ export default function RoleManagement() {
         (u) =>
           u.tenantId._id === item.tenantId._id &&
           u.userId._id !== item.userId._id &&
-          u.role === "admin"
+          u.role === "admin",
       );
       if (otherAdmins.length === 0) {
-        toast.error("You cannot remove the last Tenant Admin in this organization");
+        toast.error(
+          "You cannot remove the last Tenant Admin in this organization",
+        );
         return;
       }
     }
 
-    const confirmed = await confirmAsync(`Remove "${item.userId.username}" from "${item.tenantId.name}"? They can be re-added later.`);
+    const confirmed = await confirmAsync(
+      `Remove "${item.userId.username}" from "${item.tenantId.name}"? They can be re-added later.`,
+    );
     if (!confirmed) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}`, {
-        method: "DELETE",
-        headers: authHeaders(),
-        credentials: "include",
-      });
+      const response = await fetch(
+        `http://localhost:5000/api/role-management/${item.userId._id}/${item.tenantId._id}`,
+        {
+          method: "DELETE",
+          headers: authHeaders(),
+          credentials: "include",
+        },
+      );
       if (!response.ok) {
         throw new Error("Failed to remove user");
       }
       setOrgUsers((prev) => prev.filter((u) => u._id !== item._id));
-      toast.success("User removed from organization. They can be re-added later.");
+      toast.success(
+        "User removed from organization. They can be re-added later.",
+      );
     } catch (err) {
       console.error(err);
       toast.error("Failed to remove user");
@@ -354,16 +401,21 @@ export default function RoleManagement() {
       return;
     }
 
-    const confirmed = await confirmAsync(`Delete "${tenant.name}" organization? This will mark it as inactive.`);
+    const confirmed = await confirmAsync(
+      `Delete "${tenant.name}" organization? This will mark it as inactive.`,
+    );
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/role-management/tenant/${tenant._id}`, {
-        method: "PATCH",
-        headers: authHeaders(),
-        credentials: "include",
-        body: JSON.stringify({ status: "inactive" }),
-      });
+      const response = await fetch(
+        `http://localhost:5000/api/role-management/tenant/${tenant._id}`,
+        {
+          method: "PATCH",
+          headers: authHeaders(),
+          credentials: "include",
+          body: JSON.stringify({ status: "inactive" }),
+        },
+      );
       const data = await response.json().catch(() => null);
       if (!response.ok) {
         throw new Error(data?.message || "Failed to delete organization");
@@ -371,10 +423,13 @@ export default function RoleManagement() {
       toast.success("Organization and related users marked as inactive");
       setTenants((prev) => prev.filter((t) => t._id !== tenant._id));
       setSelectedTenantId("");
-      const updatedOrgUsers = await fetch("http://localhost:5000/api/role-management/user-tenant", {
-        headers: authHeaders(),
-        credentials: "include",
-      });
+      const updatedOrgUsers = await fetch(
+        "http://localhost:5000/api/role-management/user-tenant",
+        {
+          headers: authHeaders(),
+          credentials: "include",
+        },
+      );
       setOrgUsers(await updatedOrgUsers.json());
     } catch (err) {
       console.error(err);
@@ -410,10 +465,9 @@ export default function RoleManagement() {
   };
 
   const groupedData = groupedUsers().filter((group) =>
-    group.tenant.name.toLowerCase().includes(searchOrganization.toLowerCase())
+    group.tenant.name.toLowerCase().includes(searchOrganization.toLowerCase()),
   );
 
-  
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
       <div className="h-1.5 w-full bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500" />
@@ -435,18 +489,19 @@ export default function RoleManagement() {
               onClick={() => navigate("/organization-registration")}
               className="flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 shrink-0"
             >
-              <Plus size={18} />Create Organization
+              <Plus size={18} />
+              Create Organization
             </button>
             <button
               onClick={() => navigate("/audit-log")}
               className="flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 shrink-0"
             >
-              <ClipboardList size={18} />Audit Logs
+              <ClipboardList size={18} />
+              Audit Logs
             </button>
             <button
               onClick={() => navigate(-1)}
               className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
-              
             >
               <ArrowLeft size={16} />
             </button>
@@ -463,7 +518,10 @@ export default function RoleManagement() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200 placeholder:text-slate-400"
             />
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+            />
           </div>
           <select
             value={selectedTenantId}
@@ -471,14 +529,21 @@ export default function RoleManagement() {
             className="w-full md:w-72 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200"
           >
             <option value="">Select Organization</option>
-            {filteredOrganizations.filter((tenant) => tenant.status === "active" && isActiveTenantAdmin(tenant._id)).map((tenant) => (
-              <option key={tenant._id} value={tenant._id}>{tenant.name}</option>
-            ))}
+            {filteredOrganizations
+              .filter(
+                (tenant) =>
+                  tenant.status === "active" && isActiveTenantAdmin(tenant._id),
+              )
+              .map((tenant) => (
+                <option key={tenant._id} value={tenant._id}>
+                  {tenant.name}
+                </option>
+              ))}
           </select>
           <button
             disabled={!selectedTenantId || !canManageTenantId(selectedTenantId)}
             onClick={() => {
-              const tenant = tenants.find(t => t._id === selectedTenantId);
+              const tenant = tenants.find((t) => t._id === selectedTenantId);
               if (tenant) handleDeleteTenant(tenant);
             }}
             className={`flex items-center gap-1.5 px-4 h-[40px] rounded-lg text-white font-semibold text-[13px] shadow-md transition-all duration-200 shrink-0 ${
@@ -496,34 +561,47 @@ export default function RoleManagement() {
           <table className="min-w-full">
             <thead>
               <tr className="bg-slate-100 dark:bg-slate-900">
-                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">Name</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">Email</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">Role</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">Actions</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Name
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Email
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Role
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.length > 0 ? (
                 filteredUsers.map((user) => (
-                  <tr key={user._id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition">
-                    <td className="px-6 py-3 text-slate-800 dark:text-slate-200 font-medium">{user.username}</td>
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{user.email}</td>
+                  <tr
+                    key={user._id}
+                    className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                  >
+                    <td className="px-6 py-3 text-slate-800 dark:text-slate-200 font-medium">
+                      {user.username}
+                    </td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                      {user.email}
+                    </td>
                     <td className="px-6 py-3">
                       <select
                         value={selectedRole[user._id]}
                         onChange={(e) => {
                           const value = e.target.value;
                           setSelectedRole((prev) => ({
-                          ...prev,
-                          [user._id]: value,
-                        }));
+                            ...prev,
+                            [user._id]: value,
+                          }));
                         }}
                         className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                       >
-                          {/* NEW: placeholder */}
-                        <option value="">
-                          Select Role
-                        </option>
+                        {/* placeholder */}
+                        <option value="">Select Role</option>
                         <option value="admin">Tenant Admin</option>
                         <option value="viewer">Viewer</option>
                         <option value="creator">Creator</option>
@@ -533,13 +611,17 @@ export default function RoleManagement() {
                     <td className="px-6 py-3">
                       <button
                         onClick={() => {
-                          const tenant = tenants.find(t => t._id === selectedTenantId);
+                          const tenant = tenants.find(
+                            (t) => t._id === selectedTenantId,
+                          );
                           if (!tenant) return;
                           handleAddUser(user, tenant);
                         }}
                         disabled={!selectedTenantId}
                         className={`px-3 py-1.5 text-sm rounded-lg font-medium transition ${
-                          !selectedTenantId ? "bg-slate-300 dark:bg-slate-600 text-white cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                          !selectedTenantId
+                            ? "bg-slate-300 dark:bg-slate-600 text-white cursor-not-allowed"
+                            : "bg-indigo-600 hover:bg-indigo-700 text-white"
                         }`}
                       >
                         Add User
@@ -549,7 +631,12 @@ export default function RoleManagement() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">No Users Found</td>
+                  <td
+                    colSpan={4}
+                    className="px-6 py-8 text-center text-slate-500 dark:text-slate-400"
+                  >
+                    No Users Found
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -558,7 +645,9 @@ export default function RoleManagement() {
 
         {/* Organization Members Section */}
         <div className="mt-4">
-          <h3 className="text-2xl font-black tracking-tight text-[#0F172A] dark:text-white mb-4">Organization Members</h3>
+          <h3 className="text-2xl font-black tracking-tight text-[#0F172A] dark:text-white mb-4">
+            Organization Members
+          </h3>
           <div className="relative w-full md:max-w-md mb-4">
             <input
               type="text"
@@ -567,7 +656,10 @@ export default function RoleManagement() {
               onChange={(e) => setSearchOrganization(e.target.value)}
               className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200 placeholder:text-slate-400"
             />
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+            />
           </div>
         </div>
 
@@ -576,11 +668,21 @@ export default function RoleManagement() {
           <table className="min-w-full">
             <thead>
               <tr className="bg-slate-100 dark:bg-slate-900">
-                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">Name</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">Email</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">Role</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">Organization</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">Actions</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Name
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Email
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Role
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Organization
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -588,7 +690,9 @@ export default function RoleManagement() {
                 groupedData.map((group) => {
                   const visibleUsers = canManageTenant(group.tenant._id)
                     ? group.users
-                    : group.users.filter((u: any) => u.userId._id === currentUserId);
+                    : group.users.filter(
+                        (u: any) => u.userId._id === currentUserId,
+                      );
                   if (visibleUsers.length === 0) return null;
                   return (
                     <Fragment key={group.tenant._id}>
@@ -600,30 +704,52 @@ export default function RoleManagement() {
                         </td>
                       </tr>
                       {visibleUsers.map((item) => (
-                        <tr key={item._id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition">
-                          <td className="px-6 py-3 text-slate-800 dark:text-slate-200 font-medium">{item.userId.username}</td>
-                          <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{item.userId.email}</td>
+                        <tr
+                          key={item._id}
+                          className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                        >
+                          <td className="px-6 py-3 text-slate-800 dark:text-slate-200 font-medium">
+                            {item.userId.username}
+                          </td>
+                          <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                            {item.userId.email}
+                          </td>
                           <td className="px-6 py-3">
                             <select
                               value={selectedRole[item._id] || item.role}
-                              onChange={(e) => setSelectedRole((prev) => ({ ...prev, [item._id]: e.target.value }))}
+                              onChange={(e) =>
+                                setSelectedRole((prev) => ({
+                                  ...prev,
+                                  [item._id]: e.target.value,
+                                }))
+                              }
                               disabled={!isActiveTenantAdmin(group.tenant._id)}
                               className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-50"
                             >
-                              {Object.entries(roleLabels).map(([key, label]) => (
-                                <option key={key} value={key}>{label}</option>
-                              ))}
+                              {Object.entries(roleLabels).map(
+                                ([key, label]) => (
+                                  <option key={key} value={key}>
+                                    {label}
+                                  </option>
+                                ),
+                              )}
                             </select>
                           </td>
-                          <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{item.tenantId.name}</td>
+                          <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                            {item.tenantId.name}
+                          </td>
                           <td className="px-6 py-3">
                             {isActiveTenantAdmin(group.tenant._id) && (
                               <div className="flex gap-2">
                                 <button
                                   onClick={() => handleUpdateOrgRole(item)}
-                                  disabled={!selectedRole[item._id] || selectedRole[item._id] === item.role}
+                                  disabled={
+                                    !selectedRole[item._id] ||
+                                    selectedRole[item._id] === item.role
+                                  }
                                   className={`px-3 py-1.5 text-sm rounded-lg font-medium transition ${
-                                    !selectedRole[item._id] || selectedRole[item._id] === item.role
+                                    !selectedRole[item._id] ||
+                                    selectedRole[item._id] === item.role
                                       ? "bg-slate-300 dark:bg-slate-600 text-white cursor-not-allowed"
                                       : "bg-indigo-600 hover:bg-indigo-700 text-white"
                                   }`}
@@ -646,7 +772,12 @@ export default function RoleManagement() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">No Organizations Found</td>
+                  <td
+                    colSpan={5}
+                    className="px-6 py-8 text-center text-slate-500 dark:text-slate-400"
+                  >
+                    No Organizations Found
+                  </td>
                 </tr>
               )}
             </tbody>

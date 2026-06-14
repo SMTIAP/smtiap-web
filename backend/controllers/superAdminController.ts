@@ -9,6 +9,7 @@ import UserTenantRole from "../models/UserTenantRole.js";
 import { createAppNotification } from "../services/notificationService.js";
 import { notifyTenantRemoved } from "../services/emailNotificationService.js";
 
+// Authenticates a super admin user and issues a JWT token via cookie.
 export const superAdminLogin = async (
   req: Request,
   res: Response,
@@ -16,6 +17,7 @@ export const superAdminLogin = async (
   try {
     const { email, password } = req.body;
 
+    // Uses +password to explicitly include the normally excluded password field.
     const user = await User.findOne({ email, role: "super_admin" }).select(
       "+password",
     );
@@ -42,6 +44,7 @@ export const superAdminLogin = async (
   }
 };
 
+// Returns aggregate platform stats (tenants, users, surveys, audit logs) for the super admin overview.
 export const getSuperAdminDashboard = async (
   req: Request,
   res: Response,
@@ -80,11 +83,13 @@ export const getSuperAdminDashboard = async (
   }
 };
 
+// Lists all non-super-admin users for management by the super admin.
 export const getManagedUsers = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
+    // Excludes super_admin accounts to prevent self-listing in the management table.
     const users = await User.find({ role: { $ne: "super_admin" } })
       .select("username email role")
       .lean();
@@ -97,6 +102,7 @@ export const getManagedUsers = async (
   }
 };
 
+// Creates a non-super-admin user account. Prevents privilege escalation via this endpoint.
 export const createManagedUser = async (
   req: Request,
   res: Response,
@@ -110,12 +116,11 @@ export const createManagedUser = async (
       return;
     }
 
+    // Prevent creation of another super_admin from the management console.
     if (role === "super_admin") {
-      res
-        .status(400)
-        .json({
-          message: "Cannot create another super admin from this console",
-        });
+      res.status(400).json({
+        message: "Cannot create another super admin from this console",
+      });
       return;
     }
 
@@ -156,6 +161,7 @@ export const createManagedUser = async (
   }
 };
 
+// Updates a managed user's profile. Super admins cannot change their own role via this endpoint.
 export const updateManagedUser = async (
   req: Request,
   res: Response,
@@ -170,12 +176,11 @@ export const updateManagedUser = async (
       return;
     }
 
+    // Prevent role escalation to super_admin from the management console.
     if (role === "super_admin") {
-      res
-        .status(400)
-        .json({
-          message: "Cannot change role to super admin from this console",
-        });
+      res.status(400).json({
+        message: "Cannot change role to super admin from this console",
+      });
       return;
     }
 
@@ -185,6 +190,7 @@ export const updateManagedUser = async (
       return;
     }
 
+    // Super admin cannot demote/promote their own role from the management console.
     if (
       String(user._id) === String(actor._id) &&
       role &&
@@ -226,6 +232,7 @@ export const updateManagedUser = async (
   }
 };
 
+// Permanently deletes a user account. Protects against self-deletion and cross-admin deletion.
 export const deleteManagedUser = async (
   req: Request,
   res: Response,
@@ -234,6 +241,7 @@ export const deleteManagedUser = async (
     const { userId } = req.params;
     const actor = (req as any).user;
 
+    // Prevent super admin from deleting their own account.
     if (String(userId) === String(actor._id)) {
       res
         .status(400)
@@ -247,6 +255,7 @@ export const deleteManagedUser = async (
       return;
     }
 
+    // Prevent deleting another super admin account.
     if (user.role === "super_admin") {
       res.status(403).json({ message: "Cannot delete another super admin" });
       return;
@@ -270,6 +279,7 @@ export const deleteManagedUser = async (
   }
 };
 
+// Lists all tenants with computed credit balances by summing credit usage.
 export const getManagedTenants = async (
   req: Request,
   res: Response,
@@ -279,6 +289,7 @@ export const getManagedTenants = async (
       .populate("createdBy", "username email")
       .lean();
 
+    // Compute net credit balance: credits_used is stored as positive, so subtract each entry.
     const enrichedTenants = await Promise.all(
       tenants.map(async (tenant) => {
         const ledgers = await CreditLedger.find({
@@ -303,6 +314,7 @@ export const getManagedTenants = async (
   }
 };
 
+// Updates a tenant's status or plan. Deactivation triggers notification and membership cleanup.
 export const updateManagedTenant = async (
   req: Request,
   res: Response,
@@ -321,6 +333,7 @@ export const updateManagedTenant = async (
     const oldStatus = tenant.status;
     const oldPlan = tenant.plan;
 
+    // Detect transition into inactive to trigger side effects only on first deactivation.
     const wasDeactivated = status === "inactive" && oldStatus !== "inactive";
 
     if (status) tenant.status = status;
@@ -329,14 +342,14 @@ export const updateManagedTenant = async (
     await tenant.save();
 
     if (wasDeactivated) {
-      // Fetch admins/creators BEFORE deactivating their records
+      // Fetch admins/creators BEFORE deactivating their records.
       const tenantAdmins = await UserTenantRole.find({
         tenantId,
         role: { $in: ["admin", "creator"] },
         status: "active",
       }).populate("userId", "email username");
 
-      // Deactivate all user-tenant relationships
+      // Deactivate all user-tenant relationships.
       await UserTenantRole.updateMany(
         { tenantId },
         { $set: { status: "inactive" } },
@@ -389,6 +402,7 @@ export const updateManagedTenant = async (
   }
 };
 
+// Manually adjusts a tenant's credit balance and records the change in the credit ledger.
 export const adjustTenantCredits = async (
   req: Request,
   res: Response,
@@ -415,6 +429,7 @@ export const adjustTenantCredits = async (
       0,
     );
 
+    // Positive amount means adding credits, so credits_used is stored as negative.
     const creditsUsed = -Number(amount);
     const balanceAfter = currentBalance + Number(amount);
 

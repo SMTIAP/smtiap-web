@@ -65,7 +65,6 @@ export default function Analytics() {
   // All data-fetching state, side-effects, and runAnalysis handler
   const {
     surveyTitle,
-    totalResponses,
     surveyQuestions,
     surveyResponses,
     summary,

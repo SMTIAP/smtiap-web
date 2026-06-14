@@ -1,10 +1,11 @@
+// In-app notification routes: list, unread count, mark single/ all as read.
 import { Router, type Request, type Response } from "express";
 import { protect } from "../middleware/auth.js";
 import Notification from "../models/Notification.js";
 
 const router = Router();
 
-// GET /api/notifications — fetch notifications for the authenticated user
+// Fetch paginated notifications for the authenticated user.
 router.get("/", protect, async (req: Request, res: Response) => {
   try {
     const user = (req as unknown as Record<string, unknown>).user as {
@@ -46,7 +47,7 @@ router.get("/", protect, async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/notifications/unread-count — return count of unread notifications
+// Return count of unread notifications.
 router.get("/unread-count", protect, async (req: Request, res: Response) => {
   try {
     const user = (req as unknown as Record<string, unknown>).user as {
@@ -60,16 +61,14 @@ router.get("/unread-count", protect, async (req: Request, res: Response) => {
     res.json({ success: true, count });
   } catch (error) {
     console.error("Error counting unread notifications:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to count unread notifications.",
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to count unread notifications.",
+    });
   }
 });
 
-// PATCH /api/notifications/:id/read — mark a single notification as read
+// Mark a single notification as read.
 router.patch("/:id/read", protect, async (req: Request, res: Response) => {
   try {
     const user = (req as unknown as Record<string, unknown>).user as {
@@ -81,27 +80,23 @@ router.patch("/:id/read", protect, async (req: Request, res: Response) => {
       { new: true },
     );
     if (!notification) {
-      res
-        .status(404)
-        .json({
-          success: false,
-          message: "Notification not found or already read.",
-        });
+      res.status(404).json({
+        success: false,
+        message: "Notification not found or already read.",
+      });
       return;
     }
     res.json({ success: true, data: notification });
   } catch (error) {
     console.error("Error marking notification as read:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to mark notification as read.",
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to mark notification as read.",
+    });
   }
 });
 
-// PATCH /api/notifications/read-all — mark all notifications as read
+// Mark all notifications as read.
 router.patch("/read-all", protect, async (req: Request, res: Response) => {
   try {
     const user = (req as unknown as Record<string, unknown>).user as {
@@ -114,12 +109,10 @@ router.patch("/read-all", protect, async (req: Request, res: Response) => {
     res.json({ success: true, message: "All notifications marked as read." });
   } catch (error) {
     console.error("Error marking all notifications as read:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to mark all notifications as read.",
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to mark all notifications as read.",
+    });
   }
 });
 

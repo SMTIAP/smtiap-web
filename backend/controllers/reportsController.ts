@@ -10,6 +10,7 @@ interface AuthRequest extends Request {
   user?: IUser;
 }
 
+// Type-safe accessors for properties attached by middleware (loadTenant, enforceTenantAccess).
 const reqAny = (req: Request): Record<string, any> =>
   req as unknown as Record<string, any>;
 
@@ -19,6 +20,7 @@ const reqTenantIds = (req: Request): string[] =>
 const reqSurveyIds = (req: Request): string[] =>
   (reqAny(req).surveyIds as string[]) ?? [];
 
+// Returns tenants the user has access to. If an activeTenantId is set, restricts to that single tenant.
 export const getAllTenants = async (req: Request, res: Response) => {
   try {
     const activeTenantId = (req as any).activeTenantId as string | null;
@@ -29,6 +31,7 @@ export const getAllTenants = async (req: Request, res: Response) => {
       return;
     }
 
+    // When viewing a specific org context, only return that tenant.
     const idsToFetch = activeTenantId ? [activeTenantId] : tenantIds;
     const tenants = await Tenant.find({ _id: { $in: idsToFetch } });
     res.status(200).json(tenants);
@@ -39,7 +42,7 @@ export const getAllTenants = async (req: Request, res: Response) => {
   }
 };
 
-
+// Fetches all active users across the user's tenants, enriched with their last login timestamp.
 export const getUserTenantData = async (req: Request, res: Response) => {
   try {
     const tenantIds = (req as any).tenantIds ?? [];
@@ -75,7 +78,7 @@ export const getUserTenantData = async (req: Request, res: Response) => {
 
     // 3. Convert to lookup map
     const loginMap = new Map(
-      auditLogs.map((log) => [String(log._id), log.lastLogin])
+      auditLogs.map((log) => [String(log._id), log.lastLogin]),
     );
 
     // 4. Merge lastLogin into users
@@ -83,11 +86,11 @@ export const getUserTenantData = async (req: Request, res: Response) => {
       ...u,
       lastLogin: loginMap.get(String(u.userId._id)) || null,
     }));
-console.log("USER IDS:");
-console.log(userTenantRoles.map(u => String(u.userId._id)));
+    console.log("USER IDS:");
+    console.log(userTenantRoles.map((u) => String(u.userId._id)));
 
-console.log("AUDIT IDS:");
-console.log(auditLogs.map(a => String(a._id)));
+    console.log("AUDIT IDS:");
+    console.log(auditLogs.map((a) => String(a._id)));
     return res.status(200).json({
       users: mergedUsers,
       auditLogs,
@@ -98,33 +101,11 @@ console.log(auditLogs.map(a => String(a._id)));
   }
 };
 
+// Aggregates survey stats (drafts, published, stopped) grouped by tenant for the admin dashboard.
 export const getTenantActivity = async (req: Request, res: Response) => {
   try {
     const surveyIds = (req as any).surveyIds ?? [];
     const tenantIds = (req as any).tenantIds ?? [];
-
-
-    const userCounts = await UserTenantRole.aggregate([
-  {
-    $match: {
-      tenantId: {
-        $in: tenantIds.map((id: string) => new mongoose.Types.ObjectId(id)),
-      },
-      status: "active",
-    },
-  },
-  {
-    $group: {
-      _id: "$tenantId",
-      totalUsers: { $sum: 1 },
-    },
-  },
-]);
-
-const userCountMap = new Map(
-  userCounts.map((u) => [String(u._id), u.totalUsers])
-);
-
 
 
     if (tenantIds.length === 0) {
@@ -140,13 +121,11 @@ const userCountMap = new Map(
       .lean();
 
     const tenantMap = new Map(
-      tenants.map((t) => [String(t._id), {name: t.name, status: t.status}])
-
-      
+      tenants.map((t) => [String(t._id), t.name])
     );
     // Get surveys for those tenants
     const surveys = await Survey.find({
-      tenantId: { $in: tenantIds }
+      tenantId: { $in: tenantIds },
     }).lean();
 
     // Group analytics per tenant
@@ -190,7 +169,6 @@ const userCountMap = new Map(
     }
 
     return res.status(200).json(Array.from(activityMap.values()));
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server Error" });

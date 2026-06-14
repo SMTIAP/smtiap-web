@@ -14,7 +14,11 @@ interface SurveySelectorViewProps {
   finishedSurveys: SurveyListItem[];
 }
 
-export default function SurveySelectorView({ surveysLoading, finishedSurveys }: SurveySelectorViewProps) {
+// Dropdown selector for choosing a finished survey to view analytics for.
+export default function SurveySelectorView({
+  surveysLoading,
+  finishedSurveys,
+}: SurveySelectorViewProps) {
   const navigate = useNavigate();
 
   return (
@@ -25,7 +29,10 @@ export default function SurveySelectorView({ surveysLoading, finishedSurveys }: 
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#E8EDF2] dark:bg-slate-700">
-                <BarChart size={20} className="text-[#0D141C] dark:text-white" />
+                <BarChart
+                  size={20}
+                  className="text-[#0D141C] dark:text-white"
+                />
               </div>
               <h1 className="text-3xl font-black tracking-tight text-[#0F172A] dark:text-white">
                 Survey Analytics
@@ -35,7 +42,6 @@ export default function SurveySelectorView({ surveysLoading, finishedSurveys }: 
             <button
               onClick={() => navigate(-1)}
               className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
-              
             >
               <ArrowLeft size={16} />
             </button>
@@ -54,7 +60,9 @@ export default function SurveySelectorView({ surveysLoading, finishedSurveys }: 
         </div>
 
         {surveysLoading ? (
-          <div className="text-sm text-[#4A739C] dark:text-slate-400">Loading finished surveys...</div>
+          <div className="text-sm text-[#4A739C] dark:text-slate-400">
+            Loading finished surveys...
+          </div>
         ) : finishedSurveys.length === 0 ? (
           <div className="rounded-xl border border-[#CFDBE8] dark:border-slate-700 bg-white dark:bg-slate-800 p-8 text-[#4A739C] dark:text-slate-400">
             No finished surveys found.
@@ -65,7 +73,11 @@ export default function SurveySelectorView({ surveysLoading, finishedSurveys }: 
               <SurveyCard
                 key={survey._id}
                 title={survey.surveyTitle || "Untitled Survey"}
-                date={survey.createdAt ? new Date(survey.createdAt).toLocaleDateString("en-GB") : undefined}
+                date={
+                  survey.createdAt
+                    ? new Date(survey.createdAt).toLocaleDateString("en-GB")
+                    : undefined
+                }
                 category="Finished"
                 variant="finished"
                 to={`/analytics?surveyId=${survey._id}`}

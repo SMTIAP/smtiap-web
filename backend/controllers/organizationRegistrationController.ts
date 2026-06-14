@@ -9,6 +9,7 @@ interface AuthenticatedRequest extends Request {
   user?: { _id: string };
 }
 
+// Creates a new tenant organization and assigns the creator as admin.
 export const createOrganization = async (req: Request, res: Response) => {
   try {
     const { name, country, address, description, domain, orgType } = req.body;
@@ -31,6 +32,7 @@ export const createOrganization = async (req: Request, res: Response) => {
       });
     }
 
+    // Case-insensitive exact match to prevent duplicate names by the same creator.
     const existingOrganizationName = await Tenant.findOne({
       name: { $regex: `^${name}$`, $options: "i" },
       status: "active",
@@ -98,7 +100,7 @@ export const createOrganization = async (req: Request, res: Response) => {
 
     return res.status(500).json({
       message: error?.message || "Server Error",
-      error, // ⚠️ full error (ONLY for dev)
+      error, // Full error object returned only in development.
     });
   }
 };

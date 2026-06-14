@@ -1,8 +1,12 @@
+// Reports routes: tenant data, user activity, and survey analytics for the admin dashboard.
 import { Router } from "express";
 import { protect } from "../middleware/auth.js";
 import { loadTenant } from "../middleware/tenant.js";
-import { getAllTenants, getUserTenantData, getTenantActivity } from "../controllers/reportsController.js";
-
+import {
+  getAllTenants,
+  getUserTenantData,
+  getTenantActivity,
+} from "../controllers/reportsController.js";
 
 const router = Router();
 

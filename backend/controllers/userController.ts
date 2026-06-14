@@ -9,6 +9,7 @@ import bcrypt from "bcryptjs";
 import { sendEmail } from "../services/emailService.js";
 import { notifyRegistered } from "../services/emailNotificationService.js";
 
+// Registers a new user with email verification. Rolls back the account if the verification email fails to send.
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { username, email, password } = req.body;
@@ -20,6 +21,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // 32 random bytes = 64 hex chars, used as a secure email verification token.
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenExpire = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
@@ -56,8 +58,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         `,
       );
     } catch (emailError: any) {
-      console.error("❌ Email sending failed:", emailError);
-      // Clean up newly created user since verification email could not be sent
+      console.error("Email sending failed:", emailError);
+      // Clean up newly created user since verification email could not be sent.
       await User.deleteOne({ _id: user._id });
       res.status(500).json({
         message: `Account creation halted because verification email failed to send: ${emailError.message}. Please configure valid SMTP credentials in backend/.env.`,
@@ -74,10 +76,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+// Authenticates a user by email/password, verifies email is confirmed, and issues a JWT cookie.
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
+    // +password includes the normally excluded password field needed for comparison.
     const user = await User.findOne({ email }).select("+password");
 
     if (!user || !(await user.matchPassword(password))) {
@@ -85,16 +89,15 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Block login until the user confirms their email address.
     if (!user.isVerified) {
-      res
-        .status(401)
-        .json({
-          message: "Please verify your email address before logging in.",
-        });
+      res.status(401).json({
+        message: "Please verify your email address before logging in.",
+      });
       return;
     }
 
-    // Record audit log
+    // Audit failures should not block login.
     await AuditLog.create({
       user_id: user._id,
       action: "login",
@@ -109,6 +112,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+// Logs the user out by clearing the HttpOnly JWT cookie and recording an audit entry.
 export const logout = async (req: Request, res: Response): Promise<void> => {
   const user = (req as any).user;
   if (user) {
@@ -121,6 +125,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     }).catch(() => {});
   }
 
+  // Clear the HttpOnly cookie by expiring it immediately.
   res.cookie("token", "", {
     httpOnly: true,
     expires: new Date(0),
@@ -129,6 +134,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
   res.json({ message: "Logged out" });
 };
 
+// Returns the authenticated user's profile enriched with their active tenant memberships.
 export const getMe = async (req: Request, res: Response): Promise<void> => {
   const user = (req as any).user;
   if (!user) {
@@ -136,7 +142,7 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  // Fetch active tenant memberships only
+  // Fetch active tenant memberships only; membership fetch failures return empty list.
   const memberships = await UserTenantRole.find({
     userId: user._id,
     status: "active",
@@ -156,6 +162,7 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
   });
 };
 
+// Returns the list of organizations the authenticated user belongs to, with their role in each.
 export const getMyTenants = async (
   req: Request,
   res: Response,
@@ -185,6 +192,7 @@ export const getMyTenants = async (
   }
 };
 
+// Sends a temporary password to the user's email for self-service password reset.
 export const forgotPassword = async (
   req: Request,
   res: Response,
@@ -197,20 +205,21 @@ export const forgotPassword = async (
       return;
     }
 
-    // Generate a temporary password (8 hex chars, easy to copy)
+    // Generate a temporary password (8 hex chars, easy to copy).
     const tempPassword = crypto.randomBytes(4).toString("hex");
 
-    // Hash and store it in resetPasswordToken field
+    // Hash and store it in resetPasswordToken field.
     user.resetPasswordToken = crypto
       .createHash("sha256")
       .update(tempPassword)
       .digest("hex");
 
+    // Token expires after 10 minutes.
     user.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000);
 
     await user.save();
 
-    // Send temporary password via email
+    // Send temporary password via email.
     await sendEmail(
       user.email,
       "Your Temporary Password - MTSP",
@@ -238,6 +247,7 @@ export const forgotPassword = async (
   }
 };
 
+// Validates the temporary password and sets a new permanent password, clearing the reset token.
 export const resetPassword = async (req: Request, res: Response) => {
   try {
     const { email, tempPassword, newPassword } = req.body;
@@ -248,11 +258,13 @@ export const resetPassword = async (req: Request, res: Response) => {
       });
     }
 
+    // Hash the provided temp password to compare with the stored hash.
     const hashedToken = crypto
       .createHash("sha256")
       .update(tempPassword)
       .digest("hex");
 
+    // Find user by email + hashed token, ensuring the token has not expired.
     const user = await User.findOne({
       email,
       resetPasswordToken: hashedToken,
@@ -280,6 +292,7 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
+// Confirms a user's email address using the verification token sent during registration.
 export const verifyEmail = async (
   req: Request,
   res: Response,
@@ -295,6 +308,7 @@ export const verifyEmail = async (
     const emailStr = typeof email === "string" ? email : String(email);
     const tokenStr = typeof token === "string" ? token : String(token);
 
+    // Verify token matches and has not expired.
     const user = await User.findOne({
       email: emailStr,
       verificationToken: tokenStr,
@@ -313,6 +327,7 @@ export const verifyEmail = async (
     user.verificationTokenExpire = null;
     await user.save();
 
+    // Welcome notification failure should not block the verification response.
     try {
       await notifyRegistered({
         email: user.email,
@@ -328,6 +343,7 @@ export const verifyEmail = async (
   }
 };
 
+// Generates a fresh verification token and re-sends the verification email to an unverified user.
 export const resendVerification = async (
   req: Request,
   res: Response,
@@ -352,6 +368,7 @@ export const resendVerification = async (
       return;
     }
 
+    // Generate a new token with a 24-hour expiry, replacing any previous unexpired token.
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenExpire = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 

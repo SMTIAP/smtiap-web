@@ -4,6 +4,7 @@ import axios from "axios";
 import { GoogleIcon, GithubIcon, LinkedInIcon } from "./AuthPage";
 import { validatePassword } from "../utils/passwordValidation";
 
+// Registration form with client-side password validation and email-verification flow.
 export default function Register() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -16,6 +17,7 @@ export default function Register() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
 
+  // Countdown timer for resend-verification cooldown.
   useEffect(() => {
     if (resendCountdown > 0) {
       const timer = setTimeout(
@@ -26,6 +28,7 @@ export default function Register() {
     }
   }, [resendCountdown]);
 
+  // Resend verification email with a 60-second cooldown to prevent spam.
   const handleResend = async () => {
     if (resendCountdown > 0) return;
     try {
@@ -47,6 +50,7 @@ export default function Register() {
     }
   };
 
+  // Validate password on every keystroke and show inline error.
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setPassword(val);
@@ -61,7 +65,7 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Client-side validation before submitting
+    // Client-side validation before submitting.
     const validation = validatePassword(password);
     if (!validation.valid) {
       setPasswordError(validation.message);
@@ -95,6 +99,7 @@ export default function Register() {
     }
   };
 
+  // Redirect to backend OAuth endpoints for social authentication.
   const handleGoogleLogin = () => {
     window.location.href = "http://localhost:5000/api/users/google";
   };
@@ -196,7 +201,6 @@ export default function Register() {
       </p>
 
       <form onSubmit={handleSubmit} className="w-full">
-        {/* username added (important for backend) */}
         <input
           className="w-full py-[11px] px-[16px] border-none rounded-[10px] bg-[#f0f1f7] font-nunito text-[14px] font-semibold text-[#333] outline-none mb-[12px] transition-all duration-200 placeholder:text-[#aaa] placeholder:font-medium focus:bg-[#ebebf8] focus:ring-[2.5px] focus:ring-[#7b6ee0]/35"
           type="text"

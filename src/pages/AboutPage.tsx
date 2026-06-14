@@ -110,10 +110,10 @@ const sections = [
   },
 ];
 
+// Landing-style about page showcasing platform features: AI analysis, templates, sentiment, support, reports.
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-[#F4F6FA] dark:bg-slate-950 text-[#2C2F32] dark:text-slate-200 selection:bg-[#5C38E1] selection:text-white overflow-x-hidden font-sans">
-      {/* Background Blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
         <motion.div
           animate={{ x: [0, 50, 0], y: [0, 30, 0] }}
@@ -127,7 +127,6 @@ export default function AboutPage() {
         />
       </div>
 
-      {/* Hero Header */}
       <section className="relative pt-28 sm:pt-36 lg:pt-44 pb-16 sm:pb-24 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
@@ -166,7 +165,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Sections */}
       <div className="px-4 sm:px-6 pb-24 sm:pb-32">
         <div className="max-w-6xl mx-auto space-y-20 sm:space-y-28">
           {sections.map((section, index) => (
@@ -184,7 +182,6 @@ export default function AboutPage() {
                   index % 2 === 1 ? "lg:grid-flow-dense" : ""
                 }`}
               >
-                {/* Content */}
                 <div
                   className={`lg:col-span-3 ${
                     index % 2 === 1 ? "lg:col-start-3" : ""
@@ -212,7 +209,6 @@ export default function AboutPage() {
                     ))}
                   </ul>
 
-                  {/* Stats row */}
                   <div className="flex flex-wrap gap-4 sm:gap-6">
                     {section.stats.map((stat) => (
                       <div
@@ -230,7 +226,6 @@ export default function AboutPage() {
                   </div>
                 </div>
 
-                {/* Visual Card */}
                 <div
                   className={`lg:col-span-2 ${
                     index % 2 === 1 ? "lg:col-start-1 lg:row-start-1" : ""
@@ -252,7 +247,6 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* CTA */}
       <section className="pb-24 sm:pb-32 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
           <motion.div
@@ -276,7 +270,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="pt-16 sm:pt-24 pb-8 sm:pb-12 px-4 sm:px-8 border-t border-slate-200 dark:border-slate-800 bg-white/30 dark:bg-slate-900/50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-8 sm:gap-12 lg:gap-16 mb-12 sm:mb-20">

@@ -142,6 +142,7 @@ const SurveyItem = ({
   </div>
 );
 
+// Creator overview with stats, quick actions, survey-status donut chart, and recent surveys list.
 function CreatorDashboard() {
   // Chart data for Doughnut
   const statusData = {

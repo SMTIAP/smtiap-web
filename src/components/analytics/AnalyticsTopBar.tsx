@@ -1,5 +1,6 @@
 import { BarChart } from "lucide-react";
 
+// Top navigation bar for the analytics section with breadcrumb and action buttons.
 export default function AnalyticsTopBar() {
   return (
     <div className="sticky top-0 z-20 w-full">
@@ -9,7 +10,9 @@ export default function AnalyticsTopBar() {
           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#E8EDF2] dark:bg-slate-700">
             <BarChart size={20} className="text-[#0D141C] dark:text-white" />
           </div>
-          <h1 className="text-lg font-bold text-[#0D141C] dark:text-white">Survey Analytics</h1>
+          <h1 className="text-lg font-bold text-[#0D141C] dark:text-white">
+            Survey Analytics
+          </h1>
         </div>
       </nav>
     </div>

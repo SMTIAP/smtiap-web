@@ -36,6 +36,7 @@ interface SurveyItem {
   scheduledClose?: string;
 }
 
+// Confirmation dialog for deleting a survey.
 const DeleteConfirmModal = ({ ...props }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
@@ -90,6 +91,7 @@ const DeleteConfirmModal = ({ ...props }) => {
   );
 };
 
+// Share survey dialog with link copy, password protection toggle, and QR code download.
 const ShareModal = ({
   survey,
   onClose,
@@ -121,6 +123,7 @@ const ShareModal = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Render SVG QR to canvas, then trigger PNG download.
   const downloadQR = () => {
     const svg = document.getElementById("share-modal-qr") as SVGElement | null;
     if (!svg) return;
@@ -141,6 +144,7 @@ const ShareModal = ({
     img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
+  // Toggle password protection; clearing it removes the password from the backend immediately.
   const handleToggle = async () => {
     const newValue = !isPasswordProtected;
     setIsPasswordProtected(newValue);
@@ -298,11 +302,13 @@ const ShareModal = ({
   );
 };
 
+// Survey list page with status tabs, stats cards, copy/delete/share actions, and role-based access.
 export default function CreatedSurveys() {
   const navigate = useNavigate();
   const { activeTenant, isSystemContext } = useTenant();
   const effectiveRole =
     !isSystemContext && activeTenant ? activeTenant.role : null;
+  // Only specific roles can create, edit, or delete surveys.
   const canCreate = effectiveRole
     ? ["super_admin", "admin", "creator"].includes(effectiveRole)
     : true;
@@ -317,6 +323,7 @@ export default function CreatedSurveys() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [surveyToShare, setSurveyToShare] = useState<SurveyItem | null>(null);
 
+  // Fetch all surveys, sorted by most recent update first.
   const fetchSurveys = async () => {
     setLoading(true);
     try {
@@ -331,6 +338,7 @@ export default function CreatedSurveys() {
         credentials: "include",
       });
       const data = await response.json();
+      // Sort by updatedAt descending, falling back to createdAt.
       const sortedData = (Array.isArray(data) ? data : []).sort((a, b) => {
         const dateA = a.updatedAt
           ? new Date(a.updatedAt)
@@ -351,6 +359,7 @@ export default function CreatedSurveys() {
   useEffect(() => {
     fetchSurveys();
   }, [activeTenant]);
+  // Listen for cross-tab survey update signals to refresh the list.
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "surveyUpdated") {
@@ -362,6 +371,7 @@ export default function CreatedSurveys() {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
+  // Navigate to the appropriate view based on survey status.
   const handleCardClick = (survey: SurveyItem) => {
     if (survey.status === "Draft") {
       if (canCreate)
@@ -398,6 +408,7 @@ export default function CreatedSurveys() {
     })(),
   });
 
+  // Duplicate a survey by fetching its full data and creating a copy.
   const handleCopyClick = async (e: React.MouseEvent, survey: SurveyItem) => {
     e.stopPropagation();
     setCopyingSurveyId(survey._id);
@@ -466,7 +477,7 @@ export default function CreatedSurveys() {
         try {
           const errData = await response.json();
           msg = errData.message || msg;
-        } catch { }
+        } catch {}
         setDeleteError(msg);
         return;
       }
@@ -527,9 +538,18 @@ export default function CreatedSurveys() {
       <div className="fixed top-[70px] left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 z-50" />
 
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-400/30 dark:bg-indigo-600/20 blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-400/30 dark:bg-purple-600/20 blur-[120px] animate-pulse" style={{ animationDuration: '10s' }} />
-        <div className="absolute top-[30%] left-[50%] w-[40%] h-[40%] rounded-full bg-pink-400/20 dark:bg-pink-600/10 blur-[120px] animate-pulse" style={{ animationDuration: '12s' }} />
+        <div
+          className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-400/30 dark:bg-indigo-600/20 blur-[120px] animate-pulse"
+          style={{ animationDuration: "8s" }}
+        />
+        <div
+          className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-400/30 dark:bg-purple-600/20 blur-[120px] animate-pulse"
+          style={{ animationDuration: "10s" }}
+        />
+        <div
+          className="absolute top-[30%] left-[50%] w-[40%] h-[40%] rounded-full bg-pink-400/20 dark:bg-pink-600/10 blur-[120px] animate-pulse"
+          style={{ animationDuration: "12s" }}
+        />
 
         <div
           className="absolute inset-0 opacity-[0.04] dark:opacity-[0.02]"
@@ -591,7 +611,7 @@ export default function CreatedSurveys() {
               icon: Layout,
               color: "text-indigo-600 dark:text-indigo-400",
               bg: "bg-indigo-50 dark:bg-indigo-900/30",
-              border: "border-indigo-100 dark:border-indigo-800/30"
+              border: "border-indigo-100 dark:border-indigo-800/30",
             },
             {
               label: "Running",
@@ -599,7 +619,7 @@ export default function CreatedSurveys() {
               icon: Activity,
               color: "text-emerald-600 dark:text-emerald-400",
               bg: "bg-emerald-50 dark:bg-emerald-900/30",
-              border: "border-emerald-100 dark:border-emerald-800/30"
+              border: "border-emerald-100 dark:border-emerald-800/30",
             },
             {
               label: "Draft",
@@ -607,7 +627,7 @@ export default function CreatedSurveys() {
               icon: Clock,
               color: "text-amber-600 dark:text-amber-400",
               bg: "bg-amber-50 dark:bg-amber-900/30",
-              border: "border-amber-100 dark:border-amber-800/30"
+              border: "border-amber-100 dark:border-amber-800/30",
             },
             {
               label: "Scheduled",
@@ -615,7 +635,7 @@ export default function CreatedSurveys() {
               icon: Calendar,
               color: "text-purple-600 dark:text-purple-400",
               bg: "bg-purple-50 dark:bg-purple-900/30",
-              border: "border-purple-100 dark:border-purple-800/30"
+              border: "border-purple-100 dark:border-purple-800/30",
             },
             {
               label: "Finished",
@@ -623,7 +643,7 @@ export default function CreatedSurveys() {
               icon: CheckCircle2,
               color: "text-rose-600 dark:text-rose-400",
               bg: "bg-rose-50 dark:bg-rose-900/30",
-              border: "border-rose-100 dark:border-rose-800/30"
+              border: "border-rose-100 dark:border-rose-800/30",
             },
           ].map((stat) => (
             <div
@@ -657,17 +677,19 @@ export default function CreatedSurveys() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`relative px-5 py-2.5 text-sm font-bold rounded-xl transition-all duration-300 flex items-center gap-2.5 ${activeTab === tab
-                  ? "bg-white/90 dark:bg-slate-700/90 text-slate-900 dark:text-white shadow-md border border-white/50 dark:border-slate-600/50 scale-[1.02]"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-slate-700/40 border border-transparent"
-                  }`}
+                className={`relative px-5 py-2.5 text-sm font-bold rounded-xl transition-all duration-300 flex items-center gap-2.5 ${
+                  activeTab === tab
+                    ? "bg-white/90 dark:bg-slate-700/90 text-slate-900 dark:text-white shadow-md border border-white/50 dark:border-slate-600/50 scale-[1.02]"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-slate-700/40 border border-transparent"
+                }`}
               >
                 {tab}
                 <span
-                  className={`px-2.5 py-0.5 text-[10px] rounded-lg font-black tracking-wide ${activeTab === tab
-                    ? "bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 shadow-sm border border-indigo-100/50 dark:border-indigo-800/30"
-                    : "bg-slate-200/60 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400"
-                    }`}
+                  className={`px-2.5 py-0.5 text-[10px] rounded-lg font-black tracking-wide ${
+                    activeTab === tab
+                      ? "bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 shadow-sm border border-indigo-100/50 dark:border-indigo-800/30"
+                      : "bg-slate-200/60 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400"
+                  }`}
                 >
                   {tab === "All"
                     ? surveys.length
@@ -713,7 +735,7 @@ export default function CreatedSurveys() {
               if (isScheduled)
                 return "bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 border-purple-200 dark:border-purple-500/30";
               return "bg-rose-50 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300 border-rose-200 dark:border-rose-500/30";
-            }
+            };
 
             const getIcon = (size = 24) => {
               if (isRunning) return <Activity size={size} />;
@@ -735,10 +757,14 @@ export default function CreatedSurveys() {
 
                 <div className="relative z-10 p-7 flex flex-col h-full">
                   <div className="flex justify-between items-start mb-5">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${getIconBg()}`}>
+                    <div
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${getIconBg()}`}
+                    >
                       {getIcon(24)}
                     </div>
-                    <div className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${getBadgeColors()}`}>
+                    <div
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${getBadgeColors()}`}
+                    >
                       {survey.status}
                     </div>
                   </div>
@@ -758,18 +784,29 @@ export default function CreatedSurveys() {
                       {isRunning && survey.scheduledClose && (
                         <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-medium">
                           <Calendar size={14} />
-                          <span>Closes: {new Date(survey.scheduledClose).toLocaleString()}</span>
+                          <span>
+                            Closes:{" "}
+                            {new Date(survey.scheduledClose).toLocaleString()}
+                          </span>
                         </div>
                       )}
                       {isScheduled && survey.scheduledOpen && (
                         <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-xs font-semibold">
                           <Calendar size={14} />
-                          <span>Opens: {new Date(survey.scheduledOpen).toLocaleString()}</span>
+                          <span>
+                            Opens:{" "}
+                            {new Date(survey.scheduledOpen).toLocaleString()}
+                          </span>
                         </div>
                       )}
                       <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
                         <Clock size={14} />
-                        <span>Created: {new Date(survey.createdAt).toLocaleDateString("en-GB")}</span>
+                        <span>
+                          Created:{" "}
+                          {new Date(survey.createdAt).toLocaleDateString(
+                            "en-GB",
+                          )}
+                        </span>
                       </div>
                     </div>
                   </div>
