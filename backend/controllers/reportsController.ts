@@ -107,6 +107,26 @@ export const getTenantActivity = async (req: Request, res: Response) => {
     const surveyIds = (req as any).surveyIds ?? [];
     const tenantIds = (req as any).tenantIds ?? [];
 
+    const userCounts = await UserTenantRole.aggregate([
+      {
+        $match: {
+          tenantId: {
+            $in: tenantIds.map((id: string) => new mongoose.Types.ObjectId(id)),
+          },
+          status: "active",
+        },
+      },
+      {
+        $group: {
+          _id: "$tenantId",
+          totalUsers: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const userCountMap = new Map(
+      userCounts.map((u) => [String(u._id), u.totalUsers]),
+    );
 
     if (tenantIds.length === 0) {
       return res.status(200).json([]);
@@ -120,9 +140,7 @@ export const getTenantActivity = async (req: Request, res: Response) => {
       .select("_id name status")
       .lean();
 
-    const tenantMap = new Map(
-      tenants.map((t) => [String(t._id), t.name])
-    );
+    const tenantMap = new Map(tenants.map((t) => [String(t._id), t]));
     // Get surveys for those tenants
     const surveys = await Survey.find({
       tenantId: { $in: tenantIds },
@@ -140,9 +158,8 @@ export const getTenantActivity = async (req: Request, res: Response) => {
         activityMap.set(tenantId, {
           tenantId,
 
-
           tenantName: tenantInfo?.name ?? "Unknown",
-          users: userCountMap.get(tenantId) ?? 0,
+          users: 0,
 
           totalSurveys: 0,
           drafts: 0,
@@ -150,7 +167,7 @@ export const getTenantActivity = async (req: Request, res: Response) => {
           published: 0,
           stopped: 0,
           responses: 0,
-          status: tenantInfo?.status,
+          status: tenantInfo?.status ?? "Unknown",
         });
       }
 

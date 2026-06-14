@@ -13,8 +13,6 @@ import {
 } from "../utils/pdfHelpers";
 import { exportToCSV } from "../utils/csvHelpers";
 
-
-
 // interface User {
 //   _id: string;
 //   username: string;
@@ -61,7 +59,6 @@ interface TenantActivity {
   status: string;
   users: number;
 }
-
 
 export default function Reports() {
   const navigate = useNavigate();
@@ -144,8 +141,6 @@ export default function Reports() {
     }
   })();
 
-
-
   useEffect(() => {
     const fetchTenantActivity = async () => {
       try {
@@ -157,9 +152,7 @@ export default function Reports() {
           },
         );
 
-
         const data = await response.json();
-
 
         console.log("TENANT ACTIVITY DATA:", data); // 👈 SEE DATA HERE
         setActivityData(
@@ -170,7 +163,6 @@ export default function Reports() {
               : [],
         );
         //  setActivityData(data);
-
 
         // setActivityData(data); // if you have state
       } catch (error) {
@@ -293,15 +285,14 @@ export default function Reports() {
       await exportTenantRegistrationsPDF();
     } else if (activeTab === "users") {
       await exportUsersPDF();
-     }
+    }
     // else if (activeTab === "activity") {
     //   await exportActivityPDF();
     // }
-
-
+  };
 
   // CSV Exports
-    const exportTenantsCSV = () => {
+  const exportTenantsCSV = () => {
     exportToCSV(
       "tenant-registrations",
       tenants.map((t) => ({
@@ -517,7 +508,6 @@ export default function Reports() {
                     Total Surveys
                   </th>
 
-                  
                   <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Responses
                   </th>
@@ -536,25 +526,19 @@ export default function Reports() {
                       {activity.tenantName}
                     </td>
 
-
                     <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
                       {activity.users}
                     </td>
-                    
 
                     {/* <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{activity.scheduled}</td> */}
 
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{activity.totalSurveys}</td>
-
-                    
-<td className="px-6 py-3 text-slate-600 dark:text-slate-300">
-                      -
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                      {activity.totalSurveys}
                     </td>
 
-
-
-
-                    
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                      -
+                    </td>
 
                     <td className="px-6 py-3">
                       <span
@@ -567,9 +551,7 @@ export default function Reports() {
                         {activity.status.charAt(0).toUpperCase() +
                           activity.status.slice(1)}
                       </span>
-
                     </td>
-                    
                   </tr>
                 ))}
               </tbody>
@@ -579,4 +561,4 @@ export default function Reports() {
       </div>
     </div>
   );
-}}
+}
