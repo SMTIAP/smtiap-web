@@ -139,17 +139,22 @@ const VoiceAI: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [attachedFile, setAttachedFile] = useState<{ name: string; content: string } | null>(null);
+  const [attachedFile, setAttachedFile] = useState<{ name: string; content: string; type?: string } | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const isImage = file.type.startsWith("image/");
       const reader = new FileReader();
       reader.onload = (event) => {
         const content = event.target?.result as string;
-        setAttachedFile({ name: file.name, content });
+        setAttachedFile({ name: file.name, content, type: file.type });
       };
-      reader.readAsText(file);
+      if (isImage) {
+        reader.readAsDataURL(file);
+      } else {
+        reader.readAsText(file);
+      }
     }
   };
 
@@ -292,10 +297,21 @@ const VoiceAI: React.FC = () => {
 
     let userPrompt = activeTag ? `[${activeTag}] ${promptText}`.trim() : promptText;
     let userMsgText = promptText || activeTag || '';
+    let filePayload = null;
 
     if (attachedFile) {
-      userMsgText = `📎 ${attachedFile.name}${promptText ? ': ' + promptText : ''}`;
-      userPrompt = `[Attached File: ${attachedFile.name}]\nFile Content:\n${attachedFile.content}\n\nUser request: ${userPrompt || "Please generate a complete survey based on these questions and answers."}`;
+      const isImage = attachedFile.type?.startsWith("image/");
+      if (isImage) {
+        userMsgText = `🖼️ ${attachedFile.name}${promptText ? ': ' + promptText : ''}`;
+        userPrompt = `[Attached Image: ${attachedFile.name}]\n\nUser request: ${userPrompt || "Please generate a complete survey based on this image."}`;
+        filePayload = {
+          mimeType: attachedFile.type,
+          data: attachedFile.content.split(',')[1]
+        };
+      } else {
+        userMsgText = `📎 ${attachedFile.name}${promptText ? ': ' + promptText : ''}`;
+        userPrompt = `[Attached File: ${attachedFile.name}]\nFile Content:\n${attachedFile.content}\n\nUser request: ${userPrompt || "Please generate a complete survey based on these questions and answers."}`;
+      }
     }
 
     setIsLoading(true);
@@ -320,7 +336,8 @@ const VoiceAI: React.FC = () => {
       }));
       const { data } = await axios.post('http://localhost:5000/api/ai/chat', {
         prompt: userPrompt,
-        history: historyPayload
+        history: historyPayload,
+        file: filePayload
       });
 
       const aiMsg: Message = {
@@ -621,7 +638,7 @@ const VoiceAI: React.FC = () => {
                 )}
                 {attachedFile && (
                   <span className="flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 border border-blue-200">
-                    📎 {attachedFile.name}
+                    {attachedFile.type?.startsWith("image/") ? "🖼️ " : "📎 "}{attachedFile.name}
                     <button
                       onClick={() => setAttachedFile(null)}
                       className="hover:text-red-600 font-bold ml-1 focus:outline-none cursor-pointer text-xs"
@@ -647,7 +664,7 @@ const VoiceAI: React.FC = () => {
                   <input
                     type="file"
                     ref={fileInputRef}
-                    accept=".txt"
+                    accept=".txt,.png,.jpg,.jpeg"
                     onChange={handleFileChange}
                     className="hidden"
                   />
@@ -655,7 +672,7 @@ const VoiceAI: React.FC = () => {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     className="w-8.5 h-8.5 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all cursor-pointer"
-                    title="Add attachment (.txt)"
+                    title="Add attachment (.txt, images)"
                   >
                     <Plus className="w-4 h-4 font-bold" />
                   </button>
