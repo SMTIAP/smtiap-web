@@ -76,7 +76,7 @@ export default function PlanComparisonTable() {
               <td className="px-6 py-3 text-center"><Check size={18} className="inline text-emerald-500" /></td>
             </tr>
 
-            {/* Analytics & AI */}
+            {/* Analytics and AI */}
             <tr className="bg-slate-50 dark:bg-slate-900/50">
               <td colSpan={4} className="px-6 py-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Analytics &amp; AI Responses
@@ -95,7 +95,7 @@ export default function PlanComparisonTable() {
               <td className="px-6 py-3 text-center"><Check size={18} className="inline text-emerald-500" /></td>
             </tr>
             <tr className="border-b border-[#E0DEE3] dark:border-slate-700">
-              <td className="px-6 py-3 text-gray-700 dark:text-slate-300">AI custom specific questions</td>
+              <td className="px-6 py-3 text-gray-700 dark:text-slate-300">AI custom analysis data</td>
               <td className="px-6 py-3 text-center"><X size={18} className="inline text-slate-300 dark:text-slate-600" /></td>
               <td className="px-6 py-3 text-center"><Check size={18} className="inline text-emerald-500" /></td>
               <td className="px-6 py-3 text-center"><Check size={18} className="inline text-emerald-500" /></td>
