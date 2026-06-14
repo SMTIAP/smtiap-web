@@ -348,9 +348,9 @@ export default function LandingPage() {
               </h4>
               <ul className="space-y-4 text-slate-500 dark:text-slate-400 text-[14px]">
                 {[
-                  { name: "AI Analysis", link: "/analytics" },
-                  { name: "Templates", link: "/templates" },
-                  { name: "Sentiment", link: "/" },
+                  { name: "AI Analysis", link: "/about#ai-analysis" },
+                  { name: "Templates", link: "/about#templates" },
+                  { name: "Sentiment", link: "/about#sentiment" },
                 ].map((item) => (
                   <li key={item.name}>
                     <a
@@ -369,9 +369,8 @@ export default function LandingPage() {
               </h4>
               <ul className="space-y-4 text-slate-500 dark:text-slate-400 text-[14px]">
                 {[
-                  { name: "Templates", link: "/templates" },
-                  { name: "Live Support", link: "/" },
-                  { name: "Reports", link: "/" },
+                  { name: "Live Support", link: "/about#live-support" },
+                  { name: "Reports", link: "/about#reports" },
                 ].map((item) => (
                   <li key={item.name}>
                     <a
@@ -392,16 +391,13 @@ export default function LandingPage() {
                   <Mail className="w-4 h-4 text-[#5C38E1] dark:text-purple-400" />{" "}
                   Have an Inquiry?
                 </h4>
-                <p className="text-slate-500 dark:text-slate-400 text-[13px] mb-5 leading-relaxed">
+                <p className="text-slate-500 dark:text-slate-400 text-[13px] mb-3 leading-relaxed">
                   Need custom enterprise features or have specific questions?
-                  Contact our team.
+                  Reach out to our team.
                 </p>
-                <a
-                  href="mailto:contact@mtsp.com"
-                  className="inline-flex items-center gap-2 text-[13px] font-[700] text-white bg-[#5C38E1] px-5 py-2.5 rounded-xl hover:bg-[#4E20BD] transition-all hover:shadow-lg hover:shadow-purple-500/20"
-                >
-                  Send us an email
-                </a>
+                <p className="text-[15px] font-[700] text-[#5C38E1] dark:text-purple-400">
+                  adminmtsp@gmail.com
+                </p>
               </div>
             </div>
           </div>

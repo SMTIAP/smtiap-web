@@ -683,7 +683,7 @@ const seedTenantUsers = async (superAdminId: any) => {
     }
   }
 
-  console.log("✅ Tenant user seeding complete!");
+  console.log("Tenant user seeding complete!");
 };
 
 const runSeed = async (): Promise<void> => {
@@ -708,9 +708,9 @@ const runSeed = async (): Promise<void> => {
         role: "super_admin",
         isVerified: true,
       });
-      console.log("✅ Super admin created:", superAdmin.email);
+      console.log("Super admin created:", superAdmin.email);
     } else {
-      console.log("✅ Super admin found:", superAdmin.email);
+      console.log("Super admin found:", superAdmin.email);
     }
 
     await seedCategoriesAndTemplates(superAdmin._id);
@@ -719,7 +719,7 @@ const runSeed = async (): Promise<void> => {
 
     await seedTenantUsers(superAdmin._id);
 
-    console.log("\n✅ Seeding completed!");
+    console.log("\n Seeding completed!");
   } catch (error: unknown) {
     console.error(
       "Error while seeding:",
