@@ -209,7 +209,7 @@ export default function TakeSurvey() {
       </div>
     );
 
-  // ✅ Check for Scheduled status (not yet open)
+  // Check for Scheduled status (not yet open)
   if (surveyData.status === "Scheduled" && surveyData.scheduledOpen) {
     const now = new Date();
     const openDate = new Date(surveyData.scheduledOpen);
@@ -234,7 +234,7 @@ export default function TakeSurvey() {
     }
   }
 
-  // ✅ Check if survey has a close date and is closed (even if status still Running)
+  // Check if survey has a close date and is closed (even if status still Running)
   if (surveyData.scheduledClose) {
     const now = new Date();
     const closeDate = new Date(surveyData.scheduledClose);
@@ -346,7 +346,7 @@ export default function TakeSurvey() {
       </div>
     );
 
-  // ✅ FIXED: Thank You screen - clean white background, no survey colors
+  // FIXED: Thank You screen - clean white background, no survey colors
   if (submitted)
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">

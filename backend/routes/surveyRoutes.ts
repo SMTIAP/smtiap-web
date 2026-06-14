@@ -51,7 +51,7 @@ router.put("/:id", protect, loadTenant, updateSurvey);
 router.patch("/:id/status", protect, loadTenant, updateStatus);
 router.delete("/:id", protect, loadTenant, deleteSurvey);
 
-// ✅ Verify survey password - NOW USING BCRYPT
+// Verify survey password - now using bcrypt
 router.post("/:id/verify-password", async (req, res) => {
   try {
     const survey = await Survey.findById(req.params.id);

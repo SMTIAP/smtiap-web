@@ -65,7 +65,7 @@
 
 
 
-/* ✅ SUCCESS */
+/* SUCCESS */
 .Toastify__toast--success {
   background: linear-gradient(
     135deg,
@@ -77,7 +77,7 @@
   border-left: 4px solid #22c55e !important;
 }
 
-/* ℹ️ INFO */
+/* INFO */
 .Toastify__toast--info {
   background: linear-gradient(
     135deg,
