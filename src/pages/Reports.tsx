@@ -90,24 +90,6 @@ export default function Reports() {
     return headers;
   };
 
-  // useEffect(() => {
-  //   const fetchUser = async () => {
-  //     try {
-  //       const res = await fetch("http://localhost:5000/api/users/me", {
-  //         headers: authHeaders(),
-  //       });
-
-  //       const data = await res.json();
-  //       console.log("USER DATA:", data);
-
-  //       setGeneratedBy(data.username || data.email || "Unknown User");
-  //     } catch (err) {
-  //       console.error(err);
-  //     }
-  //   };
-
-  //   fetchUser();
-  // }, []);
   useEffect(() => {
     const fetchTenants = async () => {
       try {

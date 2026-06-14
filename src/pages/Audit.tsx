@@ -2,6 +2,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 import { Download, Eraser, ArrowLeft } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import {
+  getGeneratedBy,
+  addHeaderAndFooter,
+  formatFileDateTime,
+} from "../utils/pdfHelpers";
 
 interface AuditLogEntry {
   _id: string;
@@ -78,7 +85,7 @@ export default function Audit() {
       try {
         const params = new URLSearchParams();
         params.append("page", page.toString());
-        params.append("limit", "10");
+        params.append("limit", "50");
 
         if (fromDate) params.append("fromDate", fromDate);
         if (toDate) params.append("toDate", toDate);
@@ -145,6 +152,59 @@ export default function Audit() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  // PDF Exports
+    const handleExportPDF = async () => {
+      const doc = new jsPDF();
+  
+      const generatedBy = await getGeneratedBy();
+      const now = new Date();
+      const pageWidth = doc.internal.pageSize.width;
+  
+      // Report title below the line
+      doc.setFontSize(18);
+      doc.setFont("helvetica");
+      doc.text("Audit Report", pageWidth / 2, 32, {
+        align: "center",
+      });
+  
+      // Table
+      autoTable(doc, {
+        startY: 38,
+        head: [["Time Stamp", "Username", "Type", "Entity", "Description"]],
+        body: logs.map((l) => [
+          new Date(l.createdAt).toLocaleString("en-GB"),
+          l.createdAt,
+          l.user_id.username,
+          l.action,
+          l.entity,
+          l.description
+        ]),
+        styles: {
+          fontSize: 10,
+        },
+        headStyles: {
+          fillColor: [79, 70, 229],
+          textColor: 255,
+        },
+  
+        didDrawPage: (data) => {
+          const pageCount = doc.getNumberOfPages();
+  
+          // HEADER + FOOTER helper
+          addHeaderAndFooter(
+            doc,
+            "MTSP System",
+            generatedBy,
+            pageCount,
+            data.pageNumber,
+          );
+        },
+      });
+  
+      // Download
+      doc.save(`audit-report_${formatFileDateTime(now)}.pdf`);
+    };
 
   const getActionColor = (action: string) => {
     const a = action.toLowerCase();
@@ -294,6 +354,7 @@ export default function Audit() {
                     Export Excel
                   </button>
                   <button
+                  onClick={handleExportPDF}
                     className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   >
                     Export PDF
