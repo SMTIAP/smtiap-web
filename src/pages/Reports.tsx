@@ -4,14 +4,19 @@ import { jwtDecode } from "jwt-decode";
 import { LineChart, Download, ArrowLeft } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { getGeneratedBy, addFooter, addHeader, formatFileDateTime } from "../utils/pdfHelpers";
+import {
+  getGeneratedBy,
+  addHeaderAndFooter,
+  formatFileDateTime,
+  formatRole,
+} from "../utils/pdfHelpers";
 
-interface User {
-  _id: string;
-  username: string;
-  email: string;
-  role: string;
-}
+// interface User {
+//   _id: string;
+//   username: string;
+//   email: string;
+//   role: string;
+// }
 
 interface Tenant {
   _id: string;
@@ -52,20 +57,20 @@ interface TenantActivity {
   users: number;
 }
 
-export const formatRole = (role: string) => {
-  return role
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-};
+// export const formatRole = (role: string) => {
+//   return role
+//     .split("_")
+//     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+//     .join(" ");
+// };
 export default function Reports() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [users, setUsers] = useState<User[]>([]);
+  // const [users, setUsers] = useState<User[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  // const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("tenants");
-  const [generatedBy, setGeneratedBy] = useState("Unknown");
+  // const [generatedBy, setGeneratedBy] = useState("Unknown");
 
   // const [selectedTenantId, setSelectedTenantId] = useState<string>("");
   const [orgUsers, setOrgUsers] = useState<UserTenantRole[]>([]);
@@ -193,25 +198,18 @@ export default function Reports() {
     const doc = new jsPDF();
 
     const generatedBy = await getGeneratedBy();
-    // const now = new Date().toLocaleString("en-GB");
     const now = new Date();
 
-    addHeader(doc, "MTSP System");
+    // Header
+    // addHeader(doc, "MTSP System");
     const pageWidth = doc.internal.pageSize.width;
+
     // Report title below the line
     doc.setFontSize(18);
     doc.setFont("helvetica");
     doc.text("Tenant Registration Report", pageWidth / 2, 32, {
       align: "center",
     });
-
-    // Header
-
-    // doc.setFontSize(18);
-    // doc.setTextColor(40);
-    // doc.text("Tenant Registration Reportttt", pageWidth / 2, 20, {
-    //   align: "center",
-    // });
 
     // Table
     autoTable(doc, {
@@ -230,43 +228,100 @@ export default function Reports() {
         fillColor: [79, 70, 229],
         textColor: 255,
       },
+
+      didDrawPage: (data) => {
+        const pageCount = doc.getNumberOfPages();
+        
+        // HEADER + FOOTER helper
+        addHeaderAndFooter(
+          doc,
+          "MTSP System",
+          generatedBy,
+          pageCount,
+          data.pageNumber,
+        );
+      },
     });
 
-    addFooter(doc, generatedBy, now);
+    // addFooter(doc, generatedBy);
 
     // Download
-
-    // const dateTime = (n: number) => String(n).padStart(2, "0");
-
-    // const date =
-    //   now.getFullYear() +
-    //   "-" +
-    //   dateTime(now.getMonth() + 1) +
-    //   "-" +
-    //   dateTime(now.getDate());
-
-    // const time =
-    //   dateTime(now.getHours()) +
-    //   "-" +
-    //   dateTime(now.getMinutes()) +
-    //   "-" +
-    //   dateTime(now.getSeconds());
-
     doc.save(`tenant-registration-report_${formatFileDateTime(now)}.pdf`);
-    // doc.save("tenant-registration-report.pdf");
   };
 
+  const exportUsersPDF = async () => {
+    const doc = new jsPDF();
+
+    const generatedBy = await getGeneratedBy();
+    const now = new Date();
+
+    // Header
+    // addHeader(doc, "MTSP System");
+    const pageWidth = doc.internal.pageSize.width;
+
+    // Report title below the line
+    doc.setFontSize(18);
+    doc.setFont("helvetica");
+    doc.text("User Report", pageWidth / 2, 32, {
+      align: "center",
+    });
+
+    // Table
+    autoTable(doc, {
+      startY: 38,
+      margin: {
+        bottom: 23,
+      },
+      head: [["Username", "Tenant", "Email", "Role", "Last Login"]],
+      body: orgUsers.map((orgUser) => [
+        orgUser.userId.username,
+        orgUser.tenantId.name,
+        orgUser.userId.email,
+        formatRole(orgUser.role),
+        orgUser.lastLogin
+          ? new Date(orgUser.lastLogin).toLocaleString("en-GB")
+          : "NEVER",
+      ]),
+      styles: {
+        fontSize: 11,
+      },
+      headStyles: {
+        fillColor: [79, 70, 229],
+        textColor: 255,
+      },
+
+      didDrawPage: (data) => {
+        const pageCount = doc.getNumberOfPages();
+
+        // HEADER + FOOTER helper
+        addHeaderAndFooter(
+          doc,
+          "MTSP System",
+          generatedBy,
+          pageCount,
+          data.pageNumber,
+        );
+      },
+    });
+
+    // addFooter(doc, generatedBy);
+
+    // Download
+    doc.save(`user-tenant-report_${formatFileDateTime(now)}.pdf`);
+  };
 
   const handleExportPDF = async () => {
-  if (activeTab === "tenants") {
-    await exportTenantRegistrationsPDF();
-  } 
-  // else if (activeTab === "users") {
-  //   await exportUsersPDF();
-  // } else if (activeTab === "activity") {
-  //   await exportActivityPDF();
-  // }
-};
+    if (activeTab === "tenants") {
+      await exportTenantRegistrationsPDF();
+    } else if (activeTab === "users") {
+      await exportUsersPDF();
+    }
+    // else if (activeTab === "activity") {
+    //   await exportActivityPDF();
+    // }
+  };
+
+  
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
@@ -315,8 +370,6 @@ export default function Reports() {
               </button>
             ))}
           </div>
-
-          
 
           {/* Export Button */}
           <div className="flex items-center gap-2">
