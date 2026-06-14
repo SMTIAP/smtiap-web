@@ -8,6 +8,6 @@ const router = Router();
 
 router.get("/tenants/my", protect, loadTenant, getAllTenants);
 router.get("/user-tenant", protect, loadTenant, getUserTenantData);
-router.get("tenant-activity", protect, loadTenant, getTenantActivity);
+router.get("/tenant-activity", protect, loadTenant, getTenantActivity);
 
 export default router;
