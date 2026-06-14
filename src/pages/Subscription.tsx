@@ -13,7 +13,7 @@ interface PricingPlan {
   yearlyPrice: number;
   features: string[];
   buttonText: string;
-  isPopular?: boolean;
+  isPopular?: boolean; //? to mean optional. for the popular choice of package.
 }
 
 const plans: PricingPlan[] = [
