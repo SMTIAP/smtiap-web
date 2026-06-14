@@ -47,13 +47,14 @@ import SuperAdminTemplateEditor from "./pages/SuperAdminTemplateEditor";
 import SuperAdminCategories from "./pages/SuperAdminCategories";
 import VoiceAI from "./components/VoiceAI.tsx";
 import { TenantProvider } from "./contexts/TenantContext";
+import AboutPage from "./pages/AboutPage.tsx";
 import Reports from "./pages/Reports.tsx";
 
 // Dark mode context
 export const DarkModeContext = createContext({
   darkMode: false,
-  toggleDarkMode: () => { },
-  setDarkMode: (_value: boolean) => { },
+  toggleDarkMode: () => {},
+  setDarkMode: (_value: boolean) => {},
 });
 
 export function useDarkMode() {
@@ -106,7 +107,7 @@ export default function App() {
   useEffect(() => {
     // Disable transitions temporarily to avoid mismatched theme updates
     document.documentElement.classList.add("disable-transitions");
-    
+
     if (darkMode) {
       document.documentElement.classList.add("dark");
     } else {
@@ -208,9 +209,9 @@ export default function App() {
                 }
               />
 
-
               <Route element={<Layout />}>
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/about" element={<AboutPage />} />
                 <Route
                   path="/admin"
                   element={
@@ -395,7 +396,11 @@ export default function App() {
           draggable
           theme={darkMode ? "dark" : "light"}
         />
-        <Toaster richColors position="bottom-right" theme={darkMode ? "dark" : "light"} />
+        <Toaster
+          richColors
+          position="bottom-right"
+          theme={darkMode ? "dark" : "light"}
+        />
       </div>
     </DarkModeContext.Provider>
   );
