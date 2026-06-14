@@ -1,3 +1,5 @@
+// Database seed script: creates a super admin, categories, demo surveys with sample
+// responses across all question types, analytics data, and tenant users for testing.
 import dotenv from "dotenv";
 import path from "path";
 import mongoose from "mongoose";
@@ -21,6 +23,7 @@ dotenv.config({
   path: path.resolve(process.cwd(), ".env"),
 });
 
+// Ensures the predefined set of survey categories exists (creates or reactivates each).
 const seedCategoriesAndTemplates = async (superAdminId: any) => {
   console.log("\n📁 Seeding categories...");
 
@@ -69,6 +72,7 @@ const Q_TYPES = [
   "date",
 ] as const;
 
+// Creates demo surveys covering all question types, generates sample responses, and populates analytics results.
 const seedAnalyticsDemoData = async (superAdminId: any) => {
   console.log("\n📊 Seeding analytics demo data (all question types)...");
 
@@ -97,8 +101,7 @@ const seedAnalyticsDemoData = async (superAdminId: any) => {
   console.log(`  ○ Survey owner: ${surveyOwner?.email ?? "superAdmin"}`);
 
   // ── 2. Define surveys covering every question type ──────────────
-  // NOTE: tenantId is intentionally omitted so surveys appear in "My Account"
-  // context.  They are still linked to the tenant via Response records below.
+
   const surveysData = [
     {
       surveyTitle: "Customer Satisfaction Survey",
@@ -278,8 +281,10 @@ const seedAnalyticsDemoData = async (superAdminId: any) => {
   let analyticsCount = 0;
   let flatResponseCount = 0;
 
+  // Generate 12 sample responses per survey with staggered submission dates.
+  const sampleSize = 12;
+
   for (const sd of surveysData) {
-    // Check if survey already exists
     const existingSurvey = await Survey.findOne({
       surveyTitle: sd.surveyTitle,
     });
@@ -288,13 +293,12 @@ const seedAnalyticsDemoData = async (superAdminId: any) => {
       continue;
     }
 
-    // Create survey with embedded pages/questions
     const survey = await Survey.create(sd);
     console.log(`  ✓ Created survey: "${sd.surveyTitle}"`);
     surveyCount++;
 
-    // Create separate Question documents for each embedded question
-    // and also collect all embedded questions (with real _id from Mongoose).
+    // Create separate Question collection documents alongside the embedded questions
+    // in the Survey document. Both representations exist to support different query paths.
     const createdQuestions: any[] = [];
     const allEmbedded: {
       embedId: string;
@@ -330,14 +334,13 @@ const seedAnalyticsDemoData = async (superAdminId: any) => {
     }
 
     // ── 3. Generate sample responses & answers ──────────────────
-    const sampleSize = 12;
-
     for (let r = 0; r < sampleSize; r++) {
       const token = `demo-token-${survey._id}-${r}-${Date.now()}`;
 
       const response = await Response.create({
         survey_id: survey._id,
         tenant_id: tenant._id,
+        // Stagger submissions: each response is one day earlier than the next.
         submitted_at: new Date(Date.now() - (sampleSize - r) * 86400000),
         is_anonymous: sd.isAnonymous,
         device_info: {
@@ -403,7 +406,7 @@ const seedAnalyticsDemoData = async (superAdminId: any) => {
         flatResponses[eq.embedId] = value;
       }
 
-      // Also create Answer documents (linked to separate Question documents)
+
       for (const q of createdQuestions) {
         let val: any;
         switch (q.type) {
@@ -458,7 +461,7 @@ const seedAnalyticsDemoData = async (superAdminId: any) => {
         answerCount++;
       }
 
-      // Create flat SurveyResponse
+
       const userAgents = [
         "Mozilla/5.0 Chrome/120",
         "Mozilla/5.0 Firefox/121",
@@ -473,12 +476,14 @@ const seedAnalyticsDemoData = async (superAdminId: any) => {
         userAgent: userAgents[r % 4],
         deviceHash: `hash-${r}-${survey._id}`,
         responses: flatResponses,
+        // Stagger submissions: each response is one day earlier than the next.
         submittedAt: new Date(Date.now() - (sampleSize - r) * 86400000),
       });
       flatResponseCount++;
     }
 
     // ── 4. Create AnalyticsResult for this survey ─────────────────
+    // Hardcoded sample NPS scores matching the 12 generated responses.
     const npsValues = [9, 8, 7, 10, 9, 6, 8, 9, 10, 7, 8, 9];
     const avgNps =
       Math.round(
@@ -506,7 +511,7 @@ const seedAnalyticsDemoData = async (superAdminId: any) => {
   console.log("✅ Analytics demo data seeding complete!");
 };
 
-// ── Helper: survey-specific summaries ──────────────────────────────
+// Returns a hardcoded AI-style summary for each demo survey to populate analytics results.
 function getSummaryForSurvey(title: string): string {
   const summaries: Record<string, string> = {
     "Customer Satisfaction Survey":
@@ -522,6 +527,7 @@ function getSummaryForSurvey(title: string): string {
   );
 }
 
+// Returns hardcoded top keywords with counts for each demo survey to populate analytics results.
 function getKeywordsForSurvey(
   title: string,
 ): { keyword: string; count: number }[] {
@@ -559,6 +565,8 @@ function getKeywordsForSurvey(
   );
 }
 
+// Creates TenantUser and platform User records for demo accounts (admin, editor, viewer)
+// and links them to the demo tenant via UserTenantRole.
 const seedTenantUsers = async (superAdminId: any) => {
   console.log("\n👥 Seeding tenant users...");
 
@@ -615,9 +623,7 @@ const seedTenantUsers = async (superAdminId: any) => {
     `  ✓ TenantUsers: ${createdTu} created, ${tenantUsersData.length - createdTu} existing`,
   );
 
-  // ── Platform User records (for login) + UserTenantRole ──────────
-  // The login endpoint queries the "User" model, so we need platform-level
-  // accounts for these demo users too.
+  // accounts for these demo users .
   const platformUsersData = [
     { email: "admin@demo.org", name: "Alice Admin", role: "admin" as const },
     { email: "editor@demo.org", name: "Bob Editor", role: "creator" as const },
@@ -686,16 +692,16 @@ const seedTenantUsers = async (superAdminId: any) => {
   console.log("Tenant user seeding complete!");
 };
 
+// Main entry point: connects to MongoDB, ensures a super admin exists, then seeds
+// categories, demo surveys with analytics data, and tenant users.
 const runSeed = async (): Promise<void> => {
   try {
-    // Use MONGO_URI from .env file instead of connectDb()
     const mongoURI =
       process.env.MONGO_URI || "mongodb://127.0.0.1:27017/smtiap";
     await mongoose.connect(mongoURI);
     console.log("MongoDB Connected.");
     console.log(`Database: ${mongoose.connection.db?.databaseName}`);
 
-    // Find super admin directly from database
     let superAdmin = await User.findOne({ role: "super_admin" });
 
     if (!superAdmin) {
