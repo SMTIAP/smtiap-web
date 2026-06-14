@@ -139,20 +139,22 @@ const VoiceAI: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [attachedFile, setAttachedFile] = useState<{
-    name: string;
-    content: string;
-  } | null>(null);
+  const [attachedFile, setAttachedFile] = useState<{ name: string; content: string; type?: string } | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const isImage = file.type.startsWith("image/");
       const reader = new FileReader();
       reader.onload = (event) => {
         const content = event.target?.result as string;
-        setAttachedFile({ name: file.name, content });
+        setAttachedFile({ name: file.name, content, type: file.type });
       };
-      reader.readAsText(file);
+      if (isImage) {
+        reader.readAsDataURL(file);
+      } else {
+        reader.readAsText(file);
+      }
     }
   };
 
@@ -299,14 +301,23 @@ const VoiceAI: React.FC = () => {
     const promptText = text.trim();
     if (!promptText && !activeTag && !attachedFile) return;
 
-    let userPrompt = activeTag
-      ? `[${activeTag}] ${promptText}`.trim()
-      : promptText;
-    let userMsgText = promptText || activeTag || "";
+    let userPrompt = activeTag ? `[${activeTag}] ${promptText}`.trim() : promptText;
+    let userMsgText = promptText || activeTag || '';
+    let filePayload = null;
 
     if (attachedFile) {
-      userMsgText = `[File: ${attachedFile.name}]${promptText ? ": " + promptText : ""}`;
-      userPrompt = `[Attached File: ${attachedFile.name}]\nFile Content:\n${attachedFile.content}\n\nUser request: ${userPrompt || "Please generate a complete survey based on these questions and answers."}`;
+      const isImage = attachedFile.type?.startsWith("image/");
+      if (isImage) {
+        userMsgText = `🖼️ ${attachedFile.name}${promptText ? ': ' + promptText : ''}`;
+        userPrompt = `[Attached Image: ${attachedFile.name}]\n\nUser request: ${userPrompt || "Please generate a complete survey based on this image."}`;
+        filePayload = {
+          mimeType: attachedFile.type,
+          data: attachedFile.content.split(',')[1]
+        };
+      } else {
+        userMsgText = `📎 ${attachedFile.name}${promptText ? ': ' + promptText : ''}`;
+        userPrompt = `[Attached File: ${attachedFile.name}]\nFile Content:\n${attachedFile.content}\n\nUser request: ${userPrompt || "Please generate a complete survey based on these questions and answers."}`;
+      }
     }
 
     setIsLoading(true);
@@ -332,6 +343,7 @@ const VoiceAI: React.FC = () => {
       const { data } = await axios.post("http://localhost:5000/api/ai/chat", {
         prompt: userPrompt,
         history: historyPayload,
+        file: filePayload
       });
 
       const aiMsg: Message = {
@@ -499,13 +511,7 @@ const VoiceAI: React.FC = () => {
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className={`relative bg-white w-[350px] sm:w-[380px] rounded-3xl shadow-2xl border ${currentTheme.panelBorder} flex flex-col overflow-hidden max-h-[550px]`}
           >
-            <button
-              onClick={cycleTheme}
-              className={`absolute -top-3.5 -right-3.5 w-9 h-9 rounded-full ${currentTheme.floatingBg} text-white shadow-lg flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 z-[60]`}
-              title="Change theme color"
-            >
-              <Paintbrush className="w-4 h-4" />
-            </button>
+
 
             <div
               className={`flex justify-between items-center ${currentTheme.headerBg} p-4 rounded-t-3xl border-b border-gray-100/50 shrink-0`}
@@ -569,6 +575,13 @@ const VoiceAI: React.FC = () => {
                   )}
                 </button>
                 <button
+                  onClick={cycleTheme}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-black/5 rounded-full transition-colors cursor-pointer"
+                  title="Change theme color"
+                >
+                  <Paintbrush className="w-4 h-4" />
+                </button>
+                <button
                   onClick={() => setIsOpen(false)}
                   className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-black/5 rounded-full transition-colors cursor-pointer"
                 >
@@ -605,11 +618,11 @@ const VoiceAI: React.FC = () => {
               </button>
             </div>
 
-            <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 scrollbar-thin scrollbar-thumb-gray-200 min-h-[120px]">
+            <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-slate-700 min-h-[120px]">
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex gap-2 max-w-[85%] ${msg.sender === "user" ? "self-end flex-row-reverse" : "self-start"}`}
+                  className={`flex gap-2 max-w-[85%] ${msg.sender === 'user' ? 'self-end justify-end' : 'self-start'}`}
                 >
                   {msg.sender === "ai" && (
                     <img
@@ -622,9 +635,9 @@ const VoiceAI: React.FC = () => {
                       }}
                     />
                   )}
-                  <div className="flex flex-col gap-0.5 max-w-[calc(100%-32px)]">
+                  <div className={`flex flex-col gap-0.5 ${msg.sender === 'user' ? 'max-w-full items-end' : 'max-w-[calc(100%-32px)]'}`}>
                     {msg.tag && (
-                      <span className="text-[10px] uppercase font-bold text-orange-600 self-start bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
+                      <span className="text-[10px] uppercase font-bold text-orange-600 dark:text-orange-400 self-start bg-orange-50 dark:bg-orange-950/30 px-1.5 py-0.5 rounded border border-orange-100 dark:border-orange-900/50">
                         {msg.tag}
                       </span>
                     )}
@@ -687,7 +700,7 @@ const VoiceAI: React.FC = () => {
                 )}
                 {attachedFile && (
                   <span className="flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 border border-blue-200">
-                    [File] {attachedFile.name}
+                    {attachedFile.type?.startsWith("image/") ? "🖼️ " : "📎 "}{attachedFile.name}
                     <button
                       onClick={() => setAttachedFile(null)}
                       className="hover:text-red-600 font-bold ml-1 focus:outline-none cursor-pointer text-xs"
@@ -721,7 +734,7 @@ const VoiceAI: React.FC = () => {
                   <input
                     type="file"
                     ref={fileInputRef}
-                    accept=".txt"
+                    accept=".txt,.png,.jpg,.jpeg"
                     onChange={handleFileChange}
                     className="hidden"
                   />
@@ -729,7 +742,7 @@ const VoiceAI: React.FC = () => {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     className="w-8.5 h-8.5 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all cursor-pointer"
-                    title="Add attachment (.txt)"
+                    title="Add attachment (.txt, images)"
                   >
                     <Plus className="w-4 h-4 font-bold" />
                   </button>

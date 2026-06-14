@@ -3,12 +3,24 @@ import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { LineChart, Download, ArrowLeft } from "lucide-react";
 
-interface User {
-  _id: string;
-  username: string;
-  email: string;
-  role: string;
-}
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import {
+  getGeneratedBy,
+  addHeaderAndFooter,
+  formatFileDateTime,
+  formatRole,
+} from "../utils/pdfHelpers";
+import { exportToCSV } from "../utils/csvHelpers";
+
+
+
+// interface User {
+//   _id: string;
+//   username: string;
+//   email: string;
+//   role: string;
+// }
 
 interface Tenant {
   _id: string;
@@ -18,6 +30,7 @@ interface Tenant {
   domain: string;
   plan: string;
   created_at: string;
+  country: string;
 }
 
 interface UserTenantRole {
@@ -40,25 +53,24 @@ interface TenantActivity {
   _id: string;
   totalSurveys: number;
   drafts: number;
-  tenantName: string
+
+  tenantName: string;
   scheduled: number;
   published: number;
   stopped: number;
+  status: string;
+  users: number;
 }
 
-export const formatRole = (role: string) => {
-  return role
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-};
+
 export default function Reports() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [users, setUsers] = useState<User[]>([]);
+  // const [users, setUsers] = useState<User[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  // const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("tenants");
+  // const [generatedBy, setGeneratedBy] = useState("Unknown");
 
   // const [selectedTenantId, setSelectedTenantId] = useState<string>("");
   const [orgUsers, setOrgUsers] = useState<UserTenantRole[]>([]);
@@ -66,6 +78,7 @@ export default function Reports() {
   const [activityData, setActivityData] = useState<TenantActivity[]>([]);
 
   const token = localStorage.getItem("token");
+
   const authHeaders = (): Record<string, string> => {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -75,7 +88,6 @@ export default function Reports() {
     if (id && id !== "system") headers["x-tenant-id"] = id;
     return headers;
   };
-
 
   useEffect(() => {
     const fetchTenants = async () => {
@@ -100,17 +112,20 @@ export default function Reports() {
   useEffect(() => {
     const fetchOrganizationData = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/reports/user-tenant", {
-          headers: authHeaders(),
-          credentials: "include",
-        });
+        const response = await fetch(
+          "http://localhost:5000/api/reports/user-tenant",
+          {
+            headers: authHeaders(),
+            credentials: "include",
+          },
+        );
         const data = await response.json();
         console.log("API RESULT 2:", data);
         console.log("AUDIT LOGS:", data.auditLogs);
         // setOrgUsers(Array.isArray(data) ? data : []);
         setOrgUsers(data.users ?? []);
-setauditLogs(data.auditLogs ?? []);
-console.log("ORG USERS:", orgUsers);
+        setauditLogs(data.auditLogs ?? []);
+        console.log("ORG USERS:", orgUsers);
 
         // setauditLogs([]);
       } catch (error) {
@@ -129,70 +144,197 @@ console.log("ORG USERS:", orgUsers);
     }
   })();
 
-useEffect(() => {
-  const fetchTenantActivity = async () => {
-    try {
-      const response = await fetch("http://localhost:5000/api/reports/tenant-activity", 
-        {
-          headers: authHeaders(),
-          credentials: "include",
-        }
-      );
 
-      const data = await response.json();
 
-      console.log("TENANT ACTIVITY DATA:", data); // SEE DATA HERE
-      setActivityData(
-  Array.isArray(data)
-    ? data
-    : Array.isArray(data.activityData)
-      ? data.activityData
-      : []
-);
-      //  setActivityData(data);
+  useEffect(() => {
+    const fetchTenantActivity = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/reports/tenant-activity",
+          {
+            headers: authHeaders(),
+            credentials: "include",
+          },
+        );
 
-      // setActivityData(data); // if you have state
-    } catch (error) {
-      console.error("Error fetching activity:", error);
-    }
+
+        const data = await response.json();
+
+
+        console.log("TENANT ACTIVITY DATA:", data); // 👈 SEE DATA HERE
+        setActivityData(
+          Array.isArray(data)
+            ? data
+            : Array.isArray(data.activityData)
+              ? data.activityData
+              : [],
+        );
+        //  setActivityData(data);
+
+
+        // setActivityData(data); // if you have state
+      } catch (error) {
+        console.error("Error fetching activity:", error);
+      }
+    };
+
+    fetchTenantActivity();
+  }, [location.key]);
+
+  // PDF Exports
+  const exportTenantRegistrationsPDF = async () => {
+    const doc = new jsPDF();
+
+    const generatedBy = await getGeneratedBy();
+    const now = new Date();
+    const pageWidth = doc.internal.pageSize.width;
+
+    // Report title below the line
+    doc.setFontSize(18);
+    doc.setFont("helvetica");
+    doc.text("Tenant Registration Report", pageWidth / 2, 32, {
+      align: "center",
+    });
+
+    // Table
+    autoTable(doc, {
+      startY: 38,
+      head: [["Company", "Domain", "Subscription", "Created Date"]],
+      body: tenants.map((tenant) => [
+        tenant.name,
+        tenant.domain,
+        tenant.plan,
+        new Date(tenant.created_at).toLocaleDateString("en-GB"),
+      ]),
+      styles: {
+        fontSize: 10,
+      },
+      headStyles: {
+        fillColor: [79, 70, 229],
+        textColor: 255,
+      },
+
+      didDrawPage: (data) => {
+        const pageCount = doc.getNumberOfPages();
+
+        // HEADER + FOOTER helper
+        addHeaderAndFooter(
+          doc,
+          "MTSP System",
+          generatedBy,
+          pageCount,
+          data.pageNumber,
+        );
+      },
+    });
+
+    // Download
+    doc.save(`tenant-registration-report_${formatFileDateTime(now)}.pdf`);
   };
 
-  fetchTenantActivity();
-}, [location.key]);
+  const exportUsersPDF = async () => {
+    const doc = new jsPDF();
 
-//   const getLastLogin = (userId: string) => {
-//   const logs = auditLogs
-//     .filter((log) => log.userId === userId && log.action === "login")
-//     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const generatedBy = await getGeneratedBy();
+    const now = new Date();
+    const pageWidth = doc.internal.pageSize.width;
 
-//   return logs[0]?.createdAt ?? null;
-// };
+    // Report title below the line
+    doc.setFontSize(18);
+    doc.setFont("helvetica");
+    doc.text("User Report", pageWidth / 2, 32, {
+      align: "center",
+    });
 
-  // const isActiveTenantAdmin = (tenantId: string) =>
-  //   orgUsers.some(
-  //     (u) =>
-  //       u.tenantId._id === tenantId &&
-  //       u.userId._id === currentUserId &&
-  //       u.role === "admin" &&
-  //       u.status === "active",
-  //   );
+    // Table
+    autoTable(doc, {
+      startY: 38,
+      margin: {
+        bottom: 23,
+      },
+      head: [["Username", "Tenant", "Email", "Role", "Last Login"]],
+      body: orgUsers.map((orgUser) => [
+        orgUser.userId.username,
+        orgUser.tenantId.name,
+        orgUser.userId.email,
+        formatRole(orgUser.role),
+        orgUser.lastLogin
+          ? new Date(orgUser.lastLogin).toLocaleString("en-GB")
+          : "NEVER",
+      ]),
+      styles: {
+        fontSize: 11,
+      },
+      headStyles: {
+        fillColor: [79, 70, 229],
+        textColor: 255,
+      },
 
-  // const filteredUsers = searchTerm.trim()
-  //   ? users.filter(
-  //     (user) =>
-  //       user.role !== "super_admin" &&
-  //       user.email.toLowerCase().includes(searchTerm.toLowerCase()),
-  //   )
-  //   : [];
+      didDrawPage: (data) => {
+        const pageCount = doc.getNumberOfPages();
 
-  // const filteredOrganizations = tenants.filter((tenant) =>
-  //   orgUsers.some(
-  //     (u) =>
-  //       u.tenantId._id === tenant._id &&
-  //       u.userId._id === currentUserId &&
-  //       u.status === "active",
-  //   ),
-  // );
+        // HEADER + FOOTER helper
+        addHeaderAndFooter(
+          doc,
+          "MTSP System",
+          generatedBy,
+          pageCount,
+          data.pageNumber,
+        );
+      },
+    });
+
+    // Download
+    doc.save(`user-tenant-report_${formatFileDateTime(now)}.pdf`);
+  };
+
+  const handleExportPDF = async () => {
+    if (activeTab === "tenants") {
+      await exportTenantRegistrationsPDF();
+    } else if (activeTab === "users") {
+      await exportUsersPDF();
+     }
+    // else if (activeTab === "activity") {
+    //   await exportActivityPDF();
+    // }
+
+
+
+  // CSV Exports
+    const exportTenantsCSV = () => {
+    exportToCSV(
+      "tenant-registrations",
+      tenants.map((t) => ({
+        name: t.name,
+        domain: t.domain,
+        plan: t.plan,
+        created_at: new Date(t.created_at).toLocaleDateString("en-GB"),
+      })),
+      ["name", "domain", "plan", "created_at"],
+    );
+  };
+
+  const exportUsersCSV = () => {
+    exportToCSV(
+      "user-tenant-registrations",
+      orgUsers.map((u) => ({
+        username: u.userId.username,
+        tenant: u.tenantId.name,
+        email: u.userId.email,
+        role: formatRole(u.role),
+        lastLogin: u.lastLogin
+          ? new Date(u.lastLogin).toLocaleString("en-GB")
+          : "NEVER",
+      })),
+      ["username", "tenant", "email", "role", "lastLogin"],
+    );
+  };
+
+  const handleExportCSV = () => {
+    if (activeTab === "tenants") exportTenantsCSV();
+    else if (activeTab === "users") exportUsersCSV();
+    // else if (activeTab === "activity") exportActivityCSV();
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
@@ -229,10 +371,11 @@ useEffect(() => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 border ${activeTab === tab
+                className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 border ${
+                  activeTab === tab
                     ? "flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-[13px] border-indigo-600 shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
                     : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
-                  }`}
+                }`}
               >
                 {tab === "tenants" && "Tenant Registrations"}
                 {tab === "users" && "Tenant Users"}
@@ -244,7 +387,7 @@ useEffect(() => {
           {/* Export Button */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => console.log("Export CSV")}
+              onClick={handleExportCSV}
               className="flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
             >
               <Download size={16} />
@@ -252,7 +395,7 @@ useEffect(() => {
             </button>
 
             <button
-              onClick={() => console.log("Export PDF")}
+              onClick={handleExportPDF}
               className="flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 text-white font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
             >
               <Download size={16} />
@@ -291,9 +434,13 @@ useEffect(() => {
                       {tenant.name}
                     </td>
 
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{tenant.domain}</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                      {tenant.domain}
+                    </td>
 
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{tenant.plan}</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                      {tenant.plan}
+                    </td>
 
                     <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
                       {new Date(tenant.created_at).toLocaleDateString("en-GB")}
@@ -334,17 +481,22 @@ useEffect(() => {
                       {orgUser.userId?.username}
                     </td>
 
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{orgUser.tenantId?.name}</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                      {orgUser.tenantId?.name}
+                    </td>
 
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{orgUser.userId?.email}</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                      {orgUser.userId?.email}
+                    </td>
 
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{formatRole(orgUser.role)}</td>
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                      {formatRole(orgUser.role)}
+                    </td>
 
                     <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
                       {orgUser.lastLogin
-                          ? new Date(orgUser.lastLogin).toLocaleString("en-GB")
-                          : "NEVER"
-                      }
+                        ? new Date(orgUser.lastLogin).toLocaleString("en-GB")
+                        : "NEVER"}
                     </td>
                   </tr>
                 ))}
@@ -359,20 +511,13 @@ useEffect(() => {
                     Company Name
                   </th>
                   <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                    Users
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Total Surveys
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                    Drafts
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                    Scheduled
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                    Published
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                    Stopped
-                  </th>
+
+                  
                   <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Responses
                   </th>
@@ -391,24 +536,40 @@ useEffect(() => {
                       {activity.tenantName}
                     </td>
 
+
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                      {activity.users}
+                    </td>
+                    
+
+                    {/* <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{activity.scheduled}</td> */}
+
                     <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{activity.totalSurveys}</td>
 
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{activity.drafts}</td>
-
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{activity.scheduled}</td>
-
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
-                      {activity.published}
-                    </td>
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
-                      {activity.stopped}
-                    </td>
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                    
+<td className="px-6 py-3 text-slate-600 dark:text-slate-300">
                       -
                     </td>
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
-                      -
+
+
+
+
+                    
+
+                    <td className="px-6 py-3">
+                      <span
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                          activity.status === "active"
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                        }`}
+                      >
+                        {activity.status.charAt(0).toUpperCase() +
+                          activity.status.slice(1)}
+                      </span>
+
                     </td>
+                    
                   </tr>
                 ))}
               </tbody>
@@ -418,4 +579,4 @@ useEffect(() => {
       </div>
     </div>
   );
-}
+}}
