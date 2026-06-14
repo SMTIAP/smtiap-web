@@ -103,6 +103,7 @@ export const getTenantActivity = async (req: Request, res: Response) => {
     const surveyIds = (req as any).surveyIds ?? [];
     const tenantIds = (req as any).tenantIds ?? [];
 
+
     const userCounts = await UserTenantRole.aggregate([
   {
     $match: {
@@ -125,6 +126,7 @@ const userCountMap = new Map(
 );
 
 
+
     if (tenantIds.length === 0) {
       return res.status(200).json([]);
     }
@@ -133,11 +135,14 @@ const userCountMap = new Map(
     const tenants = await Tenant.find({
       _id: { $in: tenantIds },
     })
+
       .select("_id name status")
       .lean();
 
     const tenantMap = new Map(
       tenants.map((t) => [String(t._id), {name: t.name, status: t.status}])
+
+      
     );
     // Get surveys for those tenants
     const surveys = await Survey.find({
@@ -155,8 +160,11 @@ const userCountMap = new Map(
 
         activityMap.set(tenantId, {
           tenantId,
+
+
           tenantName: tenantInfo?.name ?? "Unknown",
           users: userCountMap.get(tenantId) ?? 0,
+
           totalSurveys: 0,
           drafts: 0,
           scheduled: 0,

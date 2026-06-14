@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { LineChart, Download, ArrowLeft } from "lucide-react";
+
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
@@ -11,6 +12,8 @@ import {
   formatRole,
 } from "../utils/pdfHelpers";
 import { exportToCSV } from "../utils/csvHelpers";
+
+
 
 // interface User {
 //   _id: string;
@@ -50,6 +53,7 @@ interface TenantActivity {
   _id: string;
   totalSurveys: number;
   drafts: number;
+
   tenantName: string;
   scheduled: number;
   published: number;
@@ -58,12 +62,7 @@ interface TenantActivity {
   users: number;
 }
 
-// export const formatRole = (role: string) => {
-//   return role
-//     .split("_")
-//     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-//     .join(" ");
-// };
+
 export default function Reports() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -145,6 +144,7 @@ export default function Reports() {
     }
   })();
 
+
   useEffect(() => {
     const fetchTenantActivity = async () => {
       try {
@@ -156,7 +156,9 @@ export default function Reports() {
           },
         );
 
+
         const data = await response.json();
+
 
         console.log("TENANT ACTIVITY DATA:", data); // 👈 SEE DATA HERE
         setActivityData(
@@ -167,6 +169,7 @@ export default function Reports() {
               : [],
         );
         //  setActivityData(data);
+
 
         // setActivityData(data); // if you have state
       } catch (error) {
@@ -512,15 +515,7 @@ export default function Reports() {
                     Total Surveys
                   </th>
 
-                  {/* <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                    Scheduled
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                    Published
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                    Stopped
-                  </th> */}
+                  
                   <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Responses
                   </th>
@@ -539,24 +534,26 @@ export default function Reports() {
                       {activity.tenantName}
                     </td>
 
+
                     <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
                       {activity.users}
                     </td>
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
-                      {activity.totalSurveys}
-                    </td>
+                    
 
                     {/* <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{activity.scheduled}</td> */}
 
-                    {/* <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
-                      {activity.published}
-                    </td> */}
-                    {/* <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
-                      {activity.stopped}
-                    </td> */}
-                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
+                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{activity.totalSurveys}</td>
+
+                    
+<td className="px-6 py-3 text-slate-600 dark:text-slate-300">
                       -
                     </td>
+
+
+
+
+                    
+
                     <td className="px-6 py-3">
                       <span
                         className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
@@ -568,7 +565,9 @@ export default function Reports() {
                         {activity.status.charAt(0).toUpperCase() +
                           activity.status.slice(1)}
                       </span>
+
                     </td>
+                    
                   </tr>
                 ))}
               </tbody>
