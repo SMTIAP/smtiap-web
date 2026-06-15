@@ -25,7 +25,7 @@ dotenv.config({
 
 // Ensures the predefined set of survey categories exists (creates or reactivates each).
 const seedCategoriesAndTemplates = async (superAdminId: any) => {
-  console.log("\n📁 Seeding categories...");
+  console.log("\n Seeding categories...");
 
   const categoryNames = [
     "Restaurant",
@@ -56,7 +56,7 @@ const seedCategoriesAndTemplates = async (superAdminId: any) => {
     }
   }
   console.log(
-    `✅ Categories: ${createdCount} new/reactivated, ${categoryNames.length - createdCount} existing`,
+    ` Categories: ${createdCount} new/reactivated, ${categoryNames.length - createdCount} existing`,
   );
 };
 
@@ -73,7 +73,7 @@ const Q_TYPES = [
 
 // Creates demo surveys covering all question types, generates sample responses, and populates analytics results.
 const seedAnalyticsDemoData = async (superAdminId: any) => {
-  console.log("\n📊 Seeding analytics demo data (all question types)...");
+  console.log("\n Seeding analytics demo data (all question types)...");
 
   // ── 1. Create or get a demo tenant ──────────────────────────────
   let tenant = await Tenant.findOne({ domain: "demo-analytics.smtiap.com" });
@@ -288,7 +288,7 @@ const seedAnalyticsDemoData = async (superAdminId: any) => {
       surveyTitle: sd.surveyTitle,
     });
     if (existingSurvey) {
-      console.log(`  ⏭️ Survey already exists: "${sd.surveyTitle}"`);
+      console.log(`   Survey already exists: "${sd.surveyTitle}"`);
       continue;
     }
 
@@ -499,13 +499,13 @@ const seedAnalyticsDemoData = async (superAdminId: any) => {
     analyticsCount++;
   }
 
-  console.log(`  📈 Surveys created: ${surveyCount}`);
-  console.log(`  ❓ Questions created: ${questionCount}`);
-  console.log(`  📋 Responses created: ${responseCount}`);
-  console.log(`  💬 Answers created: ${answerCount}`);
-  console.log(`  📄 Flat survey responses created: ${flatResponseCount}`);
-  console.log(`  📊 Analytics results created: ${analyticsCount}`);
-  console.log("✅ Analytics demo data seeding complete!");
+  console.log(`   Surveys created: ${surveyCount}`);
+  console.log(`   Questions created: ${questionCount}`);
+  console.log(`   Responses created: ${responseCount}`);
+  console.log(`   Answers created: ${answerCount}`);
+  console.log(`   Flat survey responses created: ${flatResponseCount}`);
+  console.log(`   Analytics results created: ${analyticsCount}`);
+  console.log("  Analytics demo data seeding complete!");
 };
 
 // Returns a hardcoded AI-style summary for each demo survey to populate analytics results.
@@ -569,7 +569,7 @@ const seedTenantUsers = async (superAdminId: any) => {
 
   const tenant = await Tenant.findOne({ domain: "demo-analytics.smtiap.com" });
   if (!tenant) {
-    console.log("  ⏭️ No demo tenant found — skipping tenant users");
+    console.log("   No demo tenant found — skipping tenant users");
     return;
   }
 
@@ -705,9 +705,9 @@ const runSeed = async (): Promise<void> => {
       console.log("No super admin found. Creating one...");
 
       superAdmin = await User.create({
-        email: "superadmin@smtiap.com",
-        username: "SuperAdmin",
-        password: "Admin123!",
+        email: "smtiapweb@gmail.com",
+        username: "Super Admin",
+        password: "SuperAdmin@12345",
         role: "super_admin",
         isVerified: true,
       });
