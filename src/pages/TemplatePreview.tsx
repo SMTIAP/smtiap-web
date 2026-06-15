@@ -332,12 +332,18 @@ export default function TemplatePreview() {
         },
       ];
 
+      const activeTenantId = localStorage.getItem("activeTenantId");
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+      if (activeTenantId && activeTenantId !== "__system__") {
+        headers["x-tenant-id"] = activeTenantId;
+      }
+
       const createRes = await fetch("http://localhost:5000/api/surveys", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers,
         credentials: "include",
         body: JSON.stringify({
           surveyTitle: template.title,
@@ -459,7 +465,7 @@ export default function TemplatePreview() {
 
                   <div className="space-y-6">
                     {template.previewQuestions &&
-                    template.previewQuestions.length > 0 ? (
+                      template.previewQuestions.length > 0 ? (
                       template.previewQuestions.map((q: any, idx: number) => (
                         <QuestionPreview
                           key={idx}
