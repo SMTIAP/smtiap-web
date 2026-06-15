@@ -358,7 +358,7 @@ export default function Reports() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           {/* Tabs */}
           <div className="flex gap-3 flex-wrap">
-            {["tenants", "users", "activity"].map((tab) => (
+            {["tenants", "users"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -369,7 +369,7 @@ export default function Reports() {
               >
                 {tab === "tenants" && "Tenant Registrations"}
                 {tab === "users" && "Tenant Users"}
-                {tab === "activity" && "Tenant Activity"}
+                {/* {tab === "activity" && "Tenant Activity"} */}
               </button>
             ))}
           </div>
