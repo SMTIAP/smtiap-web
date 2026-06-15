@@ -30,8 +30,18 @@ interface AnalyticsChartsSectionProps {
     maintainAspectRatio: boolean;
     plugins: { legend: { display: boolean }; tooltip: { enabled: boolean } };
     scales: {
-      x: { beginAtZero: boolean; max: number; grid: { display: boolean } };
-      y: { grid: { display: boolean } };
+      x: {
+        beginAtZero: boolean;
+        max: number;
+        grid: { color: string };
+        ticks: { color: string };
+        border: { display: boolean; color: string };
+      };
+      y: {
+        grid: { display: boolean };
+        ticks: { color: string };
+        border: { display: boolean; color: string };
+      };
     };
   };
   multipleChoiceQuestions: SurveyQuestion[];
@@ -54,8 +64,17 @@ interface AnalyticsChartsSectionProps {
     maintainAspectRatio: boolean;
     plugins: { legend: { display: boolean } };
     scales: {
-      x: { beginAtZero: boolean; grid: { display: boolean } };
-      y: { grid: { display: boolean } };
+      x: {
+        beginAtZero: boolean;
+        grid: { display: boolean };
+        ticks: { color: string };
+        border: { display: boolean; color: string };
+      };
+      y: {
+        grid: { color: string };
+        ticks: { color: string };
+        border: { display: boolean; color: string };
+      };
     };
   };
 }
@@ -71,6 +90,7 @@ const StatCard = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
+// Renders analytics charts (responses over time, rating distribution, keyword frequency) for a survey.
 export default function AnalyticsChartsSection({
   totalResponses,
   completionRate,

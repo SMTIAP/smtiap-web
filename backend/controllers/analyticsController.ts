@@ -3,6 +3,7 @@ import AnalyticsResult from "../models/AnalyticsResult.js";
 import AuditLog from "../models/AuditLog.js";
 import Survey from "../models/Survey.js";
 
+// Updating AI-generated analytics results for a survey (summary, keywords, response counts).
 export const saveAnalyticsResult = async (
   req: Request,
   res: Response,
@@ -23,6 +24,7 @@ export const saveAnalyticsResult = async (
       return;
     }
 
+    // Keep only the top 5 keywords with valid string keywords.
     const normalizedTopKeywords = topKeywords
       .filter((item) => item && typeof item.keyword === "string")
       .map((item) => ({
@@ -31,6 +33,7 @@ export const saveAnalyticsResult = async (
       }))
       .slice(0, 5);
 
+    // Accept both sourceCount and totalResponses as interchangeable field names.
     const payload = {
       surveyId: surveyId.trim(),
       summary: summary.trim(),
@@ -51,13 +54,14 @@ export const saveAnalyticsResult = async (
       },
     );
 
+    // Log the analytics run asynchronously; audit failures should not block the response.
     try {
       const userId = (req as any).user?._id;
 
       if (userId) {
-        
-        const survey = await Survey.findById(surveyId).select("surveyTitle tenantId");
-        // const tenantId = survey?.tenantId ?? null;
+        const survey = await Survey.findById(surveyId).select(
+          "surveyTitle tenantId",
+        );
 
         await AuditLog.create({
           user_id: userId,
@@ -72,13 +76,13 @@ export const saveAnalyticsResult = async (
       console.error("Audit log failed:", auditErr);
     }
 
-
     res.json(result);
   } catch (err) {
     next(err);
   }
 };
 
+// Retrieves stored AI analytics for a single survey, returned as an array for consistent frontend consumption.
 export const getAnalyticsResults = async (
   req: Request,
   res: Response,
@@ -94,6 +98,7 @@ export const getAnalyticsResults = async (
     }
 
     const result = await AnalyticsResult.findOne({ surveyId: surveyIdParam });
+    // Always return an array so the frontend can iterate without null checks.
     res.json(result ? [result] : []);
   } catch (err) {
     next(err);

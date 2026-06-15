@@ -8,6 +8,7 @@ interface Props {
   allowedRoles?: string[];
 }
 
+// Route guard: redirects unauthenticated users or blocks users without the required role.
 export default function ProtectedRoute({ children, allowedRoles }: Props) {
   const location = useLocation();
   const [loading, setLoading] = useState(true);

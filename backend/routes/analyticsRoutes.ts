@@ -1,3 +1,4 @@
+// Analytics results routes: GET retrieves stored results, POST saves AI analysis.
 import { Router } from "express";
 import {
   getAnalyticsResults,

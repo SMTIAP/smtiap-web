@@ -1,7 +1,9 @@
+// JWT authentication middleware: verifies tokens from cookies or Bearer headers.
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
+// Safely extracts an error message from any thrown value.
 const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) return error.message;
   return "Unknown error";

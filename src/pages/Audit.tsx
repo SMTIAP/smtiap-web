@@ -2,7 +2,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 import { Download, Eraser, ArrowLeft } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import {
+  getGeneratedBy,
+  addHeaderAndFooter,
+  formatFileDateTime,
+} from "../utils/pdfHelpers";
 
+// Populated user object returned by the audit-log API.
 interface AuditLogEntry {
   _id: string;
   user_id: { _id: string; username: string; email: string };
@@ -20,6 +28,7 @@ interface PaginationInfo {
   totalPages: number;
 }
 
+// Audit trail viewer with date/action filters, pagination, and CSV export.
 export default function Audit() {
   const navigate = useNavigate();
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
@@ -39,7 +48,7 @@ export default function Audit() {
   const [openExport, setOpenExport] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch filter options
+  // Load available action types for the filter dropdown.
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
@@ -57,6 +66,7 @@ export default function Audit() {
     fetchFilterOptions();
   }, []);
 
+  // Close export dropdown when clicking outside.
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -71,14 +81,14 @@ export default function Audit() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch logs
+  // Fetch paginated audit logs with current filter values.
   const fetchLogs = useCallback(
     async (page: number = 1) => {
       setLoading(true);
       try {
         const params = new URLSearchParams();
         params.append("page", page.toString());
-        params.append("limit", "10");
+        params.append("limit", "50");
 
         if (fromDate) params.append("fromDate", fromDate);
         if (toDate) params.append("toDate", toDate);
@@ -101,7 +111,7 @@ export default function Audit() {
     [fromDate, toDate, actionFilter],
   );
 
-  // Fetch logs on filter change
+  // Re-fetch on filter change, resetting to page 1.
   useEffect(() => {
     fetchLogs(1);
   }, [fetchLogs]);
@@ -112,6 +122,7 @@ export default function Audit() {
     setActionFilter("");
   };
 
+  // Export visible logs as a CSV file with escaped cells.
   const handleExportCSV = () => {
     if (logs.length === 0) return;
     const headers = [
@@ -132,6 +143,7 @@ export default function Audit() {
       log.entity_id,
       log.description,
     ]);
+    // Escape double-quotes per CSV standard.
     const csv = [headers, ...rows]
       .map((row) =>
         row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
@@ -146,6 +158,59 @@ export default function Audit() {
     URL.revokeObjectURL(url);
   };
 
+  // PDF Exports
+    const handleExportPDF = async () => {
+      const doc = new jsPDF();
+  
+      const generatedBy = await getGeneratedBy();
+      const now = new Date();
+      const pageWidth = doc.internal.pageSize.width;
+  
+      // Report title below the line
+      doc.setFontSize(18);
+      doc.setFont("helvetica");
+      doc.text("Audit Report", pageWidth / 2, 32, {
+        align: "center",
+      });
+  
+      // Table
+      autoTable(doc, {
+        startY: 38,
+        head: [["Time Stamp", "Username", "Type", "Entity", "Description"]],
+        body: logs.map((l) => [
+          new Date(l.createdAt).toLocaleString("en-GB"),
+          l.createdAt,
+          l.user_id.username,
+          l.action,
+          l.entity,
+          l.description
+        ]),
+        styles: {
+          fontSize: 10,
+        },
+        headStyles: {
+          fillColor: [79, 70, 229],
+          textColor: 255,
+        },
+  
+        didDrawPage: (data) => {
+          const pageCount = doc.getNumberOfPages();
+  
+          // HEADER + FOOTER helper
+          addHeaderAndFooter(
+            doc,
+            "MTSP System",
+            generatedBy,
+            pageCount,
+            data.pageNumber,
+          );
+        },
+      });
+  
+      // Download
+      doc.save(`audit-report_${formatFileDateTime(now)}.pdf`);
+    };
+
   const getActionColor = (action: string) => {
     const a = action.toLowerCase();
     if (a === "login") return "bg-blue-500";
@@ -159,6 +224,7 @@ export default function Audit() {
     return "bg-gray-500";
   };
 
+  // Human-readable label; status_change_<newStatus> becomes "Status -> <NewStatus>".
   const formatAction = (action: string) => {
     if (action.startsWith("status_change_")) {
       const status = action.replace("status_change_", "");
@@ -167,6 +233,7 @@ export default function Audit() {
     return action.charAt(0).toUpperCase() + action.slice(1);
   };
 
+  // Format to DD.MM.YYYY HH:mm:ss for consistent locale-independent display.
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     const day = String(date.getDate()).padStart(2, "0");
@@ -182,7 +249,6 @@ export default function Audit() {
     <div className="flex min-h-screen flex-col items-center bg-[#F8FAFC] dark:bg-[#0F172A] transition-colors duration-300">
       <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
       <div className="w-full max-w-6xl px-6 py-10 flex flex-col gap-10">
-        {/* Header - Title on left, back button on right */}
         <div className="flex justify-between items-center w-full">
           <div className="flex items-center gap-4 w-fit">
             <h2 className="text-3xl font-black tracking-tight text-[#0D141C] dark:text-white">
@@ -190,20 +256,18 @@ export default function Audit() {
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            {/* Circular Back Button - Top Right */}
-<button
-  onClick={() => navigate("/role-management")}
-  className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
-  title="Back to Role Management"
->
-  <ArrowLeft size={16} />
-</button>
+            <button
+              onClick={() => navigate("/role-management")}
+              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+              title="Back to Role Management"
+            >
+              <ArrowLeft size={16} />
+            </button>
           </div>
         </div>
 
         <div className="w-full max-w-3xl space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-3">
-            {/* From */}
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-slate-600 dark:text-slate-300">
                 From
@@ -218,7 +282,6 @@ export default function Audit() {
               />
             </div>
 
-            {/* To */}
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-slate-600 dark:text-slate-300">
                 To
@@ -235,7 +298,6 @@ export default function Audit() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Action Filter */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-slate-600 dark:text-slate-300">
                 Action Type
@@ -288,12 +350,11 @@ export default function Audit() {
                   >
                     Export CSV
                   </button>
-                  <button
-                    className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                  >
+                  <button className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
                     Export Excel
                   </button>
                   <button
+                  onClick={handleExportPDF}
                     className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   >
                     Export PDF
@@ -364,10 +425,9 @@ export default function Audit() {
                       </tr>
                     ))}
                   </tbody>
-                 </table>
+                </table>
               </div>
 
-              {/* Pagination */}
               <div className="flex justify-center items-center gap-4 mt-6">
                 <button
                   onClick={() => fetchLogs(pagination.page - 1)}
@@ -401,7 +461,6 @@ export default function Audit() {
                 </button>
               </div>
 
-              {/* Entries Info */}
               <p className="text-sm text-gray-600 dark:text-slate-400 text-center mt-4">
                 Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
                 {Math.min(

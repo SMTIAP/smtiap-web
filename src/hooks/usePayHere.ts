@@ -58,7 +58,7 @@ export const usePayHere = () => {
         items: data.items,
         currency: data.currency,
         amount: data.amount,
-        hash: data.hash, // Use the hash directly!
+        hash: data.hash,
         first_name: data.first_name,
         last_name: data.last_name,
         email: data.email,
@@ -66,6 +66,9 @@ export const usePayHere = () => {
         address: data.address,
         city: data.city,
         country: data.country,
+        custom_1: data.custom_1 ?? "",   // username
+        custom_2: data.custom_2 ?? "",   // email
+        custom_3: data.custom_3 ?? "",   // tenantId
       };
 
       if (window.payhere) {

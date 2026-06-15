@@ -10,6 +10,7 @@ interface AnalyticsToolbarProps {
 }
 
 // Renders a row with date range filter on the left and an export button on the right.
+// Toolbar for the analytics view with date range picker and export controls.
 export default function AnalyticsToolbar({
   surveyTitle,
   fromDate,

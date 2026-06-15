@@ -158,6 +158,7 @@ interface IncomingPage {
   questions?: IncomingQuestion[];
 }
 
+// Preview mode device breakpoints.
 type PreviewDeviceType = "desktop" | "tablet" | "mobile";
 
 const previewDeviceWidths: Record<PreviewDeviceType, string> = {
@@ -166,21 +167,28 @@ const previewDeviceWidths: Record<PreviewDeviceType, string> = {
   mobile: "w-[375px]",
 };
 
+// Determine contrasting text colour based on background luminance.
+// Uses W3C relative luminance formula for readability.
 function getTextColor(backgroundColor: string, opacity: number = 1): string {
   if (!backgroundColor || backgroundColor === "#F8FAFC") {
     return `rgba(30, 41, 59, ${opacity})`;
   }
-  
+
   let hex = backgroundColor.replace("#", "");
   if (hex.length === 3) {
-    hex = hex.split('').map(c => c + c).join('');
+    hex = hex
+      .split("")
+      .map((c) => c + c)
+      .join("");
   }
-  
+
   const r = parseInt(hex.substring(0, 2), 16);
   const g = parseInt(hex.substring(2, 4), 16);
   const b = parseInt(hex.substring(4, 6), 16);
+  // Weighted luminance: human eyes perceive green as brightest, blue as dimmest.
   const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-  
+
+  // Threshold between dark and light backgrounds.
   if (brightness < 128) {
     return `rgba(255, 255, 255, ${opacity})`;
   } else {
@@ -188,18 +196,29 @@ function getTextColor(backgroundColor: string, opacity: number = 1): string {
   }
 }
 
-const PreviewDeviceIcon = ({ device, current, onClick }: { device: PreviewDeviceType; current: PreviewDeviceType; onClick: () => void }) => {
+const PreviewDeviceIcon = ({
+  device,
+  current,
+  onClick,
+}: {
+  device: PreviewDeviceType;
+  current: PreviewDeviceType;
+  onClick: () => void;
+}) => {
   const icons = { desktop: Monitor, tablet: Tablet, mobile: Smartphone };
   const Icon = icons[device];
   return (
-    <button onClick={onClick}
+    <button
+      onClick={onClick}
       className={`p-2 rounded-lg transition-all ${current === device ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"}`}
-      title={device.charAt(0).toUpperCase() + device.slice(1)}>
+      title={device.charAt(0).toUpperCase() + device.slice(1)}
+    >
       <Icon size={18} />
     </button>
   );
 };
 
+// Inline calendar widget for date question type.
 const DatePickerCalendar = ({ value, onChange }: DatePickerCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(
     value ? new Date(value) : new Date(),
@@ -207,11 +226,13 @@ const DatePickerCalendar = ({ value, onChange }: DatePickerCalendarProps) => {
   const [showCalendar, setShowCalendar] = useState(false);
   const selectedDate = value ? new Date(value) : null;
 
+  // Day 0 of next month = last day of current month.
   const getDaysInMonth = (date: Date) =>
     new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   const getFirstDayOfMonth = (date: Date) =>
     new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
+  // Fill leading blanks for first day offset, then day numbers.
   const days: Array<number | null> = [];
   const daysInMonth = getDaysInMonth(currentDate);
   const firstDay = getFirstDayOfMonth(currentDate);
@@ -385,6 +406,7 @@ const QUESTION_TYPES: QuestionTypeConfig[] = [
   },
 ];
 
+// Draggable question card with preview rendering and action toolbar.
 const QuestionCard = ({
   question,
   index,
@@ -511,7 +533,9 @@ const QuestionCard = ({
                 <div
                   className={`w-4 h-4 border border-gray-300 ${question.type === "multiple_choice" ? "rounded-full" : "rounded"}`}
                 />
-                <span className="text-gray-700 dark:text-slate-300 break-words whitespace-normal">{opt}</span>
+                <span className="text-gray-700 dark:text-slate-300 break-words whitespace-normal">
+                  {opt}
+                </span>
               </div>
             ))}
           </div>
@@ -541,6 +565,7 @@ const QuestionCard = ({
   );
 };
 
+// Right-side panel for editing selected question properties and branching rules.
 const PropertyEditor = ({
   selectedQuestion,
   updateQuestion,
@@ -556,6 +581,7 @@ const PropertyEditor = ({
     );
   }
 
+  // Only choice-based question types support conditional branching.
   const supportsBranching =
     selectedQuestion.type === "multiple_choice" ||
     selectedQuestion.type === "checkboxes";
@@ -566,6 +592,7 @@ const PropertyEditor = ({
     defaultTargetQuestionId: "",
   };
 
+  // Replace existing rule for this option value or append new one.
   const updateBranchRule = (value: string, targetQuestionId: string) => {
     const nextRules = (branching.rules || []).filter(
       (rule) => rule.value !== value,
@@ -584,7 +611,9 @@ const PropertyEditor = ({
   return (
     <div className="p-5 space-y-5 bg-white dark:bg-slate-800 h-full overflow-y-auto">
       <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-slate-700">
-        <h2 className="font-semibold text-gray-900 dark:text-white text-base">Properties</h2>
+        <h2 className="font-semibold text-gray-900 dark:text-white text-base">
+          Properties
+        </h2>
         <button
           onClick={() => setSelectedQuestionId(null)}
           className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-gray-500 dark:text-slate-400"
@@ -607,7 +636,8 @@ const PropertyEditor = ({
         />
       </div>
 
-      {(selectedQuestion.type === "short_text" || selectedQuestion.type === "long_text") && (
+      {(selectedQuestion.type === "short_text" ||
+        selectedQuestion.type === "long_text") && (
         <div className="space-y-1">
           <label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
             Placeholder
@@ -625,7 +655,8 @@ const PropertyEditor = ({
         </div>
       )}
 
-      {(selectedQuestion.type === "multiple_choice" || selectedQuestion.type === "checkboxes") && (
+      {(selectedQuestion.type === "multiple_choice" ||
+        selectedQuestion.type === "checkboxes") && (
         <div className="space-y-2">
           <label className="text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider block">
             Options
@@ -648,7 +679,9 @@ const PropertyEditor = ({
                 <button
                   onClick={() => {
                     const currentOptions = selectedQuestion.options || [];
-                    const newOpts = currentOptions.filter((_, idx) => idx !== i);
+                    const newOpts = currentOptions.filter(
+                      (_, idx) => idx !== i,
+                    );
                     updateQuestion(selectedQuestion.id, {
                       options: newOpts,
                     });
@@ -663,7 +696,10 @@ const PropertyEditor = ({
               onClick={() => {
                 const currentOptions = selectedQuestion.options || [];
                 updateQuestion(selectedQuestion.id, {
-                  options: [...currentOptions, `Option ${currentOptions.length + 1}`],
+                  options: [
+                    ...currentOptions,
+                    `Option ${currentOptions.length + 1}`,
+                  ],
                 });
               }}
               className="w-full mt-1 py-2 px-3 border border-dashed border-gray-300 dark:border-slate-600 rounded-lg text-xs text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-center gap-1"
@@ -705,7 +741,7 @@ const PropertyEditor = ({
               <p className="text-[10px] text-gray-600 dark:text-slate-400">
                 Map each answer to the next question
               </p>
-              
+
               {(selectedQuestion.options || []).map((optionValue) => {
                 const selectedTarget = (branching.rules || []).find(
                   (rule) => rule.value === optionValue,
@@ -806,6 +842,7 @@ const PropertyEditor = ({
   );
 };
 
+// Main survey designer — manages pages, questions, preview, and save/publish flows.
 export default function AddQuestions() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -818,6 +855,7 @@ export default function AddQuestions() {
   const { activeTenant, isSystemContext } = useTenant();
   const tenantRole =
     !isSystemContext && activeTenant ? activeTenant.role : null;
+  // Viewer and billing_manager roles cannot edit or publish surveys.
   const isViewer = tenantRole === "viewer" || tenantRole === "billing_manager";
   const readOnly = routeState.readOnly === true || isViewer;
 
@@ -854,7 +892,8 @@ export default function AddQuestions() {
   );
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [tenantId, setTenantId] = useState<string | null>(null);
-  const [previewDevice, setPreviewDevice] = useState<PreviewDeviceType>("desktop");
+  const [previewDevice, setPreviewDevice] =
+    useState<PreviewDeviceType>("desktop");
 
   useEffect(() => {
     if (
@@ -983,6 +1022,7 @@ export default function AddQuestions() {
       .catch(() => {});
   }, []);
 
+  // Normalise incoming question types; "checkbox" is an alias for "checkboxes".
   const normalizeQuestionType = useCallback((type?: string): QuestionTypeId => {
     if (type === "checkbox") return "checkboxes";
     const allowedTypes: QuestionTypeId[] = [
@@ -999,6 +1039,7 @@ export default function AddQuestions() {
       : "short_text";
   }, []);
 
+  // Convert API survey pages into the local editor format.
   const normalizeSurveyPages = useCallback(
     (incomingPages: unknown): SurveyPage[] => {
       if (!Array.isArray(incomingPages) || incomingPages.length === 0) {
@@ -1160,6 +1201,7 @@ export default function AddQuestions() {
     setPages(updatedPages);
   };
 
+  // Remove branching rules that reference the deleted question.
   const deleteQuestion = (id: string) => {
     const updatedPages = pages.map((page) => ({
       ...page,
@@ -1231,6 +1273,8 @@ export default function AddQuestions() {
     activePage?.questions.find((q) => q.id === selectedQuestionId) ||
     pages.flatMap((p) => p.questions).find((q) => q.id === selectedQuestionId);
 
+  // Only downstream questions (after the selected one) are valid branching targets
+  // to prevent circular navigation.
   const branchTargets = useMemo(() => {
     const flattened = pages.flatMap((page, pageIndex) =>
       page.questions.map((question, questionIndex) => ({
@@ -1245,6 +1289,7 @@ export default function AddQuestions() {
     return flattened.filter((_, index) => index > selectedIndex);
   }, [pages, selectedQuestionId]);
 
+  // Apply AI-modified survey data and resolve branching labels to question IDs.
   const handleAiModifyApplied = useCallback(
     (result: {
       surveyTitle: string;
@@ -1374,7 +1419,8 @@ export default function AddQuestions() {
       {readOnly && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-amber-50 border-b border-amber-200 px-6 py-3 text-center text-sm font-semibold text-amber-800">
           <Eye size={16} className="inline mr-2 -mt-0.5" />
-          Viewing draft survey (read-only) — you do not have permission to edit or publish
+          Viewing draft survey (read-only) — you do not have permission to edit
+          or publish
         </div>
       )}
 
@@ -1382,7 +1428,10 @@ export default function AddQuestions() {
         <aside className="w-72 bg-gray-50 dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col z-10 shadow-sm transition-colors duration-300">
           <div className="p-6 border-b border-gray-200 dark:border-slate-700 flex items-center gap-3 bg-gray-50 dark:bg-slate-900">
             <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-indigo-100 dark:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800">
-              <Layout size={20} className="text-indigo-600 dark:text-indigo-400" />
+              <Layout
+                size={20}
+                className="text-indigo-600 dark:text-indigo-400"
+              />
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-sm font-bold text-gray-900 dark:text-white truncate w-28">
@@ -1443,10 +1492,14 @@ export default function AddQuestions() {
                   >
                     <div
                       className={`w-1.5 h-1.5 rounded-full ${
-                        activePageIndex === idx ? "bg-indigo-500" : "bg-gray-300 dark:bg-slate-600"
+                        activePageIndex === idx
+                          ? "bg-indigo-500"
+                          : "bg-gray-300 dark:bg-slate-600"
                       }`}
                     />
-                    <span className="truncate flex-1 text-sm">{page.title}</span>
+                    <span className="truncate flex-1 text-sm">
+                      {page.title}
+                    </span>
                     {pages.length > 1 && (
                       <button
                         onClick={(e) => {
@@ -1529,7 +1582,9 @@ export default function AddQuestions() {
         </aside>
       )}
 
-      <main className={`flex-1 flex flex-col h-full overflow-hidden ${readOnly ? "pt-12" : ""}`}>
+      <main
+        className={`flex-1 flex flex-col h-full overflow-hidden ${readOnly ? "pt-12" : ""}`}
+      >
         <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 transition-colors duration-300">
           <div className="flex items-center justify-end gap-2 px-4 py-2">
             {!readOnly && (
@@ -1541,7 +1596,7 @@ export default function AddQuestions() {
                 AI Modify
               </button>
             )}
-            
+
             <button
               onClick={() => {
                 if (readOnly) {
@@ -1559,7 +1614,7 @@ export default function AddQuestions() {
               <Eye size={14} />
               {isPreviewMode ? "Exit Preview" : "Preview"}
             </button>
-            
+
             {isPreviewMode && (
               <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-slate-700 rounded-lg px-1.5 py-1">
                 <button
@@ -1585,7 +1640,7 @@ export default function AddQuestions() {
                 </button>
               </div>
             )}
-            
+
             {!readOnly && (
               <button
                 onClick={async () => {
@@ -1649,7 +1704,7 @@ export default function AddQuestions() {
               </button>
             )}
           </div>
-          
+
           <div className="px-6 pb-4">
             <input
               type="text"
@@ -1669,9 +1724,7 @@ export default function AddQuestions() {
             {!isPreviewMode ? (
               <div className="space-y-4">
                 <div className="mb-8">
-                  <span
-                    className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400"
-                  >
+                  <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
                     {activePage.title}
                   </span>
                   <input
@@ -1690,8 +1743,12 @@ export default function AddQuestions() {
                 {activePage.questions.length === 0 ? (
                   <div className="border-4 border-dashed border-gray-100 rounded-3xl p-20 flex flex-col items-center justify-center text-gray-400">
                     <Plus size={48} className="mb-4 opacity-10" />
-                    <p className="text-lg font-medium opacity-40">Your survey is empty</p>
-                    <p className="text-sm opacity-30">Add elements from the left sidebar to begin</p>
+                    <p className="text-lg font-medium opacity-40">
+                      Your survey is empty
+                    </p>
+                    <p className="text-sm opacity-30">
+                      Add elements from the left sidebar to begin
+                    </p>
                   </div>
                 ) : (
                   activePage.questions.map((q, idx) => (
@@ -1722,8 +1779,10 @@ export default function AddQuestions() {
               </div>
             ) : (
               <div className="relative">
-                <div className={`transition-all duration-300 mx-auto ${previewDeviceWidths[previewDevice]}`}>
-                  <div 
+                <div
+                  className={`transition-all duration-300 mx-auto ${previewDeviceWidths[previewDevice]}`}
+                >
+                  <div
                     className="relative rounded-3xl shadow-xl border border-gray-200 dark:border-slate-700 overflow-hidden min-h-150 flex flex-col transition-colors duration-300"
                     style={{ backgroundColor: backgroundColor || "#FFFFFF" }}
                   >
@@ -1735,28 +1794,34 @@ export default function AddQuestions() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div 
+                        <div
                           className="w-full h-full opacity-90"
                           style={{
-                            background: `linear-gradient(135deg, ${primaryColor} 0%, #4f46e5 100%)`
+                            background: `linear-gradient(135deg, ${primaryColor} 0%, #4f46e5 100%)`,
                           }}
                         />
                       )}
                     </div>
-                    
+
                     {logo && (
                       <div className="absolute left-1/2 -translate-x-1/2 top-20 w-24 h-24 rounded-full bg-white p-1 border-4 border-white shadow-md flex items-center justify-center overflow-hidden z-10 transition-all">
-                        <img src={logo} alt="Survey logo" className="w-full h-full object-cover rounded-full" />
+                        <img
+                          src={logo}
+                          alt="Survey logo"
+                          className="w-full h-full object-cover rounded-full"
+                        />
                       </div>
                     )}
 
-                    <div className={`p-8 pb-6 flex flex-col items-start flex-1 ${logo ? 'pt-16' : 'pt-6'}`}>
+                    <div
+                      className={`p-8 pb-6 flex flex-col items-start flex-1 ${logo ? "pt-16" : "pt-6"}`}
+                    >
                       {customizeBranding && websiteUrl && (
                         <div className="flex justify-center w-full">
-                          <a 
-                            href={websiteUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
+                          <a
+                            href={websiteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="inline-block text-[11px] font-bold hover:underline mb-4 text-center break-all max-w-full"
                             style={{ color: getTextColor(backgroundColor) }}
                           >
@@ -1764,25 +1829,25 @@ export default function AddQuestions() {
                           </a>
                         </div>
                       )}
-                      
-                      <h1 
-                        className="text-2xl font-bold mb-2  text-left w-full break-words whitespace-normal" 
+
+                      <h1
+                        className="text-2xl font-bold mb-2  text-left w-full break-words whitespace-normal"
                         style={{ color: getTextColor(backgroundColor) }}
                       >
                         {surveyTitle}
                       </h1>
-                      
+
                       {description && (
-                        <p 
-                          className="text-sm mb-1  text-left w-full break-words whitespace-normal" 
+                        <p
+                          className="text-sm mb-1  text-left w-full break-words whitespace-normal"
                           style={{ color: getTextColor(backgroundColor, 0.7) }}
                         >
                           {description}
                         </p>
                       )}
-                      
-                      <p 
-                        className="mb-8  text-left w-full break-words whitespace-normal" 
+
+                      <p
+                        className="mb-8  text-left w-full break-words whitespace-normal"
                         style={{ color: getTextColor(backgroundColor, 0.6) }}
                       >
                         {activePage.title}
@@ -1792,45 +1857,72 @@ export default function AddQuestions() {
                         {activePage.questions.map((q, idx) => (
                           <div key={q.id} className="w-full">
                             <div className="flex gap-2 mb-3 w-full">
-                              <span className="font-bold shrink-0" style={{ color: getTextColor(backgroundColor) }}>
-                                {idx + 1}.
-                              </span>
-                              <h3 
-                                className="font-semibold flex-1 break-words whitespace-normal" 
+                              <span
+                                className="font-bold shrink-0"
                                 style={{ color: getTextColor(backgroundColor) }}
                               >
-                                {q.label} {q.required && <span className="text-red-500">*</span>}
+                                {idx + 1}.
+                              </span>
+                              <h3
+                                className="font-semibold flex-1 break-words whitespace-normal"
+                                style={{ color: getTextColor(backgroundColor) }}
+                              >
+                                {q.label}{" "}
+                                {q.required && (
+                                  <span className="text-red-500">*</span>
+                                )}
                               </h3>
                             </div>
                             <div className="pl-6 w-full">
                               {q.type === "short_text" && (
-                                <input 
-                                  type="text" 
-                                  className="w-full border-b-2 border-gray-300 focus:border-gray-500 outline-none pb-2 transition-colors" 
-                                  style={{ backgroundColor: "transparent", color: getTextColor(backgroundColor) }}
-                                  placeholder={q.placeholder || "Enter text here..."}
+                                <input
+                                  type="text"
+                                  className="w-full border-b-2 border-gray-300 focus:border-gray-500 outline-none pb-2 transition-colors"
+                                  style={{
+                                    backgroundColor: "transparent",
+                                    color: getTextColor(backgroundColor),
+                                  }}
+                                  placeholder={
+                                    q.placeholder || "Enter text here..."
+                                  }
                                 />
                               )}
                               {q.type === "long_text" && (
-                                <textarea 
-                                  className="w-full border-2 border-gray-300 rounded-xl p-3 outline-none min-h-25 transition-colors focus:border-gray-500" 
-                                  style={{ backgroundColor: "transparent", color: getTextColor(backgroundColor) }}
-                                  placeholder={q.placeholder || "Enter detailed response..."}
+                                <textarea
+                                  className="w-full border-2 border-gray-300 rounded-xl p-3 outline-none min-h-25 transition-colors focus:border-gray-500"
+                                  style={{
+                                    backgroundColor: "transparent",
+                                    color: getTextColor(backgroundColor),
+                                  }}
+                                  placeholder={
+                                    q.placeholder ||
+                                    "Enter detailed response..."
+                                  }
                                   rows={4}
                                 />
                               )}
-                              {(q.type === "multiple_choice" || q.type === "checkboxes") && (
+                              {(q.type === "multiple_choice" ||
+                                q.type === "checkboxes") && (
                                 <div className="space-y-3">
                                   {q.options?.map((opt: string, i: number) => (
-                                    <label key={i} className="flex items-start gap-3 cursor-pointer group">
-                                      <input 
-                                        type={q.type === "multiple_choice" ? "radio" : "checkbox"} 
-                                        name={q.id} 
-                                        className="w-5 h-5 border-gray-400 rounded-full focus:ring-0 mt-0.5 shrink-0" 
+                                    <label
+                                      key={i}
+                                      className="flex items-start gap-3 cursor-pointer group"
+                                    >
+                                      <input
+                                        type={
+                                          q.type === "multiple_choice"
+                                            ? "radio"
+                                            : "checkbox"
+                                        }
+                                        name={q.id}
+                                        className="w-5 h-5 border-gray-400 rounded-full focus:ring-0 mt-0.5 shrink-0"
                                       />
-                                      <span 
-                                        className="transition-colors flex-1 break-words whitespace-normal" 
-                                        style={{ color: getTextColor(backgroundColor) }}
+                                      <span
+                                        className="transition-colors flex-1 break-words whitespace-normal"
+                                        style={{
+                                          color: getTextColor(backgroundColor),
+                                        }}
                                       >
                                         {opt}
                                       </span>
@@ -1841,10 +1933,15 @@ export default function AddQuestions() {
                               {q.type === "rating" && (
                                 <div className="flex gap-2 flex-wrap">
                                   {[...Array(q.max || 5)].map((_, i) => (
-                                    <button 
-                                      key={i} 
+                                    <button
+                                      key={i}
                                       className="w-10 h-10 rounded-lg border-2 border-gray-300 transition-all hover:border-yellow-400 flex items-center justify-center shrink-0"
-                                      style={{ color: getTextColor(backgroundColor, 0.5) }}
+                                      style={{
+                                        color: getTextColor(
+                                          backgroundColor,
+                                          0.5,
+                                        ),
+                                      }}
                                     >
                                       <Star size={20} />
                                     </button>
@@ -1852,15 +1949,26 @@ export default function AddQuestions() {
                                 </div>
                               )}
                               {q.type === "number" && (
-                                <input 
-                                  type="number" 
-                                  className="border-2 border-gray-300 rounded-lg p-2 outline-none w-32 focus:border-gray-500" 
-                                  style={{ backgroundColor: "transparent", color: getTextColor(backgroundColor) }}
+                                <input
+                                  type="number"
+                                  className="border-2 border-gray-300 rounded-lg p-2 outline-none w-32 focus:border-gray-500"
+                                  style={{
+                                    backgroundColor: "transparent",
+                                    color: getTextColor(backgroundColor),
+                                  }}
                                   placeholder="Enter a number"
                                 />
                               )}
                               {q.type === "date" && (
-                                <DatePickerCalendar value={responses[q.id] || ""} onChange={(date) => setResponses((prev) => ({ ...prev, [q.id]: date }))} />
+                                <DatePickerCalendar
+                                  value={responses[q.id] || ""}
+                                  onChange={(date) =>
+                                    setResponses((prev) => ({
+                                      ...prev,
+                                      [q.id]: date,
+                                    }))
+                                  }
+                                />
                               )}
                               {q.branching?.enabled && (
                                 <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-semibold text-indigo-700">
@@ -1876,21 +1984,44 @@ export default function AddQuestions() {
                     <div className="p-8 bg-gray-50/80 dark:bg-slate-800/80 flex justify-between items-center border-t border-gray-200 dark:border-slate-700">
                       <div className="flex gap-2">
                         {pages.map((_, i) => (
-                          <div key={i} className="w-2 h-2 rounded-full transition-colors" style={{ backgroundColor: activePageIndex === i ? primaryColor : "#D1D5DB" }} />
+                          <div
+                            key={i}
+                            className="w-2 h-2 rounded-full transition-colors"
+                            style={{
+                              backgroundColor:
+                                activePageIndex === i
+                                  ? primaryColor
+                                  : "#D1D5DB",
+                            }}
+                          />
                         ))}
                       </div>
                       <div className="flex gap-4">
                         {activePageIndex > 0 && (
-                          <button onClick={() => setActivePageIndex(activePageIndex - 1)} className="px-6 py-2 border border-gray-300 rounded-xl font-semibold hover:bg-gray-100 transition-all text-gray-700">
+                          <button
+                            onClick={() =>
+                              setActivePageIndex(activePageIndex - 1)
+                            }
+                            className="px-6 py-2 border border-gray-300 rounded-xl font-semibold hover:bg-gray-100 transition-all text-gray-700"
+                          >
                             Back
                           </button>
                         )}
                         {activePageIndex < pages.length - 1 ? (
-                          <button onClick={() => setActivePageIndex(activePageIndex + 1)} style={{ backgroundColor: primaryColor }} className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all flex items-center gap-2">
+                          <button
+                            onClick={() =>
+                              setActivePageIndex(activePageIndex + 1)
+                            }
+                            style={{ backgroundColor: primaryColor }}
+                            className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all flex items-center gap-2"
+                          >
                             Next <ChevronRight size={18} />
                           </button>
                         ) : (
-                          <button style={{ backgroundColor: primaryColor }} className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all">
+                          <button
+                            style={{ backgroundColor: primaryColor }}
+                            className="px-8 py-2 text-white rounded-xl font-semibold hover:opacity-90 shadow-lg transition-all"
+                          >
                             Submit Survey
                           </button>
                         )}

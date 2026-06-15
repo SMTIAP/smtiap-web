@@ -38,6 +38,7 @@ function formatTimestamp(iso: string): string {
   return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 }
 
+// Notification bell icon with dropdown: lists recent notifications, marks read, polls for unread count.
 export default function NotificationBell() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);

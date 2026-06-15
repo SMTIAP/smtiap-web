@@ -1,8 +1,17 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { Copy, Check, Download, Share2, ChevronLeft, Lock, Calendar } from "lucide-react";
+import {
+  Copy,
+  Check,
+  Download,
+  Share2,
+  ChevronLeft,
+  Lock,
+  Calendar,
+} from "lucide-react";
 
+// Post-publish or post-schedule share screen with link, QR code, and password protection.
 export default function ShareSurvey() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -16,7 +25,9 @@ export default function ShareSurvey() {
   const [savingPassword, setSavingPassword] = useState(false);
 
   const isScheduled = !!scheduledOpen;
-  const formattedOpenDate = scheduledOpen ? new Date(scheduledOpen).toLocaleString() : null;
+  const formattedOpenDate = scheduledOpen
+    ? new Date(scheduledOpen).toLocaleString()
+    : null;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(surveyLink);
@@ -24,6 +35,7 @@ export default function ShareSurvey() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Render SVG QR to canvas, then trigger PNG download.
   const downloadQR = () => {
     const svg = document.getElementById("survey-qr") as SVGGraphicsElement;
     if (!svg) return;
@@ -56,6 +68,7 @@ export default function ShareSurvey() {
     })(),
   };
 
+  // Toggle password protection; clearing it removes the password from the backend immediately.
   const handleToggle = async () => {
     const newValue = !isPasswordProtected;
     setIsPasswordProtected(newValue);
@@ -104,14 +117,16 @@ export default function ShareSurvey() {
           </button>
         </div>
 
-        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 ${isScheduled ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" : "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"}`}>
+        <div
+          className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 ${isScheduled ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" : "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"}`}
+        >
           {isScheduled ? <Calendar size={32} /> : <Share2 size={32} />}
         </div>
 
         <h1 className="text-2xl font-black text-slate-900 dark:text-white mb-2">
           {isScheduled ? "Survey Scheduled!" : "Survey Published!"}
         </h1>
-        
+
         {isScheduled && formattedOpenDate ? (
           <>
             <p className="text-slate-500 dark:text-slate-400 text-sm mb-2">
@@ -121,12 +136,14 @@ export default function ShareSurvey() {
               {formattedOpenDate}
             </p>
             <p className="text-slate-400 dark:text-slate-500 text-xs mb-6">
-              Share the link now. Respondents will see a "Not Started Yet" message until the scheduled time.
+              Share the link now. Respondents will see a "Not Started Yet"
+              message until the scheduled time.
             </p>
           </>
         ) : (
           <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">
-            Share the link or download the QR code to start collecting responses.
+            Share the link or download the QR code to start collecting
+            responses.
           </p>
         )}
 
@@ -179,7 +196,9 @@ export default function ShareSurvey() {
         {/* Survey Link */}
         <div className="mb-8 text-left">
           <label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mb-2 block">
-            {isScheduled ? "Survey Link (preview available now)" : "Unique Survey Link"}
+            {isScheduled
+              ? "Survey Link (preview available now)"
+              : "Unique Survey Link"}
           </label>
           <div className="flex gap-2">
             <input

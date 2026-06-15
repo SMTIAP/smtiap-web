@@ -1,3 +1,4 @@
+// Super admin routes: platform-wide user, tenant, and audit log management.
 import express from "express";
 import { protect } from "../middleware/auth.js";
 import { authorizeRoles } from "../middleware/role.js";
@@ -23,12 +24,7 @@ router.get(
   authorizeRoles("super_admin"),
   getSuperAdminDashboard,
 );
-router.get(
-  "/users",
-  protect,
-  authorizeRoles("super_admin"),
-  getManagedUsers,
-);
+router.get("/users", protect, authorizeRoles("super_admin"), getManagedUsers);
 router.post(
   "/users",
   protect,
@@ -68,11 +64,7 @@ router.post(
   adjustTenantCredits,
 );
 
-// ============================================================
-// SUPER ADMIN AUDIT ENDPOINTS
-// ============================================================
-
-// GET /api/super-admin/audit-logs - Super admin sees ALL platform logs
+// Super admin sees ALL platform logs (no tenant filter).
 router.get(
   "/audit-logs",
   protect,
@@ -156,10 +148,10 @@ router.get(
         error: error.message,
       });
     }
-  }
+  },
 );
 
-// GET /api/super-admin/audit-actions - Get all unique actions for filter
+//  Get all unique actions for filter
 router.get(
   "/audit-actions",
   protect,
@@ -179,10 +171,10 @@ router.get(
         error: error.message,
       });
     }
-  }
+  },
 );
 
-// GET /api/super-admin/audit-entities - Get all unique entities for filter
+// Get all unique entities for filter
 router.get(
   "/audit-entities",
   protect,
@@ -202,7 +194,7 @@ router.get(
         error: error.message,
       });
     }
-  }
+  },
 );
 
 export default router;

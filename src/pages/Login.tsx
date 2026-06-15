@@ -4,6 +4,7 @@ import axios from "axios";
 import { GoogleIcon, GithubIcon, LinkedInIcon } from "./AuthPage";
 import { useNavigate } from "react-router-dom";
 
+// Sign-in form with email/password, social logins, and resend-verification flow.
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,13 +19,21 @@ export default function Login() {
     if (!email) return;
     try {
       setResendLoading(true);
-      const res = await axios.post("http://localhost:5000/api/users/resend-verification", {
-        email,
-      });
-      setMessage(res.data.message || "Verification email resent! Please check your inbox.");
+      const res = await axios.post(
+        "http://localhost:5000/api/users/resend-verification",
+        {
+          email,
+        },
+      );
+      setMessage(
+        res.data.message ||
+          "Verification email resent! Please check your inbox.",
+      );
       setNeedsVerification(false);
     } catch (err: any) {
-      setMessage(err.response?.data?.message || "Failed to resend verification email.");
+      setMessage(
+        err.response?.data?.message || "Failed to resend verification email.",
+      );
     } finally {
       setResendLoading(false);
     }
@@ -37,7 +46,7 @@ export default function Login() {
       setLoading(true);
       setMessage("");
       setNeedsVerification(false);
- 
+
       const res = await axios.post(
         "http://localhost:5000/api/users/login",
         {
@@ -50,7 +59,7 @@ export default function Login() {
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
       }
- 
+
       if (userRole === "admin") {
         navigate("/admin");
       } else if (userRole === "creater") {
@@ -60,11 +69,14 @@ export default function Login() {
       } else {
         navigate("/admin");
       }
- 
+
       setMessage("Login successful ✔");
       console.log(res.data);
     } catch (err: any) {
-      if (err.response?.status === 401 && err.response?.data?.message?.includes("verify")) {
+      if (
+        err.response?.status === 401 &&
+        err.response?.data?.message?.includes("verify")
+      ) {
         setNeedsVerification(true);
       }
       setMessage(err.response?.data?.message || "Login failed");
@@ -73,6 +85,7 @@ export default function Login() {
     }
   };
 
+  // Redirect to backend OAuth endpoints for social authentication.
   const handleGoogleLogin = () => {
     window.location.href = "http://localhost:5000/api/users/google";
   };
@@ -151,7 +164,11 @@ export default function Login() {
       </form>
 
       {message && (
-        <div className={`mt-[10px] text-[12px] font-semibold ${needsVerification ? 'text-rose-500' : 'text-[#5a45b8]'}`}>{message}</div>
+        <div
+          className={`mt-[10px] text-[12px] font-semibold ${needsVerification ? "text-rose-500" : "text-[#5a45b8]"}`}
+        >
+          {message}
+        </div>
       )}
 
       {needsVerification && (

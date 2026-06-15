@@ -2,40 +2,46 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
+// Email verification page called from the verification link sent to the user's inbox.
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token");
   const email = searchParams.get("email");
 
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading",
+  );
   const [message, setMessage] = useState("Verifying your email address...");
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
   const hasRequested = useRef(false);
 
+  // Prevent double requests.
   useEffect(() => {
-    // Prevent double requests in React 18 StrictMode
     if (hasRequested.current) return;
     hasRequested.current = true;
 
     if (!token || !email) {
       setStatus("error");
-      setMessage("Verification parameters are missing. Please double-check your link.");
+      setMessage(
+        "Verification parameters are missing. Please double-check your link.",
+      );
       return;
     }
 
     const verify = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:5000/api/users/verify-email?token=${token}&email=${email}`
+          `http://localhost:5000/api/users/verify-email?token=${token}&email=${email}`,
         );
         setStatus("success");
         setMessage(res.data.message || "Email verified successfully!");
       } catch (err: any) {
         setStatus("error");
         setMessage(
-          err.response?.data?.message || "Invalid or expired verification link."
+          err.response?.data?.message ||
+            "Invalid or expired verification link.",
         );
       }
     };
@@ -43,18 +49,25 @@ export default function VerifyEmail() {
     verify();
   }, [token, email]);
 
+  // Resend the verification email for the current address.
   const handleResend = async () => {
     if (!email) return;
     try {
       setResendLoading(true);
       setResendMessage("");
-      const res = await axios.post("http://localhost:5000/api/users/resend-verification", {
-        email,
-      });
-      setResendMessage(res.data.message || "Verification link resent successfully.");
+      const res = await axios.post(
+        "http://localhost:5000/api/users/resend-verification",
+        {
+          email,
+        },
+      );
+      setResendMessage(
+        res.data.message || "Verification link resent successfully.",
+      );
     } catch (err: any) {
       setResendMessage(
-        err.response?.data?.message || "Failed to resend verification link. Please try again."
+        err.response?.data?.message ||
+          "Failed to resend verification link. Please try again.",
       );
     } finally {
       setResendLoading(false);
@@ -82,7 +95,7 @@ export default function VerifyEmail() {
 
         {status === "success" && (
           <div className="flex flex-col items-center py-4 animate-[fadeIn_0.5s_ease-out]">
-            {/* Beautiful Animated Success Ring */}
+            {/*  Animated Success Ring */}
             <div className="w-20 h-20 rounded-full bg-emerald-50 flex items-center justify-center mb-8 border-2 border-emerald-100 shadow-[0_8px_30px_rgb(209,250,229,0.5)]">
               <svg
                 className="w-10 h-10 text-emerald-500 animate-[scaleIn_0.3s_ease-out]"
@@ -91,15 +104,20 @@ export default function VerifyEmail() {
                 stroke="currentColor"
                 strokeWidth={3}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
-            
+
             <h1 className="text-2xl font-black text-[#1a1a2e] mb-3 tracking-tight">
               Email Verified!
             </h1>
             <p className="text-[#6B7280] text-sm leading-relaxed mb-8 max-w-[320px]">
-              {message} Your account is now fully active. You are ready to log in.
+              {message} Your account is now fully active. You are ready to log
+              in.
             </p>
 
             <button
@@ -143,9 +161,11 @@ export default function VerifyEmail() {
                   Need another link?
                 </p>
                 <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-                  We can send a new verification link to <span className="font-semibold text-slate-800">{email}</span>. It will expire in 24 hours.
+                  We can send a new verification link to{" "}
+                  <span className="font-semibold text-slate-800">{email}</span>.
+                  It will expire in 24 hours.
                 </p>
-                
+
                 <button
                   onClick={handleResend}
                   disabled={resendLoading}

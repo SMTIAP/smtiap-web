@@ -5,7 +5,7 @@ import Registration from "./Register";
 
 type Mode = "signin" | "signup";
 
-// Social Icons (shared between components)
+// Social login SVG icons shared between AuthPage and child components.
 export const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
     <path
@@ -39,10 +39,12 @@ export const LinkedInIcon = () => (
   </svg>
 );
 
+// Animated auth container that switches between sign-in and sign-up panels.
 export default function AuthPage() {
   const [mode, setMode] = useState<Mode>("signin");
   const [animating, setAnimating] = useState(false);
 
+  // Delay mode switch to allow overlay slide animation to complete.
   const switchMode = (newMode: Mode) => {
     if (newMode === mode || animating) return;
     setAnimating(true);

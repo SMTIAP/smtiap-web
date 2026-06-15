@@ -76,7 +76,7 @@ interface DashboardUser {
   role?: string;
 }
 
-
+// Dashboard stats returned by the API for the organization view.
 interface DashboardStats {
   roles: {
     admin: number;
@@ -84,12 +84,12 @@ interface DashboardStats {
     billing_manager: number;
     viewer: number;
   };
-  surveys: { 
-    total: number; 
-    draft: number; 
-    published: number; 
-    scheduled: number;  // ✅ ADDED
-    ended: number; 
+  surveys: {
+    total: number;
+    draft: number;
+    published: number;
+    scheduled: number;
+    ended: number;
   };
   subscription: {
     plan: string;
@@ -100,19 +100,20 @@ interface DashboardStats {
   } | null;
 }
 
+// Admin dashboard with feature cards, org-wide stats, and role-based access control.
 export default function OrganizationAdmin() {
   const navigate = useNavigate();
   const [user, setUser] = useState<DashboardUser | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const { activeTenant, isSystemContext } = useTenant();
 
-  // Resolve effective role: system context → user.role, tenant context → tenant role
+  // Resolve effective role: system context -> user.role, tenant context -> tenant role.
   const effectiveRole =
     !isSystemContext && activeTenant
       ? activeTenant.role
       : (user?.role ?? "admin");
 
-  // Define which roles can see which feature cards
+  // Define which roles can see which feature cards.
   const roleAccess: Record<string, string[]> = {
     super_admin: ["surveys", "employees", "billing"],
     admin: ["surveys", "employees", "billing"],
@@ -123,6 +124,7 @@ export default function OrganizationAdmin() {
 
   const allowedFeatures = roleAccess[effectiveRole] ?? ["surveys"];
 
+  // Fetch user profile and dashboard stats on mount; poll every 15 s and refresh on window focus.
   useEffect(() => {
     let statsTimer: ReturnType<typeof setInterval> | null = null;
     const fetchUser = async () => {
@@ -161,6 +163,7 @@ export default function OrganizationAdmin() {
       </div>
     );
 
+  // Aggregate user totals and define role-gated feature cards.
   const totalUsers =
     (stats?.roles.admin ?? 0) +
     (stats?.roles.creator ?? 0) +
@@ -186,7 +189,7 @@ export default function OrganizationAdmin() {
       to: "/created-surveys",
       gradient: "bg-linear-to-br from-indigo-500 to-purple-600",
       description:
-        "Craft, distribute and monitor active system feedback forms.",
+        "Craft, distribute and monitor active survey feedback forms.",
       badge: `${activePublished} Active`,
       badgeColor:
         "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/40 dark:text-indigo-300",
@@ -208,7 +211,7 @@ export default function OrganizationAdmin() {
       to: "/subscription",
       gradient: "bg-linear-to-br from-indigo-500 to-purple-600",
       description:
-        "Configure licensing, view active invoices, or scale your account.",
+        "Upgrade your account to premium status for extra features and more freedom.",
       badge: stats?.subscription?.plan
         ? `${stats.subscription.plan} Active`
         : "Free Tier",
@@ -234,7 +237,6 @@ export default function OrganizationAdmin() {
     { label: "Viewers", value: stats?.roles.viewer ?? "—" },
   ];
 
-  
   const statRows2 = [
     { label: "Created Total", value: stats?.surveys.total ?? "—" },
     { label: "Draft Mode", value: stats?.surveys.draft ?? "—" },

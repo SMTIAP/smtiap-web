@@ -3,10 +3,17 @@ import User, { IUser } from "../models/User.js";
 import Tenant from "../models/Tenant.js";
 import UserTenantRole from "../models/UserTenantRole.js";
 import AuditLog from "../models/AuditLog.js";
+import { Payment } from "../models/Payment.js";
 import { toast } from "sonner";
-import { notifyRoleChanged, notifyUserAddedToOrganization, notifyUserRemove, notifyTenantRemoved } from "../services/emailNotificationService.js";
+import {
+  notifyRoleChanged,
+  notifyUserAddedToOrganization,
+  notifyUserRemove,
+  notifyTenantRemoved,
+} from "../services/emailNotificationService.js";
 import { createAppNotification } from "../services/notificationService.js";
 
+// Converts a snake_case role string to Title Case for display (e.g. "super_admin" -> "Super Admin").
 export const formatRole = (role: string) => {
   return role
     .split("_")
@@ -30,7 +37,7 @@ const hasTenantAccess = (req: Request, tenantId: string): boolean =>
 /** Check if the authenticated user is the creator/owner of the tenant. */
 const isTenantAdminOrCreator = async (
   req: Request,
-  tenantId: string
+  tenantId: string,
 ): Promise<boolean> => {
   const userId = (req as any).user?._id;
   if (!userId) return false;
@@ -51,6 +58,29 @@ const isTenantAdminOrCreator = async (
   return isCreator || isAdmin;
 };
 
+// ---plan-based member ability limits, payment related---
+// limit how many members one can add to their organization
+//depending on their payment plan
+// null means unlimited (for the pro plan)
+const PLAN_MEMBER_LIMITS: Record<string, number | null> = {
+  free: 1,
+  startup: 2,
+  pro: 10,
+};
+
+// resolve the tenant's current active plan, defaulting to "free" if none/expired.
+const getTenantPlanName = async (tenantId: string): Promise<string> => {
+  const payment = await Payment.findOne({ tenantId, status: "success" })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  if (!payment) return "free";
+  if (payment.expiresAt && new Date(payment.expiresAt) < new Date())
+    return "free";
+
+  return payment.planName.toLowerCase();
+};
+
 // ── Controllers ──────────────────────────────────────────────────────
 
 export const getAllUsers = async (req: Request, res: Response) => {
@@ -65,6 +95,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
   }
 };
 
+// Returns tenants accessible to the user. If an activeTenantId is set, scopes to that single tenant.
 export const getAllTenants = async (req: Request, res: Response) => {
   try {
     const activeTenantId = (req as any).activeTenantId as string | null;
@@ -85,6 +116,7 @@ export const getAllTenants = async (req: Request, res: Response) => {
   }
 };
 
+// Adds a user to an organization with a specific role, enforcing plan-based member limits.
 export const addUserToOrganization = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.params;
@@ -111,13 +143,31 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
       });
     }
 
+    // ---Enforce plan-based member limits--
+    const planName = await getTenantPlanName(tenantId);
+    const memberLimit = PLAN_MEMBER_LIMITS[planName] ?? 1;
+
+    if (memberLimit !== null) {
+      const currentMemberCount = await UserTenantRole.countDocuments({
+        tenantId,
+        status: "active",
+      });
+
+      if (currentMemberCount >= memberLimit) {
+        return res.status(403).json({
+          message:
+            planName === "free"
+              ? "Your organization is on the Free plan, which only supports 1 member (you). Upgrade your plan to add more members."
+              : `Your organization is on the ${formatRole(planName)} plan, which supports up to ${memberLimit} members. Upgrade to Pro for unlimited members.`,
+        });
+      }
+    }
+
     const record = await UserTenantRole.create({
       userId,
       tenantId,
       role,
     });
-
-
 
     //Fetch user details
     const user = await User.findById(userId).lean<IUser>();
@@ -132,7 +182,7 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
       });
     }
 
-    //In-app notification for User (NEW)
+    // In-app notification for the added user.
     await createAppNotification({
       tenant_id: tenantId,
       user_id: userId,
@@ -141,7 +191,7 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
       message: `You have been added to "${tenant?.name}" with role "${formatRole(role)}".`,
     });
 
-    //In-app notification for Actor (NEW)
+    // In-app notification for the actor who performed the addition.
     await createAppNotification({
       tenant_id: tenantId,
       user_id: actor,
@@ -167,6 +217,7 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
   }
 };
 
+// Returns all active members across the user's tenants with their roles.
 export const getUserTenantData = async (req: Request, res: Response) => {
   try {
     const tenantIds = reqTenantIds(req);
@@ -190,6 +241,7 @@ export const getUserTenantData = async (req: Request, res: Response) => {
   }
 };
 
+// Updates a user's role within an organization. Only the tenant admin or creator can perform this action.
 export const updateOrgRole = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.params;
@@ -236,12 +288,12 @@ export const updateOrgRole = async (req: Request, res: Response) => {
     const tenant = await Tenant.findById(tenantId);
 
     if (user && tenant) {
-      await notifyRoleChanged ({
+      await notifyRoleChanged({
         email: user?.email,
         organizationName: tenant?.name,
         username: user?.username,
         newRole: newRole,
-      })
+      });
     }
 
     //Audit log
@@ -254,8 +306,7 @@ export const updateOrgRole = async (req: Request, res: Response) => {
       description: `Role changed from ${formatRole(oldRole)} to ${formatRole(newRole)} for ${user?.username} in Organization ${tenant?.name}`,
     });
 
-
-    //In-app notification for User (NEW)
+    // In-app notification for the affected user.
     await createAppNotification({
       tenant_id: tenantId,
       user_id: userId,
@@ -264,7 +315,7 @@ export const updateOrgRole = async (req: Request, res: Response) => {
       message: `Your role was changed to ${formatRole(newRole)} in ${tenant?.name}`,
     });
 
-    //In-app notification for Actor (NEW)
+    // In-app notification for the actor who changed the role.
     await createAppNotification({
       tenant_id: tenantId,
       user_id: actor,
@@ -285,6 +336,7 @@ export const updateOrgRole = async (req: Request, res: Response) => {
   }
 };
 
+// Soft-deactivates a user's membership in an organization (sets status to inactive).
 export const removeOrgUser = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.params;
@@ -322,15 +374,15 @@ export const removeOrgUser = async (req: Request, res: Response) => {
     const user = await User.findById(userId);
     const tenant = await Tenant.findById(tenantId);
 
-    if(user && tenant){
+    if (user && tenant) {
       await notifyUserRemove({
         email: user.email,
         username: user.username,
         organizationName: tenant.name,
-      })
+      });
     }
 
-    //In-app notification for User (NEW)
+    // In-app notification for the removed user.
     await createAppNotification({
       tenant_id: tenantId,
       user_id: userId,
@@ -339,7 +391,7 @@ export const removeOrgUser = async (req: Request, res: Response) => {
       message: `You have been removed from the Organization ${tenant?.name}`,
     });
 
-    //In-app notification for Actor (NEW)
+    // In-app notification for the actor who performed the removal.
     await createAppNotification({
       tenant_id: tenantId,
       user_id: actor,
@@ -367,6 +419,7 @@ export const removeOrgUser = async (req: Request, res: Response) => {
   }
 };
 
+// Soft-deactivates an entire organization and all its memberships. Notifies all affected users.
 export const removeTenant = async (req: Request, res: Response) => {
   const { tenantId } = req.params;
   const actor = (req as any).user;
@@ -375,7 +428,7 @@ export const removeTenant = async (req: Request, res: Response) => {
     const tenant = await Tenant.findByIdAndUpdate(
       tenantId,
       { status: "inactive" },
-      { new: true }
+      { new: true },
     );
 
     if (!tenant) {
@@ -383,7 +436,7 @@ export const removeTenant = async (req: Request, res: Response) => {
     }
 
     const actorId = actor?._id?.toString();
-    
+
     // Get all active users before deactivating
     const tenantUsers = await UserTenantRole.find({
       tenantId,
@@ -397,10 +450,10 @@ export const removeTenant = async (req: Request, res: Response) => {
         $set: {
           status: "inactive",
         },
-      }
+      },
     );
 
-    // 👇 Actor notification
+    // Actor notification
     if (actor) {
       await createAppNotification({
         tenant_id: tenantId,
@@ -424,28 +477,25 @@ export const removeTenant = async (req: Request, res: Response) => {
       tenantUsers
         .filter((member) => member.userId?._id?.toString() !== actorId)
         .map(async (member) => {
-        const user = member.userId as any;
+          const user = member.userId as any;
 
-        if (!user?.email) return;
+          if (!user?.email) return;
 
-        
+          // Other users notification
+          await createAppNotification({
+            tenant_id: tenantId,
+            user_id: user._id,
+            type: "TENANT_DEACTIVATED",
+            channel: "in_app",
+            message: `Organization ${tenant.name} has been deactivated`,
+          });
 
-        // 👇 Other users notification
-        await createAppNotification({
-          tenant_id: tenantId,
-          user_id: user._id,
-          type: "TENANT_DEACTIVATED",
-          channel: "in_app",
-          message: `Organization ${tenant.name} has been deactivated`,
-        });
-
-        return notifyTenantRemoved({
-          email: user.email,
-          username: user.username,
-          organizationName: tenant.name,
-        });
-      })
-
+          return notifyTenantRemoved({
+            email: user.email,
+            username: user.username,
+            organizationName: tenant.name,
+          });
+        }),
     );
 
     //Audit log
@@ -462,7 +512,6 @@ export const removeTenant = async (req: Request, res: Response) => {
       message: "Tenant and related users deactivated successfully",
       tenant,
     });
-
   } catch (error) {
     console.error("Error removing tenant:", error);
     return res.status(500).json({ message: "Internal server error" });

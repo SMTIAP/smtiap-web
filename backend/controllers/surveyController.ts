@@ -3,10 +3,14 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import Survey from "../models/Survey.js";
 import AuditLog from "../models/AuditLog.js";
-import { notifySurveyPublished, notifySurveyStopped } from "../services/emailNotificationService.js";
+import {
+  notifySurveyPublished,
+  notifySurveyStopped,
+} from "../services/emailNotificationService.js";
 import User from "../models/User.js";
 import { toast } from "sonner";
 import Tenant from "../models/Tenant.js";
+import { Payment } from "../models/Payment.js";
 import { createAppNotification } from "../services/notificationService.js";
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -128,6 +132,70 @@ const verifySurveyAccess = async (
   return null;
 };
 
+// ---plan-based active survey limits pyahere----
+
+// "Active" = counts toward the limit (Running or Scheduled)
+const ACTIVE_SURVEY_STATUSES = ["Running", "Scheduled"];
+
+// null = unlimited
+const PLAN_SURVEY_LIMITS: Record<string, number> = {
+  free: 2,
+  startup: 3,
+  pro: 100,
+};
+
+/** Resolve the tenant's current active plan, defaulting to "free" if none/expired. */
+const getTenantPlanName = async (tenantId: string): Promise<string> => {
+  const payment = await Payment.findOne({ tenantId, status: "success" })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  if (!payment) return "free";
+  if (payment.expiresAt && new Date(payment.expiresAt) < new Date())
+    return "free";
+
+  return payment.planName.toLowerCase();
+};
+
+/**
+ returns null if the survey can transition to `newStatus`, or an error
+ message string if doing so would exceed the tenant's plan limit.
+
+ only checks when newStatus is "Running"/"Scheduled" AND the survey's
+ previous status was NOT already counted as active - ex: only on the
+ transition INTO the active set, not between Running <-> Scheduled.
+ */
+const checkActiveSurveyLimit = async (
+  req: Request,
+  tenantId: string | null | undefined,
+  newStatus: string,
+  oldStatus: string | null | undefined,
+): Promise<string | null> => {
+  if (!ACTIVE_SURVEY_STATUSES.includes(newStatus)) return null;
+  if (oldStatus && ACTIVE_SURVEY_STATUSES.includes(oldStatus)) return null;
+
+  const planName = tenantId ? await getTenantPlanName(tenantId) : "free";
+  const limit = PLAN_SURVEY_LIMITS[planName] ?? PLAN_SURVEY_LIMITS.free;
+
+  // build the same filter used to scope surveys for this context:
+  // tenant-scoped surveys for orgs, personal surveys (no tenant) for "My Account"
+  const countFilter = tenantId
+    ? { tenantId: new mongoose.Types.ObjectId(tenantId), status: { $in: ACTIVE_SURVEY_STATUSES } }
+    : {
+        createdBy: (req as any).user?._id,
+        $or: [{ tenantId: { $exists: false } }, { tenantId: null }],
+        status: { $in: ACTIVE_SURVEY_STATUSES },
+      };
+
+  const activeCount = await Survey.countDocuments(countFilter as any);
+
+  if (activeCount >= limit) {
+    return `${tenantId ? `Your organization is on the ${planName.charAt(0).toUpperCase() + planName.slice(1)} plan` : "Your personal account is on the Free plan"}, which allows up to ${limit} active (published or scheduled) survey${limit === 1 ? "" : "s"} at a time. Finish or unpublish an existing survey to publish more.`;
+  }
+
+  return null;
+};
+
 // Records an audit trail entry for survey actions
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const logAudit = (
@@ -206,6 +274,13 @@ export const createSurvey = async (req: Request, res: Response) => {
       hashedPassword = await bcrypt.hash(password, saltRounds);
     }
 
+        // ---enforce plan based active survey limits payhere---
+    const limitError = await checkActiveSurveyLimit(req, activeTenantId, status, null);
+    if (limitError) {
+      res.status(403).json({ message: limitError });
+      return;
+    }
+
     const survey = new Survey({
       surveyTitle,
       description,
@@ -240,7 +315,6 @@ export const createSurvey = async (req: Request, res: Response) => {
       const orgName = tenant?.name ?? "System";
 
       await createAppNotification({
-        
         tenant_id: survey.tenantId ? String(survey.tenantId) : "", // or null if schema allows
         user_id: userId!,
         type: "SURVEY_CREATED",
@@ -264,7 +338,7 @@ export const createSurvey = async (req: Request, res: Response) => {
 export const getSurveys = async (req: Request, res: Response) => {
   try {
     const filter = buildSurveyFilter(req);
-    // Unauthenticated requests get empty results via this management endpoint
+    // Unauthenticated requests get empty results via this management endpoint.
     if (!filter) {
       res.json([]);
       return;
@@ -280,22 +354,18 @@ export const getSurveys = async (req: Request, res: Response) => {
   }
 };
 
-// GET /api/surveys/:id — Returns a single survey
-// NOTE: This endpoint is intentionally left public (no `protect` middleware)
-//       so respondents can load surveys via TakeSurvey page.
-//       When the user IS authenticated (via loadTenant), we verify access.
-//       When NOT authenticated, any survey is readable (public survey-taking).
+// GET /api/surveys/:id — Returns a single survey (public respondents bypass auth checks).
 export const getSurveyById = async (req: Request, res: Response) => {
   try {
     const user = reqUser(req);
 
     if (user) {
-      // Authenticated user → enforce isolation
+      // Authenticated user → enforce isolation.
       const survey = await verifySurveyAccess(req, res, req.params.id);
       if (!survey) return;
       res.json(survey);
     } else {
-      // Unauthenticated (public respondent) → anyone can read any survey
+      // Unauthenticated (public respondent) → anyone can read any survey.
       const survey = await Survey.findById(req.params.id);
       if (!survey) {
         res.status(404).json({ message: "Survey not found" });
@@ -374,16 +444,22 @@ export const updateSurvey = async (req: Request, res: Response) => {
     )
       return;
 
-      const oldTitle = survey.surveyTitle;
+    const oldTitle = survey.surveyTitle;
 
     // Never allow overwriting tenantId or createdBy via the request body
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { tenantId: _tid, createdBy: _cb, password, isPasswordProtected, ...safeBody } = req.body;
+    const {
+      tenantId: _tid,
+      createdBy: _cb,
+      password,
+      isPasswordProtected,
+      ...safeBody
+    } = req.body;
 
     // Handle password hashing if password protection is being updated
     if (isPasswordProtected !== undefined) {
       safeBody.isPasswordProtected = isPasswordProtected;
-      
+
       if (isPasswordProtected && password) {
         // Hash the new password
         const saltRounds = 10;
@@ -394,12 +470,26 @@ export const updateSurvey = async (req: Request, res: Response) => {
       }
     }
 
+    // ---enforce plan-based active survey limits payhere---
+    if (safeBody.status) {
+      const limitError = await checkActiveSurveyLimit(
+        req,
+        survey.tenantId ? String(survey.tenantId) : null,
+        safeBody.status,
+        survey.status,
+      );
+      if (limitError) {
+        res.status(403).json({ message: limitError });
+        return;
+      }
+    }
+
     const updated = await Survey.findByIdAndUpdate(req.params.id, safeBody, {
       new: true,
       runValidators: true,
     });
 
-    // 🔥 AUDIT: title changed
+    // AUDIT: title changed
     if (safeBody.surveyTitle && safeBody.surveyTitle !== oldTitle) {
       await AuditLog.create({
         tenant_id: survey.tenantId ?? null,
@@ -442,14 +532,14 @@ export const updateSurvey = async (req: Request, res: Response) => {
             });
           }
           await createAppNotification({
-              tenant_id: updated.tenantId ? String(updated.tenantId) : "",
-              user_id: userId,
-              type: "SURVEY_UPDATE", // or SURVEY_UPDATED if that already exists
-              channel: "in_app",
-              message: `Survey "${updated.surveyTitle}" has been updated in ${orgName}`,
-              surveyId: updated._id.toString(),
-              surveyName: updated.surveyTitle,
-            });
+            tenant_id: updated.tenantId ? String(updated.tenantId) : "",
+            user_id: userId,
+            type: "SURVEY_UPDATE", // or SURVEY_UPDATED if that already exists
+            channel: "in_app",
+            message: `Survey "${updated.surveyTitle}" has been updated in ${orgName}`,
+            surveyId: updated._id.toString(),
+            surveyName: updated.surveyTitle,
+          });
         }
       } catch (err) {
         console.error("Draft notification failed:", err);
@@ -462,7 +552,7 @@ export const updateSurvey = async (req: Request, res: Response) => {
   }
 };
 
-// PATCH /api/surveys/:id/status — Updates survey status (with tenant check)
+// updates survey status (with tenant check)
 export const updateStatus = async (req: Request, res: Response) => {
   try {
     const { status } = req.body;
@@ -482,6 +572,16 @@ export const updateStatus = async (req: Request, res: Response) => {
     )
 
     return;
+
+    // --enforce plan-based active survey limits payhere---
+    const limitError = await checkActiveSurveyLimit(
+      req,
+      survey.tenantId ? String(survey.tenantId) : null,
+      status,
+      survey.status,
+    );
+    
+
     const updated = await Survey.findByIdAndUpdate(
       req.params.id,
       { status },
@@ -496,11 +596,10 @@ export const updateStatus = async (req: Request, res: Response) => {
     );
 
     const user = reqUser(req);
-    
+
     const userId = reqUserId(req);
 
-if (!userId) return; // or handle error
-    
+    if (!userId) return; // or handle error
 
     if (status === "Running") {
       if (user?._id) {
@@ -527,7 +626,6 @@ if (!userId) return; // or handle error
         const orgName = tenant?.name ?? "System";
 
         await createAppNotification({
-          
           tenant_id: survey.tenantId ? String(survey.tenantId) : "", // or null if schema allows
           user_id: userId!,
           type: "SURVEY_PUBLISHED",
@@ -537,14 +635,15 @@ if (!userId) return; // or handle error
           surveyName: survey.surveyTitle,
         });
       } catch (err) {
-        console.error("Notification failed but survey will still publish:", err);
+        console.error(
+          "Notification failed but survey will still publish:",
+          err,
+        );
       }
     }
 
     if (status === "Finished") {
-      const currentUser = user?._id
-        ? await User.findById(user._id)
-        : null;
+      const currentUser = user?._id ? await User.findById(user._id) : null;
 
       const tenant = survey.tenantId
         ? await Tenant.findById(survey.tenantId)
@@ -561,24 +660,24 @@ if (!userId) return; // or handle error
     }
 
     try {
-        const tenant = survey.tenantId
-          ? await Tenant.findById(survey.tenantId)
-          : null;
+      const tenant = survey.tenantId
+        ? await Tenant.findById(survey.tenantId)
+        : null;
 
-        const orgName = tenant?.name ?? "System";
+      const orgName = tenant?.name ?? "System";
 
-        await createAppNotification({
-          tenant_id: survey.tenantId ? String(survey.tenantId) : "", // or null if schema allows
-          user_id: userId!,
-          type: "SURVEY_STOPPED",
-          channel: "in_app",
-          message: `Survey "${survey.surveyTitle}" has been stopped in ${orgName}`,
-          surveyId: survey._id.toString(),
-          surveyName: survey.surveyTitle,
-        });
-      } catch (err) {
-        console.error("Notification failed but survey will still publish:", err);
-      }
+      await createAppNotification({
+        tenant_id: survey.tenantId ? String(survey.tenantId) : "", // or null if schema allows
+        user_id: userId!,
+        type: "SURVEY_STOPPED",
+        channel: "in_app",
+        message: `Survey "${survey.surveyTitle}" has been stopped in ${orgName}`,
+        surveyId: survey._id.toString(),
+        surveyName: survey.surveyTitle,
+      });
+    } catch (err) {
+      console.error("Notification failed but survey will still publish:", err);
+    }
 
     res.json({ message: "Status updated", survey: updated });
   } catch (err) {
@@ -614,20 +713,22 @@ export const verifySurveyPassword = async (req: Request, res: Response) => {
   try {
     const { password } = req.body;
     const survey = await Survey.findById(req.params.id);
-    
+
     if (!survey) {
       res.status(404).json({ success: false, message: "Survey not found" });
       return;
     }
-    
+
     if (!survey.isPasswordProtected) {
-      res.status(400).json({ success: false, message: "Survey is not password protected" });
+      res
+        .status(400)
+        .json({ success: false, message: "Survey is not password protected" });
       return;
     }
-    
+
     // Compare the provided password with the stored hash
     const isValid = await bcrypt.compare(password, survey.password);
-    
+
     if (isValid) {
       res.json({ success: true, message: "Password verified" });
     } else {

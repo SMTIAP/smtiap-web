@@ -25,6 +25,7 @@ interface AiInsightsSectionProps {
   keywords: { keyword: string; count: number }[];
 }
 
+// Displays AI-generated insights, summary, and top keywords for a selected survey.
 export default function AiInsightsSection({
   runAnalysis,
   isAnalyzing,

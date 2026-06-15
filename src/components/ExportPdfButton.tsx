@@ -10,6 +10,7 @@ interface ExportPdfButtonProps {
   fileName?: string;
 }
 
+// Button that exports survey data as a PDF document.
 export default function ExportPdfButton({
   targetId,
   fileName = "analytics-report",

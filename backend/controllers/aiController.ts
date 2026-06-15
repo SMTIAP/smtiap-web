@@ -68,6 +68,7 @@ If the input is gibberish, random characters, nonsense text, off-topic questions
   "_message": "Please describe what kind of survey you want to create. For example: \"A customer feedback survey about our new mobile app\" or \"An employee engagement survey for our company\"."
 }`;
 
+// Generates a complete survey structure from a user's natural-language description via Gemini.
 export const generateSurveyWithAi = async (
   req: Request,
   res: Response,
@@ -79,6 +80,7 @@ export const generateSurveyWithAi = async (
       return;
     }
 
+    // Check both frontend (VITE_) and backend env var naming conventions.
     const apiKey =
       process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -94,7 +96,7 @@ export const generateSurveyWithAi = async (
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
       generationConfig: {
-        responseMimeType: "application/json",
+        responseMimeType: "application/json", // Forces Gemini to return raw JSON.
       },
     });
 
@@ -146,6 +148,7 @@ Rules:
   ]
 }`;
 
+// Modifies an existing survey structure based on a user's natural-language change request.
 export const modifySurveyWithAi = async (
   req: Request,
   res: Response,
@@ -157,6 +160,7 @@ export const modifySurveyWithAi = async (
       return;
     }
 
+    // Check both frontend (VITE_) and backend env var naming conventions.
     const apiKey =
       process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -187,22 +191,63 @@ export const modifySurveyWithAi = async (
   }
 };
 
+// Matches user input against known page routes locally, used as fallback when Gemini is unavailable.
 const tryLocalNavigation = (prompt: string) => {
   const normalized = prompt.toLowerCase().trim();
 
   // Define route mapping
   const routes = [
-    { pattern: /\b(dashboard|creator-dashboard|creator dashboard)\b/, path: "/creator-dashboard", name: "Dashboard" },
-    { pattern: /\b(analytics|stats|charts|reports|analyze|analyzed|analysis|analyse|analysed)\b/, path: "/analytics", name: "Analytics" },
-    { pattern: /\b(created surveys|my surveys|view surveys|surveys|survey|survey list)\b/, path: "/created-surveys", name: "Created Surveys" },
-    { pattern: /\b(create new survey|create survey|new survey|make survey|add survey)\b/, path: "/create-new-survey", name: "Create New Survey" },
-    { pattern: /\b(templates|template)\b/, path: "/templates", name: "Templates" },
-    { pattern: /\b(subscription|billing|plan|credits|pricing)\b/, path: "/subscription", name: "Subscription" },
-    { pattern: /\b(organization registration|register organization|org registration|organization|org)\b/, path: "/organization-registration", name: "Organization Registration" },
-    { pattern: /\b(role management|roles|role|manage roles)\b/, path: "/role-management", name: "Role Management" },
-    { pattern: /\b(audit logs|audit log|logs|audit)\b/, path: "/audit-log", name: "Audit Logs" },
+    {
+      pattern: /\b(dashboard|creator-dashboard|creator dashboard)\b/,
+      path: "/creator-dashboard",
+      name: "Dashboard",
+    },
+    {
+      pattern:
+        /\b(analytics|stats|charts|reports|analyze|analyzed|analysis|analyse|analysed)\b/,
+      path: "/analytics",
+      name: "Analytics",
+    },
+    {
+      pattern:
+        /\b(created surveys|my surveys|view surveys|surveys|survey|survey list)\b/,
+      path: "/created-surveys",
+      name: "Created Surveys",
+    },
+    {
+      pattern:
+        /\b(create new survey|create survey|new survey|make survey|add survey)\b/,
+      path: "/create-new-survey",
+      name: "Create New Survey",
+    },
+    {
+      pattern: /\b(templates|template)\b/,
+      path: "/templates",
+      name: "Templates",
+    },
+    {
+      pattern: /\b(subscription|billing|plan|credits|pricing)\b/,
+      path: "/subscription",
+      name: "Subscription",
+    },
+    {
+      pattern:
+        /\b(organization registration|register organization|org registration|organization|org)\b/,
+      path: "/organization-registration",
+      name: "Organization Registration",
+    },
+    {
+      pattern: /\b(role management|roles|role|manage roles)\b/,
+      path: "/role-management",
+      name: "Role Management",
+    },
+    {
+      pattern: /\b(audit logs|audit log|logs|audit)\b/,
+      path: "/audit-log",
+      name: "Audit Logs",
+    },
     { pattern: /\b(admin|administrator)\b/, path: "/admin", name: "Admin" },
-    { pattern: /\b(home|landing|main|index)\b/, path: "/", name: "Home" }
+    { pattern: /\b(home|landing|main|index)\b/, path: "/", name: "Home" },
   ];
 
   for (const route of routes) {
@@ -210,7 +255,7 @@ const tryLocalNavigation = (prompt: string) => {
       return {
         response_message: `Navigating you to your ${route.name.toLowerCase()} page.`,
         action: "navigate",
-        path: route.path
+        path: route.path,
       };
     }
   }
@@ -218,9 +263,10 @@ const tryLocalNavigation = (prompt: string) => {
   // Also match general greets/questions for polite fallback
   if (/\b(hi|hello|hey|greetings|yo|good morning|good afternoon)\b/.test(normalized)) {
     return {
-      response_message: "Hello! I am your AI assistant. How can I help you navigate?",
+      response_message:
+        "Hello! I am your AI assistant. How can I help you navigate?",
       action: "speak",
-      path: null
+      path: null,
     };
   }
 
@@ -312,6 +358,8 @@ const resolveConfirmationPath = (history: any[]): string | null => {
   return null;
 };
 
+// Main conversational AI handler: routes navigation, answers questions, or generates surveys.
+// Falls back to local route matching when Gemini is unreachable.
 export const chatWithAi = async (
   req: Request,
   res: Response,
@@ -388,14 +436,22 @@ export const chatWithAi = async (
   try {
     // Intercept specific requests for individual survey analytics or settings using surveyTitle
     const normalizedPrompt = prompt.toLowerCase();
-    const isAnalyticsRequest = /\b(analytics|results|charts|stats|responses|analyse|analysis|analyze|analyzed)\b/.test(normalizedPrompt);
-    const isSettingsRequest = /\b(settings|configure|configuration|edit settings)\b/.test(normalizedPrompt);
+    const isAnalyticsRequest =
+      /\b(analytics|results|charts|stats|responses|analyse|analysis|analyze|analyzed)\b/.test(
+        normalizedPrompt,
+      );
+    const isSettingsRequest =
+      /\b(settings|configure|configuration|edit settings)\b/.test(
+        normalizedPrompt,
+      );
 
     if (isAnalyticsRequest || isSettingsRequest) {
       // Find all surveys
       const surveys = await Survey.find({}, "surveyTitle _id").lean();
       // Sort surveys by title length descending to prevent partial match issues
-      const sortedSurveys = surveys.sort((a, b) => b.surveyTitle.length - a.surveyTitle.length);
+      const sortedSurveys = surveys.sort(
+        (a, b) => b.surveyTitle.length - a.surveyTitle.length,
+      );
 
       for (const survey of sortedSurveys) {
         const titleLower = survey.surveyTitle.toLowerCase();
@@ -404,14 +460,14 @@ export const chatWithAi = async (
             res.json({
               response_message: `Opening analytics for survey "${survey.surveyTitle}".`,
               action: "navigate",
-              path: `/survey-results/${survey._id}`
+              path: `/survey-results/${survey._id}`,
             });
             return;
           } else if (isSettingsRequest) {
             res.json({
               response_message: `Opening settings for survey "${survey.surveyTitle}".`,
               action: "navigate",
-              path: `/survey-settings/${survey._id}`
+              path: `/survey-settings/${survey._id}`,
             });
             return;
           }
@@ -437,7 +493,12 @@ export const chatWithAi = async (
         res.json(fallback);
         return;
       }
-      res.status(500).json({ error: "Gemini API key is missing. Please set GEMINI_API_KEY in your backend/.env file." });
+      res
+        .status(500)
+        .json({
+          error:
+            "Gemini API key is missing. Please set GEMINI_API_KEY in your backend/.env file.",
+        });
       return;
     }
 
@@ -508,11 +569,17 @@ If the user asks to generate, create, or build a survey (especially if they uplo
 If the user asks to go to a page or open a page, set action to "navigate", path to the page path, and response_message to confirm the action.
 If the user asks a general question, hello, or asks about billing/surveys, answer it in response_message, set action to "speak" (or "navigate" if they explicitly asked to go to the page), and path to null (unless navigating).`;
 
+    // Include prior conversation turns so the AI maintains context across messages.
     let historyText = "";
     if (Array.isArray(history) && history.length > 0) {
-      historyText = "\n\nConversation History:\n" + history
-        .map((msg: any) => `${msg.sender === "user" ? "User" : "AI Assistant"}: ${msg.text}`)
-        .join("\n");
+      historyText =
+        "\n\nConversation History:\n" +
+        history
+          .map(
+            (msg: any) =>
+              `${msg.sender === "user" ? "User" : "AI Assistant"}: ${msg.text}`,
+          )
+          .join("\n");
     }
 
     const fullPrompt = `${systemInstruction}${historyText}\n\nUser request: ${prompt}`;
@@ -565,4 +632,3 @@ If the user asks a general question, hello, or asks about billing/surveys, answe
     });
   }
 };
-

@@ -1,3 +1,4 @@
+// Drops all collections in the database. Useful for resetting before a fresh seed.
 import mongoose from "mongoose";
 import { env } from "./config/env.js";
 
@@ -28,7 +29,7 @@ async function cleanDb() {
 
       for (const name of collectionNames) {
         await db.dropCollection(name);
-        console.log(`  ✓ Dropped "${name}"`);
+        console.log(`  Dropped "${name}"`);
       }
     }
 
