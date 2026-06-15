@@ -284,7 +284,7 @@ const tryLocalNavigation = (prompt: string) => {
     return {
       response_message: "I can help you navigate to the Dashboard, Analytics, Create Survey, Templates, or Subscription pages. I can also help you generate surveys from screenshots or text files.",
       action: "speak",
-      path: null
+      path: null,
     };
   }
 
