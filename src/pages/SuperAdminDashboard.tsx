@@ -542,28 +542,6 @@ export default function SuperAdminDashboard() {
             </div>
           </div>
 
-          {/* Card 2: Organization Plans */}
-          <div
-            onClick={() => scrollToSection("super-admin-tenants")}
-            className="group relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-xl hover:scale-[1.02] hover:border-indigo-300 dark:hover:border-indigo-500 transition-all duration-300 p-6 flex flex-col cursor-pointer"
-          >
-            <div className="flex items-start justify-between mb-5">
-              <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-linear-to-br from-purple-500 to-violet-600 shadow-sm shrink-0">
-                <Building2 size={20} className="text-white" />
-              </div>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold text-purple-600 bg-purple-50 dark:bg-purple-900/40 dark:text-purple-300">
-                {tenants.length} Tenants
-              </span>
-            </div>
-            <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-1.5">Organization plans</h3>
-            <p className="text-gray-400 dark:text-slate-400 text-sm leading-relaxed mb-5">Adjust plans, suspend domains, or grant core credits.</p>
-            <div className="border-t border-gray-50 dark:border-slate-700 pt-4 mt-auto">
-              <span className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 dark:text-indigo-400 group-hover:gap-2 transition-all">
-                Manage Tenants <ChevronRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
-              </span>
-            </div>
-          </div>
-
           {/* Card 3: Security Trail */}
           <div
             onClick={() => scrollToSection("security-trail-section")}
@@ -937,95 +915,6 @@ export default function SuperAdminDashboard() {
               Create User Account
             </button>
           </div>
-        </section>
-
-        {/* Global Organization & Subscription Controls Section */}
-        <section id="super-admin-tenants" className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 w-full scroll-mt-24">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-5 border-b border-slate-100 dark:border-slate-700">
-            <div>
-              <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                <Building2 size={20} className="text-purple-500" />
-                Workspace & tenant registry
-              </h2>
-              <p className="text-xs text-slate-400 mt-1">
-                View, filter, and manage all organization instances registered on the platform.
-              </p>
-            </div>
-
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search by tenant or domain"
-                value={tenantsSearch}
-                onChange={(e) => setTenantsSearch(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-2 pl-9 pr-3 text-sm"
-              />
-            </div>
-          </div>
-
-          {tenantsLoading ? (
-            <div className="flex justify-center py-12">
-              <RefreshCw className="h-6 w-6 animate-spin text-indigo-500" />
-            </div>
-          ) : filteredTenants.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 text-sm">
-              No organization workspaces registered yet.
-            </div>
-          ) : (
-            <div className="mt-4 space-y-3">
-              {filteredTenants.map((tenant) => (
-                <div key={tenant._id} className="rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4 transition hover:border-slate-200 dark:hover:border-slate-600">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                        <h3 className="font-bold text-slate-800 dark:text-white truncate">{tenant.name}</h3>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${tenant.status === "active" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" :
-                            tenant.status === "suspended" ? "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300" :
-                              "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                          }`}>
-                          {tenant.status}
-                        </span>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${tenant.plan === "premium" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                          }`}>
-                          {tenant.plan}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-400 truncate">{tenant.domain}</p>
-                      <div className="flex flex-wrap items-center gap-3 mt-2 text-[10px] text-slate-500">
-                        <span className="flex items-center gap-1">
-                          <Coins size={10} />
-                          Credits: {tenant.creditBalance}
-                        </span>
-                        <span>📍 {tenant.country}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => handleUpdateTenant(tenant._id, tenant.status === "active" ? "suspended" : "active")}
-                        className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition ${tenant.status === "active"
-                            ? "border border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100 dark:border-amber-800/50 dark:bg-amber-950/30 dark:text-amber-400"
-                            : "border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:border-emerald-800/50 dark:bg-emerald-950/30 dark:text-emerald-400"
-                          }`}
-                      >
-                        {tenant.status === "active" ? <Ban size={12} /> : <CheckCircle2 size={12} />}
-                        {tenant.status === "active" ? "Suspend" : "Activate"}
-                      </button>
-
-                      <button
-                        onClick={() => handleUpdateTenant(tenant._id, undefined, tenant.plan === "premium" ? "free" : "premium")}
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                      >
-                        <ArrowRightLeft size={12} />
-                        Switch to {tenant.plan === "premium" ? "Free" : "Premium"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </section>
 
         {/* Security Trail Preview Section */}
