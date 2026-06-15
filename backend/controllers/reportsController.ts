@@ -74,7 +74,8 @@ export const getUserTenantData = async (req: Request, res: Response) => {
         },
       },
     ]);
-    console.log("🔥 RAW AUDIT AGGREGATION RESULT:", auditLogs);
+    console.log("REQ USER:", req.user);
+    console.log("AUDIT RESULT:", auditLogs);
 
     // 3. Convert to lookup map
     const loginMap = new Map(
@@ -140,7 +141,9 @@ export const getTenantActivity = async (req: Request, res: Response) => {
       .select("_id name status")
       .lean();
 
-    const tenantMap = new Map(tenants.map((t) => [String(t._id), t]));
+    const tenantMap = new Map(
+      tenants.map((t) => [String(t._id), {name: t.name, status: t.status}])
+    );
     // Get surveys for those tenants
     const surveys = await Survey.find({
       tenantId: { $in: tenantIds },
@@ -159,7 +162,7 @@ export const getTenantActivity = async (req: Request, res: Response) => {
           tenantId,
 
           tenantName: tenantInfo?.name ?? "Unknown",
-          users: 0,
+          users: userCountMap.get(tenantId) ?? 0,
 
           totalSurveys: 0,
           drafts: 0,
@@ -167,7 +170,7 @@ export const getTenantActivity = async (req: Request, res: Response) => {
           published: 0,
           stopped: 0,
           responses: 0,
-          status: tenantInfo?.status ?? "Unknown",
+          status: tenantInfo?.status,
         });
       }
 
