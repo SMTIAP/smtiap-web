@@ -207,10 +207,10 @@ export const handlePayHereNotify = async (
       return;
     }
  
-    //4. Single upsert into MongoDB, scoped to the tenant
+    
     console.log("Attempting DB write for order:", order_id, "tenant:", tenantId);
 
-    // Remove the tenant's previous active plan (upgrades replace, not stack)
+    // first write to mongodb. remove the tenant's previous active plan (upgrades replace, not stack)
     await Payment.deleteMany({ tenantId, status: "success" });
 
     // calculate expiry date
@@ -218,6 +218,7 @@ export const handlePayHereNotify = async (
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
 
+    //second write to mongodb. add new payment record
     await Payment.findOneAndUpdate(
       { orderId: order_id },
       {
