@@ -2,6 +2,20 @@ import { Request, Response } from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Survey from "../models/Survey.js";
 
+const cleanAndParseJson = (text: string) => {
+  let cleaned = text.trim();
+  if (cleaned.startsWith("```json")) {
+    cleaned = cleaned.substring(7);
+  } else if (cleaned.startsWith("```")) {
+    cleaned = cleaned.substring(3);
+  }
+  if (cleaned.endsWith("```")) {
+    cleaned = cleaned.substring(0, cleaned.length - 3);
+  }
+  cleaned = cleaned.trim();
+  return JSON.parse(cleaned);
+};
+
 const SURVEY_GENERATION_SYSTEM_PROMPT = `You are a survey generation assistant. Given a user's description, generate a complete survey in JSON format.
 
 Available question types: "short_text", "long_text", "multiple_choice", "checkboxes", "rating", "number", "date".
@@ -75,7 +89,7 @@ export const generateSurveyWithAi = async (
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const fullPrompt = `${SURVEY_GENERATION_SYSTEM_PROMPT}\n\nUser request: ${prompt}`;
 
@@ -87,7 +101,7 @@ export const generateSurveyWithAi = async (
     });
 
     const responseText = result.response.text();
-    const surveyData = JSON.parse(responseText);
+    const surveyData = cleanAndParseJson(responseText);
 
     res.json(surveyData);
   } catch (error) {
@@ -155,7 +169,7 @@ export const modifySurveyWithAi = async (
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const currentSurveyJson = JSON.stringify(currentSurvey, null, 2);
     const fullPrompt = `${SURVEY_MODIFICATION_SYSTEM_PROMPT}\n\nCurrent survey:\n${currentSurveyJson}\n\nModification request: ${prompt}`;
@@ -168,7 +182,7 @@ export const modifySurveyWithAi = async (
     });
 
     const responseText = result.response.text();
-    const modifiedSurvey = JSON.parse(responseText);
+    const modifiedSurvey = cleanAndParseJson(responseText);
 
     res.json(modifiedSurvey);
   } catch (error) {
@@ -247,13 +261,98 @@ const tryLocalNavigation = (prompt: string) => {
   }
 
   // Also match general greets/questions for polite fallback
-  if (/\b(hi|hello|hey|greetings|yo)\b/.test(normalized)) {
+  if (/\b(hi|hello|hey|greetings|yo|good morning|good afternoon)\b/.test(normalized)) {
     return {
       response_message:
         "Hello! I am your AI assistant. How can I help you navigate?",
       action: "speak",
       path: null,
     };
+  }
+
+  // Match identity questions
+  if (/\b(who are you|what is your name|your name|what are you|introduce yourself)\b/.test(normalized)) {
+    return {
+      response_message: "I am your Form Copilot, an AI assistant built to help you manage surveys, view analytics, and navigate the platform.",
+      action: "speak",
+      path: null
+    };
+  }
+
+  // Match capabilities questions
+  if (/\b(what can you do|help|capabilities|how to use|features)\b/.test(normalized)) {
+    return {
+      response_message: "I can help you navigate to the Dashboard, Analytics, Create Survey, Templates, or Subscription pages. I can also help you generate surveys from screenshots or text files.",
+      action: "speak",
+      path: null,
+    };
+  }
+
+  return null;
+};
+
+const isAffirmation = (prompt: string): boolean => {
+  const normalized = prompt.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "");
+  const affirmations = ["yes", "sure", "ok", "okay", "yep", "yeah", "please", "go ahead", "do it", "yup"];
+  return affirmations.includes(normalized);
+};
+
+const isNegation = (prompt: string): boolean => {
+  const normalized = prompt.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "");
+  const negations = ["no", "nope", "nah", "cancel", "dont", "dont do it", "nevermind", "no thanks"];
+  return negations.includes(normalized);
+};
+
+const resolveConfirmationPath = (history: any[]): string | null => {
+  if (!Array.isArray(history) || history.length === 0) return null;
+  const lastAiMsg = [...history].reverse().find(msg => msg.sender === 'ai' || msg.role === 'model' || msg.role === 'assistant');
+  if (!lastAiMsg || !lastAiMsg.text) return null;
+
+  const text = lastAiMsg.text.toLowerCase();
+
+  // Exclude the welcome message to prevent false positives
+  if (text.includes("form copilot") && text.includes("what can i do for you today")) {
+    return null;
+  }
+
+  if (text.includes("create new survey") || text.includes("create survey") || text.includes("/create-new-survey")) {
+    return "/create-new-survey";
+  }
+  if (text.includes("created surveys") || text.includes("all surveys") || text.includes("view surveys") || text.includes("/created-surveys")) {
+    return "/created-surveys";
+  }
+  if (text.includes("template") || text.includes("/templates")) {
+    return "/templates";
+  }
+  if (text.includes("subscription") || text.includes("billing") || text.includes("plan") || text.includes("upgrade") || text.includes("/subscription")) {
+    return "/subscription";
+  }
+  if (text.includes("analytics") || text.includes("statistics") || text.includes("/analytics")) {
+    return "/analytics";
+  }
+  if (text.includes("role management") || text.includes("/role-management")) {
+    return "/role-management";
+  }
+  if (text.includes("audit log") || text.includes("/audit-log")) {
+    return "/audit-log";
+  }
+  if (text.includes("dashboard") || text.includes("/creator-dashboard")) {
+    return "/creator-dashboard";
+  }
+  if (text.includes("organization") || text.includes("/organization-registration")) {
+    return "/organization-registration";
+  }
+  if (text.includes("profile") || text.includes("/profile")) {
+    return "/profile";
+  }
+  if (text.includes("settings") || text.includes("/settings")) {
+    return "/settings";
+  }
+  if (text.includes("notification") || text.includes("/notifications")) {
+    return "/notifications";
+  }
+  if (text.includes("help") || text.includes("/help")) {
+    return "/help";
   }
 
   return null;
@@ -268,6 +367,69 @@ export const chatWithAi = async (
   const { prompt, history, file } = req.body;
   if (!prompt) {
     res.status(400).json({ error: "Prompt is required" });
+    return;
+  }
+
+  // Intercept simple affirmation/negation confirmations
+  if (isAffirmation(prompt)) {
+    const targetPath = resolveConfirmationPath(history);
+    if (targetPath) {
+      const pathNames: Record<string, string> = {
+        "/create-new-survey": "Create New Survey",
+        "/created-surveys": "Created Surveys",
+        "/templates": "Templates",
+        "/subscription": "Subscription",
+        "/analytics": "Analytics",
+        "/role-management": "Role Management",
+        "/audit-log": "Audit Logs",
+        "/creator-dashboard": "Dashboard",
+        "/organization-registration": "Organization Registration",
+        "/profile": "Profile",
+        "/settings": "Settings",
+        "/notifications": "Notifications",
+        "/help": "Help"
+      };
+      const pageName = pathNames[targetPath] || "requested";
+      res.json({
+        response_message: `Great! Navigating you to the ${pageName} page now.`,
+        action: "navigate",
+        path: targetPath,
+        surveyData: null
+      });
+      return;
+    }
+
+    // Fallback if no path resolved, but history exists and it's a simple 'yes'
+    if (Array.isArray(history) && history.length > 0) {
+      const lastMsg = history[history.length - 1];
+      if (lastMsg.sender === 'ai' && lastMsg.text.includes("Form Copilot")) {
+        res.json({
+          response_message: 'Hello! How can I help you today? Are you looking to create a new survey, view existing ones, or explore our templates?',
+          action: 'speak',
+          path: null,
+          surveyData: null
+        });
+        return;
+      }
+    } else {
+      // Empty history fallback
+      res.json({
+        response_message: 'Hello! How can I help you today with the SMTIAP survey platform?',
+        action: 'speak',
+        path: null,
+        surveyData: null
+      });
+      return;
+    }
+  }
+
+  if (isNegation(prompt)) {
+    res.json({
+      response_message: "Okay, I won't navigate you there. What else can I help you with?",
+      action: "speak",
+      path: null,
+      surveyData: null
+    });
     return;
   }
 
@@ -316,6 +478,15 @@ export const chatWithAi = async (
     const apiKey =
       process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) {
+      if (file && file.data) {
+        res.json({
+          response_message: "I see you uploaded a file or image to generate a survey. However, the Gemini API key is missing, so I cannot process your upload.",
+          action: "speak",
+          path: null,
+          surveyData: null
+        });
+        return;
+      }
       // Local navigation fallback when API key is missing
       const fallback = tryLocalNavigation(prompt);
       if (fallback) {
@@ -332,7 +503,7 @@ export const chatWithAi = async (
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // System prompt for structured navigation/actions
     const systemInstruction = `You are a helpful AI assistant for a website (SMTIAP survey platform). 
@@ -431,17 +602,33 @@ If the user asks a general question, hello, or asks about billing/surveys, answe
     });
 
     const responseText = result.response.text();
-    const aiResponse = JSON.parse(responseText);
+    const aiResponse = cleanAndParseJson(responseText);
 
     res.json(aiResponse);
   } catch (error) {
     console.error("Error communicating with Gemini:", error);
+    // If a file or image was uploaded, do not fallback to navigation
+    if (file && file.data) {
+      res.json({
+        response_message: "I see you uploaded a file or image to generate a survey. However, my connection to the AI backend is currently rate-limited. Please try again in a few moments.",
+        action: "speak",
+        path: null,
+        surveyData: null
+      });
+      return;
+    }
     // Even if Gemini fails at runtime (e.g. rate limit, invalid key, or network issue), try local navigation fallback before erroring
     const fallback = tryLocalNavigation(prompt);
     if (fallback) {
       res.json(fallback);
       return;
     }
-    res.status(500).json({ error: "Failed to communicate with AI" });
+    // Polite local fallback instead of a hard 500 error
+    res.json({
+      response_message: "I am your Form Copilot. I'm currently running in offline navigation mode because my backend connection is rate-limited. How can I help you navigate the platform?",
+      action: "speak",
+      path: null,
+      surveyData: null
+    });
   }
 };

@@ -362,11 +362,10 @@ export default function Reports() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 border ${
-                  activeTab === tab
+                className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 border ${activeTab === tab
                     ? "flex items-center gap-1.5 px-4 h-[40px] rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold text-[13px] border-indigo-600 shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
                     : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
-                }`}
+                  }`}
               >
                 {tab === "tenants" && "Tenant Registrations"}
                 {tab === "users" && "Tenant Users"}
@@ -542,11 +541,10 @@ export default function Reports() {
 
                     <td className="px-6 py-3">
                       <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                          activity.status === "active"
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${activity.status === "active"
                             ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                             : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                        }`}
+                          }`}
                       >
                         {activity.status.charAt(0).toUpperCase() +
                           activity.status.slice(1)}

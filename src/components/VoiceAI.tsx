@@ -109,7 +109,9 @@ const SUGGESTION_CHIPS = [
 ];
 
 const VoiceAI: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(() => {
+    return sessionStorage.getItem('voice_assistant_is_open') === 'true';
+  });
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [textInput, setTextInput] = useState("");
@@ -643,10 +645,9 @@ const VoiceAI: React.FC = () => {
                     )}
                     <div
                       className={`text-[13px] px-3.5 py-2.5 rounded-2xl leading-relaxed shadow-sm break-words whitespace-normal
-                        ${
-                          msg.sender === "user"
-                            ? "bg-slate-100 text-slate-800 rounded-tr-none"
-                            : "bg-blue-50/60 text-slate-800 rounded-tl-none border border-blue-100/50"
+                        ${msg.sender === "user"
+                          ? "bg-slate-100 text-slate-800 rounded-tr-none"
+                          : "bg-blue-50/60 text-slate-800 rounded-tl-none border border-blue-100/50"
                         }`}
                     >
                       {msg.text}
@@ -760,10 +761,9 @@ const VoiceAI: React.FC = () => {
                       onClick={toggleListening}
                       disabled={isLoading}
                       className={`w-8.5 h-8.5 rounded-full border flex items-center justify-center transition-all cursor-pointer
-                        ${
-                          isListening
-                            ? "bg-red-500 border-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.4)]"
-                            : "border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                        ${isListening
+                          ? "bg-red-500 border-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.4)]"
+                          : "border-gray-200 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
                         }`}
                       title={
                         isListening
