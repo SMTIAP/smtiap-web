@@ -13,7 +13,7 @@ import {
 } from "../services/emailNotificationService.js";
 import { createAppNotification } from "../services/notificationService.js";
 
-// Converts a snake_case role string to Title Case for display (e.g. "super_admin" -> "Super Admin").
+// Converts a snake_case role string to Title Case for display
 export const formatRole = (role: string) => {
   return role
     .split("_")
@@ -21,20 +21,20 @@ export const formatRole = (role: string) => {
     .join(" ");
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 const reqAny = (req: Request): Record<string, any> =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   req as unknown as Record<string, any>;
 
-/** Get the authenticated user's tenant IDs from the request (set by loadTenant middleware). */
+
 const reqTenantIds = (req: Request): string[] =>
   (reqAny(req).tenantIds as string[]) ?? [];
 
-/** Check if user has access to a specific tenant. */
+// Check if user has access to a specific tenant.
 const hasTenantAccess = (req: Request, tenantId: string): boolean =>
   reqTenantIds(req).includes(tenantId);
 
-/** Check if the authenticated user is the creator/owner of the tenant. */
+// Check if the authenticated user is the creator/owner of the tenant.
 const isTenantAdminOrCreator = async (
   req: Request,
   tenantId: string,
@@ -86,6 +86,7 @@ const getTenantPlanName = async (tenantId: string): Promise<string> => {
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
     // Return ALL users in the system so admins can search and invite them
+    // .lean() return plain javascrip object
     const users = await User.find().select("username email role").lean();
     res.status(200).json(users);
   } catch (error: unknown) {
@@ -121,7 +122,6 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.params;
     const { role } = req.body;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const actor = (req as any).user;
 
     // Only the tenant creator can add users
@@ -246,7 +246,7 @@ export const updateOrgRole = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.params;
     const { role: newRole } = req.body;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const actor = (req as any).user;
 
     if (!hasTenantAccess(req, tenantId)) {
@@ -340,7 +340,6 @@ export const updateOrgRole = async (req: Request, res: Response) => {
 export const removeOrgUser = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.params;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const actor = (req as any).user;
 
     if (!hasTenantAccess(req, tenantId)) {
