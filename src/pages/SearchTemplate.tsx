@@ -125,11 +125,11 @@ export default function SearchTemplate() {
       ...t,
       numericUsedCount: parseUsedCount(t.usedCount)
     }));
-    
-    const sorted = [...templatesWithUsedCount].sort((a, b) => 
+
+    const sorted = [...templatesWithUsedCount].sort((a, b) =>
       b.numericUsedCount - a.numericUsedCount
     );
-    
+
     return sorted.slice(0, 5);
   }, [templates]);
 
@@ -181,7 +181,7 @@ export default function SearchTemplate() {
     if (isMostPopularSelected) {
       return mostPopularTemplates;
     }
-    
+
     // Otherwise filter by regular categories
     let filtered = templates.filter((t) => {
       const matchesCategory =
@@ -195,20 +195,26 @@ export default function SearchTemplate() {
         t.category.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-    
+
     // Sort A-Z for regular categories
-    return filtered.sort((a, b) => 
+    return filtered.sort((a, b) =>
       a.title.toLowerCase().localeCompare(b.title.toLowerCase())
     );
   }, [templates, selectedCategories, searchQuery, mostPopularTemplates, isMostPopularSelected]);
 
   const generateAndSave = async (title: string, prompt: string, templateId?: string) => {
+    const activeTenantId = localStorage.getItem("activeTenantId");
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+    if (activeTenantId && activeTenantId !== "__system__") {
+      headers["x-tenant-id"] = activeTenantId;
+    }
+
     const aiRes = await fetch("http://localhost:5000/api/ai/generate-survey", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+      headers,
       credentials: "include",
       body: JSON.stringify({ prompt }),
     });
@@ -218,22 +224,19 @@ export default function SearchTemplate() {
     const pages = aiData?.pages || [];
     const createRes = await fetch("http://localhost:5000/api/surveys", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+      headers,
       credentials: "include",
       body: JSON.stringify({ surveyTitle, status: "Draft", pages }),
     });
     const created = await createRes.json();
     const newSurveyId = created?._id || created?.survey?._id;
-    
+
     // Increment usage count for template
     if (templateId) {
       try {
         await templateApi.incrementUsageCount(templateId);
         // Update local state to reflect new count
-        setTemplates(prevTemplates => 
+        setTemplates(prevTemplates =>
           prevTemplates.map(t => {
             if (t._id === templateId) {
               const currentCount = parseUsedCount(t.usedCount);
@@ -250,7 +253,7 @@ export default function SearchTemplate() {
         console.error("Failed to increment usage count:", err);
       }
     }
-    
+
     return newSurveyId;
   };
 
@@ -296,7 +299,7 @@ export default function SearchTemplate() {
     const rank = isMostPopularSelected ? index + 1 : null;
     const rankStyles = rank ? getRankStyles(rank) : null;
     const RankIcon = rankStyles?.icon;
-    
+
     return (
       <div
         key={temp._id}
@@ -306,9 +309,8 @@ export default function SearchTemplate() {
             state: { templateId: temp._id },
           })
         }
-        className={`group cursor-pointer bg-white dark:bg-slate-800 border rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ${
-          rankStyles?.borderClass || "border-slate-200 dark:border-slate-700"
-        }`}
+        className={`group cursor-pointer bg-white dark:bg-slate-800 border rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ${rankStyles?.borderClass || "border-slate-200 dark:border-slate-700"
+          }`}
       >
         {/* Cover Image or Gradient Header */}
         <div className="h-32 relative overflow-hidden flex items-center justify-center bg-slate-100 dark:bg-slate-900">
@@ -321,7 +323,7 @@ export default function SearchTemplate() {
           ) : (
             <div className={`absolute inset-0 bg-gradient-to-br ${temp.gradient}`} />
           )}
-          
+
           {/* Rank Badge - Only show for Most Popular category */}
           {isMostPopularSelected && rank && (
             <div className={`absolute top-3 left-3 z-20 ${rankStyles?.badgeClass} px-2 py-1 rounded-lg shadow-lg flex items-center gap-1.5`}>
@@ -329,7 +331,7 @@ export default function SearchTemplate() {
               <span className="text-[10px] font-bold text-white">{rankStyles?.badgeText}</span>
             </div>
           )}
-          
+
           <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity z-10" />
           {isGenerating && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-20">
@@ -417,25 +419,23 @@ export default function SearchTemplate() {
           <div className="flex lg:flex-col gap-0.5 overflow-x-auto pb-2 lg:pb-0">
             <button
               onClick={() => toggleCategory("All")}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all w-full text-left group ${
-                selectedCategories.includes("All") ||
-                selectedCategories.length === 0
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all w-full text-left group ${selectedCategories.includes("All") ||
+                  selectedCategories.length === 0
                   ? "bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400"
                   : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-              }`}
+                }`}
             >
               <span
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                  selectedCategories.includes("All") ||
-                  selectedCategories.length === 0
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${selectedCategories.includes("All") ||
+                    selectedCategories.length === 0
                     ? "border-indigo-500 bg-indigo-500"
                     : "border-slate-300 dark:border-slate-600 group-hover:border-indigo-400"
-                }`}
+                  }`}
               >
                 {(selectedCategories.includes("All") ||
                   selectedCategories.length === 0) && (
-                  <ChevronRight size={11} className="text-white" />
-                )}
+                    <ChevronRight size={11} className="text-white" />
+                  )}
               </span>
               <span className="flex-1">All</span>
               <span className="text-xs text-slate-400 dark:text-slate-500">
@@ -446,18 +446,16 @@ export default function SearchTemplate() {
             {/* Most Popular Category Button */}
             <button
               onClick={() => toggleCategory("Most Popular")}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all w-full text-left group ${
-                selectedCategories.includes("Most Popular")
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all w-full text-left group ${selectedCategories.includes("Most Popular")
                   ? "bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400"
                   : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-              }`}
+                }`}
             >
               <span
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                  selectedCategories.includes("Most Popular")
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${selectedCategories.includes("Most Popular")
                     ? "border-indigo-500 bg-indigo-500"
                     : "border-slate-300 dark:border-slate-600 group-hover:border-indigo-400"
-                }`}
+                  }`}
               >
                 {selectedCategories.includes("Most Popular") && (
                   <ChevronRight size={11} className="text-white" />
@@ -479,18 +477,16 @@ export default function SearchTemplate() {
                 <button
                   key={cat._id}
                   onClick={() => toggleCategory(cat.name)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all w-full text-left group ${
-                    isSelected
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all w-full text-left group ${isSelected
                       ? "bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400"
                       : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  }`}
+                    }`}
                 >
                   <span
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                      isSelected
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${isSelected
                         ? "border-indigo-500 bg-indigo-500"
                         : "border-slate-300 dark:border-slate-600 group-hover:border-indigo-400"
-                    }`}
+                      }`}
                   >
                     {isSelected && (
                       <ChevronRight size={11} className="text-white" />
