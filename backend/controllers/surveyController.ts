@@ -144,7 +144,7 @@ const PLAN_SURVEY_LIMITS: Record<string, number> = {
   pro: 100,
 };
 
-/** Resolve the tenant's current active plan, defaulting to "free" if none/expired. */
+//looks for the tenant's current active plan on page load, defaulting to "free" if none/expired.
 const getTenantPlanName = async (tenantId: string): Promise<string> => {
   const payment = await Payment.findOne({ tenantId, status: "success" })
     .sort({ createdAt: -1 })

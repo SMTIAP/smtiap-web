@@ -121,7 +121,6 @@ export const addUserToOrganization = async (req: Request, res: Response) => {
   try {
     const { userId, tenantId } = req.params;
     const { role } = req.body;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const actor = (req as any).user;
 
     // Only the tenant creator can add users

@@ -5,8 +5,8 @@ import {
   handlePayHereNotify,
   getTenantSubscription,
 } from "../controllers/payhereController.js";
-import { protect } from "../middleware/auth.js";
-import { loadTenant } from "../middleware/tenant.js";
+import { protect } from "../middleware/auth.js"; //to verify the JWT json web token
+import { loadTenant } from "../middleware/tenant.js"; //look up user's tenant role
 
 const router = Router();
 
