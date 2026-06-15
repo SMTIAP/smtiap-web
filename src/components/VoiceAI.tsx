@@ -109,7 +109,9 @@ const SUGGESTION_CHIPS = [
 ];
 
 const VoiceAI: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(() => {
+    return sessionStorage.getItem('voice_assistant_is_open') === 'true';
+  });
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [textInput, setTextInput] = useState('');
@@ -124,14 +126,28 @@ const VoiceAI: React.FC = () => {
     return localStorage.getItem('voice_assistant_speech_enabled') !== 'false';
   });
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      sender: 'ai',
-      text: "Hi! I am your Form Copilot. I can help you create surveys, suggest questions, navigate the dashboard, or answer questions. What can I do for you today?",
-      timestamp: new Date()
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const saved = sessionStorage.getItem('voice_assistant_messages');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+      } catch (e) {
+        console.error("Failed to parse saved messages", e);
+      }
     }
-  ]);
+    return [
+      {
+        id: 'welcome',
+        sender: 'ai',
+        text: "Hi! I am your Form Copilot. I can help you create surveys, suggest questions, navigate the dashboard, or answer questions. What can I do for you today?",
+        timestamp: new Date()
+      }
+    ];
+  });
 
   const navigate = useNavigate();
   const recognitionRef = useRef<any>(null);
@@ -168,6 +184,14 @@ const VoiceAI: React.FC = () => {
   isSpeakingRef.current = isSpeaking;
 
   const manuallyStoppedRef = useRef(false);
+
+  useEffect(() => {
+    sessionStorage.setItem('voice_assistant_is_open', String(isOpen));
+  }, [isOpen]);
+
+  useEffect(() => {
+    sessionStorage.setItem('voice_assistant_messages', JSON.stringify(messages));
+  }, [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
