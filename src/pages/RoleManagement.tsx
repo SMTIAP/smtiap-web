@@ -62,6 +62,7 @@ export default function RoleManagement() {
     };
     if (token) headers["Authorization"] = `Bearer ${token}`;
     const id = localStorage.getItem("activeTenantId");
+    // x-custom header
     if (id && id !== "__system__") headers["x-tenant-id"] = id;
     return headers;
   };

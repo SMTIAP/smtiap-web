@@ -326,13 +326,6 @@ export default function Audit() {
 
         <div className="flex justify-between items-center w-full">
           <div className="flex w-full justify-end gap-2">
-            <button
-              onClick={handleClear}
-              className="flex items-center gap-1.5 px-4 h-[40px] rounded-lg text-white font-semibold text-[13px] shadow-md transition-all duration-200 shrink-0 bg-gray-400 hover:bg-gray-500 hover:scale-[1.02]"
-            >
-              <Eraser size={16} />
-              Clear
-            </button>
             <div ref={dropdownRef} className="relative inline-block">
               <button
                 onClick={() => setOpenExport((prev) => !prev)}
@@ -349,9 +342,6 @@ export default function Audit() {
                     className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   >
                     Export CSV
-                  </button>
-                  <button className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
-                    Export Excel
                   </button>
                   <button
                   onClick={handleExportPDF}
