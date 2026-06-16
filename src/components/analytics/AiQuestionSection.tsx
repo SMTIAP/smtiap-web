@@ -18,7 +18,7 @@ const PLAN_FEATURE_ACCESS: Record<string, boolean> = {
   pro: true,
 };
 
-
+//what this component receives. surveyQuestions - list of questions in the survey, responses, total count of responses
 interface AiQuestionSectionProps {
   surveyQuestions: SurveyQuestion[];
   surveyResponses: SurveyResponseDoc[];
@@ -30,9 +30,9 @@ export default function AiQuestionSection({
   surveyResponses,
   totalResponses,
 }: AiQuestionSectionProps) {
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState<string | null>(null);
-  const [isAsking, setIsAsking] = useState(false);
+  const [question, setQuestion] = useState(""); //user typed question
+  const [answer, setAnswer] = useState<string | null>(null); //ai's answer
+  const [isAsking, setIsAsking] = useState(false); //loading state
   const [error, setError] = useState<string | null>(null);
   
     // ---plan access check. check if tenant is in a paid plan or not.----
@@ -57,9 +57,10 @@ export default function AiQuestionSection({
   }, []);
 
 
+  //input validation.
   const askQuestion = async () => {
     const trimmed = question.trim();
-    if (!trimmed || isAsking) return;
+    if (!trimmed || isAsking) return; //no empty questions or already answering one
 
     setIsAsking(true);
     setError(null);
@@ -80,13 +81,14 @@ export default function AiQuestionSection({
         .map((q, i) => `${i + 1}. [${q.type ?? "unknown"}] ${q.label ?? "Untitled"}`)
         .join("\n");
 
-      // Build response text lines from the (already date-filtered) responses
+      // 1a. build response data by converting them to AI understandable format
       const questionById = new Map(
         surveyQuestions
           .map((q) => [getQuestionId(q), q] as const)
           .filter(([id]) => Boolean(id)),
       );
 
+      // 1b. output ex: response 1 | question (type): question |answer: ...
       const inputLines = surveyResponses.flatMap((doc, idx) =>
         Object.entries(doc.responses ?? {}).flatMap(([qId, value]) => {
           const q = questionById.get(qId);
@@ -103,6 +105,7 @@ export default function AiQuestionSection({
         throw new Error("No responses found in database for this survey.");
       }
 
+      //initialize gemini ai
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
@@ -127,6 +130,7 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
 {"answer":"..."}
 `;
 
+      //call gemini api and parse response- send prompt, cleanup markdown formatting in response, parse json response, extract and store answer
       const result = await model.generateContent(prompt);
       const text = result.response
         .text()
@@ -158,6 +162,7 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
     }
   };
 
+  //press enter on keyboard to submit question
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -165,7 +170,7 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
     }
   };
 
-    //while chekcing access, render nothing extra (avoids flash of locked UI)
+    //while chekcing access, render nothing extra, show loading spinner (avoids flash of locked UI)
   if (isCheckingAccess) {
     return (
       <section className="p-6 rounded-lg border border-[#CFDBE8] dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md relative overflow-hidden transition-colors duration-300 mt-6">
@@ -180,6 +185,7 @@ Return a purely JSON object (no markdown formatting, no code fence) with this st
     );
   }
 
+  //locked state cause of low plan
   if (!hasAccess) {
     return (
       <section className="p-6 rounded-lg border border-[#CFDBE8] dark:border-slate-700 bg-white dark:bg-slate-800 shadow-md relative overflow-hidden transition-colors duration-300 mt-6">

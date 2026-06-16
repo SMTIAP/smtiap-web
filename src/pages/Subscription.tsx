@@ -63,6 +63,7 @@ export default function Subscription() {
   const [backendUnavailable, setBackendUnavailable] = useState(false);
   const [permissionError, setPermissionError] = useState<string | null>(null);
 
+  //fetch email and username to send to later payhere billing details. down
   useEffect(() => {
     let mounted = true;
     api.get("/me")
@@ -78,6 +79,7 @@ export default function Subscription() {
       .finally(() => { if (mounted) setIsUserLoading(false); });
     return () => { mounted = false; };
   }, []);
+
 
   const fetchSubscription = () => {
     //no tenant selected, nothing to show, treat as Free with no active plan
@@ -151,7 +153,9 @@ export default function Subscription() {
     return { label: "Upgrade", disabled: false, style: "upgrade" };
   };
 
+  //runs first when clicking to buy a plan. 
   const handlePayment = async (plan: PricingPlan) => {
+    //check if plan isnt already current or downgrade. prevent stale UI clicks - duplicate purchases
     const state = getPlanState(plan);
     if (state.disabled) return;
 
@@ -160,6 +164,7 @@ export default function Subscription() {
       return;
     }
 
+    //prepare payment data
     const price = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
     const billingPeriod = isYearly ? "yearly" : "monthly";
     const tenantId = activeTenant!.tenantId._id;
@@ -170,6 +175,7 @@ export default function Subscription() {
     const liveEmail = currentUser?.email || "customer@smtiap.com";
 
     try {
+      //states for disabling visual features before invoking doing payment.
       setIsGeneratingHash(true);
       setBackendUnavailable(false);
       setPermissionError(null);
@@ -181,6 +187,7 @@ export default function Subscription() {
 
       const { merchant_id, hash, notify_url, tenant_id } = response.data;
 
+      //send and used by usePayHere.ts to filter what gets sent to PayHere itself
       startPayment({
         sandbox: true,
         merchant_id,
@@ -226,6 +233,7 @@ export default function Subscription() {
       return null;
     }
 
+    //sethourse(hours, minutes, seconds, milliseconds)
     const start = new Date(activePlan.createdAt);
     start.setHours(0, 0, 0, 0);  //snap to midnight of start day
 

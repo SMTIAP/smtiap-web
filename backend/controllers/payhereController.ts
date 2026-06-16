@@ -12,7 +12,7 @@ const getPlanDuration = (billingPeriod: string): number => {
   return billingPeriod === "yearly" ? 365 : 30; // days
 };
 
-//check that our personal notify endpoint is reachable from outside
+//check that our personal notify endpoint is reachable from outside. used in one of createPayHereHash 3 filters here next
 const isNotifyUrlReachable = async (): Promise<boolean> => {
   if (!env.notifyBaseUrl) {
     console.warn("NOTIFY_BASE_URL is not set — refusing to start payments.");
@@ -39,7 +39,7 @@ const isNotifyUrlReachable = async (): Promise<boolean> => {
 //these are the roles allowed to purchase or change a tenant's subscription
 const BILLING_ROLES = ["admin", "billing_manager", "super_admin"];
 
-//payhere create hash part
+//payhere create hash part. does 3 checks - is there even a active tenant, does he have billing capable role, see if notify even reachable (so no money ckarge without record adding)
 export const createPayHereHash = async (
   req: Request,
   res: Response,
@@ -93,6 +93,7 @@ export const createPayHereHash = async (
       return;
     }
 
+    //only come here if all 3 checks pass. start making the md5 hash starting here.
     const formattedAmount = Number(amount).toFixed(2);
 
     const hashedSecret = crypto
@@ -128,7 +129,7 @@ export const createPayHereHash = async (
   }
 };
 
-//payHere notification handler part, called by payhere after payment
+//payHere notify handler part, called by payhere after payment
 export const handlePayHereNotify = async (
   req: Request,
   res: Response,
@@ -184,7 +185,7 @@ export const handlePayHereNotify = async (
       return;
     }
 
-    //2. map status_code -> readable status
+    //2. map status_code into readable status
     const statusMap: Record<string, IPaymentStatus> = {
       "2": "success",
       "0": "pending",
@@ -206,10 +207,10 @@ export const handlePayHereNotify = async (
       return;
     }
  
-    //4. Single upsert into MongoDB, scoped to the tenant
+    
     console.log("Attempting DB write for order:", order_id, "tenant:", tenantId);
 
-    // Remove the tenant's previous active plan (upgrades replace, not stack)
+    // first write to mongodb. remove the tenant's previous active plan (upgrades replace, not stack)
     await Payment.deleteMany({ tenantId, status: "success" });
 
     // calculate expiry date
@@ -217,6 +218,7 @@ export const handlePayHereNotify = async (
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
 
+    //second write to mongodb. add new payment record
     await Payment.findOneAndUpdate(
       { orderId: order_id },
       {
@@ -253,6 +255,7 @@ export const handlePayHereNotify = async (
             const user = await User.findById(member.userId).lean<IUser>();
             if (!user?.email) return;
 
+            //send a email with bill to admin and billing managers
             await notifyPaymentReceived({
               email: user.email,
               username: user.username || "User",
