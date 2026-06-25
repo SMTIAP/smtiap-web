@@ -1,0 +1,10 @@
+Visa	4916217501611292
+MasterCard	5307 7321 2553 1191
+American Express	3467 8100 5510 225
+
+CVV: any 3-digts
+Expiry Date: any future date (04/27)
+
+super admin:
+smtiapweb@gmail.com
+SuperAdmin@12345
